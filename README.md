@@ -15,9 +15,7 @@
 
 ## 📖 Sobre el Proyecto
 
-**Reservives** es una aplicación integral diseñada para simplificar y modernizar el proceso de reserva de espacios, equipos y recursos para estudiantes y administradores. 
-
-Con un diseño de vanguardia (glassmorphism, animaciones fluidas) y una arquitectura robusta Cliente-Servidor Multicapa, la aplicación garantiza una experiencia de usuario excepcional y un rendimiento sólido en producción.
+**Reservives** es una aplicación diseñada para simplificar y modernizar el proceso de reserva de espacios, equipos y recursos para estudiantes y profesores del IES Luis Vives. 
 
 ## ✨ Características Principales
 
