@@ -1,7 +1,7 @@
 [![Logo del IES Luis Vives](https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png)](https://iesluisvives.es/)
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/gonnzaxx/RESERVIVES-DESARROLLO/main/Mockups/logo.png" width="200" alt="Reservives Logo" />
+  <img src="https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png" width="200" alt="Reservives Logo" />
   <h1>📅 RESERVIVES APP</h1>
   <p><strong>El sistema definitivo de gestión de reservas para recursos y espacios académicos.</strong></p>
   
