@@ -20,7 +20,7 @@
 ## ✨ Características Principales
 
 *   🔐 **Autenticación Segura & Microsoft OAuth**: Inicio de sesión integrado con cuentas institucionales.
-*   👥 **Gestión de Roles**: Interfaces adaptativas para Estudiantes (Reservas) y Administradores (Backoffice).
+*   👥 **Gestión de Roles**: Interfaces adaptativas para Estudiantes, Profesores y Administradores (Backoffice).
 *   🌐 **Internacionalización (i18n)**: Soporte multi-idioma integrado desde la pantalla de bienvenida.
 *   🎨 **UX/UI Premium**: Modo oscuro automatizado, efectos de glassmorphism, micro-animaciones en botones y skeleton loaders.
 *   📋 **Panel de Administración**: Gestión y edición avanzada de usuarios, reservas y recursos.
