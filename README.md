@@ -45,7 +45,7 @@ La forma más rápida y fácil de levantar todo el ecosistema de **Reservives** 
 ### Pre-requisitos
 * [Docker](https://www.docker.com/get-started) y Docker Compose instalados.
 * [Flutter SDK](https://docs.flutter.dev/get-started/install) (Si deseas correr la app en emuladores móbiles o desarrollar la UI localmente).
-* Python 3.12 (Para desarrollo local del backend sin Docker).
+* [Python 3.12](https://www.python.org/downloads/) (Para desarrollo local del backend sin Docker).
 
 ### Despliegue Rápido (Local)
 
