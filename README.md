@@ -1,86 +1,120 @@
-[![Logo del IES Luis Vives](https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png)](https://iesluisvives.es/)
+<div align="center">
+  <img src="https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png" width="200" alt="Reservives Logo" />
+  <h1>RESERVIVES APP</h1>
+  <p><strong>El sistema de gestión de reservas para recursos y espacios académicos.</strong></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  </p>
+</div>
 
-# 📱 TFG Desarrollo de Aplicaciones Multiplataforma
+<hr>
 
-## 🚀 Introducción
+## 📖 Sobre el Proyecto
 
-Aplicación que permite la gestión y administración de reservas de espacios comunes en el instituto IES Luis Vives mediante una app móvil para Android como trabajo de fin de grado para el Ciclo Formativo de Grado Superior en Desarrollo de Aplicaciones Multiplataforma.
+**Reservives** es una aplicación diseñada para simplificar y modernizar el proceso de reserva de espacios, equipos y recursos para estudiantes y profesores del IES Luis Vives. 
 
-## 📋 Funcionalidades
+## ✨ Características Principales
 
-La aplicación cuenta con las siguientes funcionalidades:
+*   🔐 **Autenticación Segura & Microsoft OAuth**: Inicio de sesión integrado con cuentas institucionales.
+*   👥 **Gestión de Roles**: Interfaces adaptativas para Estudiantes, Profesores y Administradores (Backoffice).
+*   🌐 **Internacionalización (i18n)**: Soporte multi-idioma integrado desde la pantalla de bienvenida.
+*   🎨 **UX/UI**: Modo oscuro automatizado, efectos de glassmorphis y skeleton loaders.
+*   📋 **Panel de Administración**: Gestión y edición de usuarios, reservas y recursos.
+*   🐳 **Despliegue Sencillo**: Estructurado en contenedores Docker para levantar todos los servicios con un solo comando.
 
-### 🔒 Para usuarios finales (*Alumno/a* y *Profesor/a*)
+## 🏗 Arquitectura y Estructura
 
-- Crear, anular, modificar y solicitar reservas.
-- Visualizar las reservas propias.
-- Visualizar la disponibilidad de espacios.
-- Visualizar el perfil propio.
+El proyecto se divide en diferentes directorios principales:
 
-### 🔑 Para el usuario con rol *Administrador/a*
+```text
+📦 RESERVIVES-APP
+ ┣ 📂 backend            # API RESTFUL construida con FastAPI (Python) & SQLAlchemy
+ ┣ 📂 frontend           # Interfaz de usuario construida con Flutter y Riverpod 3.3.1
+ ┣ 📂 database           # Ficheros de inicialización y migración (PostgreSQL)
+ ┗ 📜 docker-compose.yml # Orquestación de múltiples contenedores
+```
 
-- Crear, anular, modificar, aceptar reservas de cualquier usuario.
-- Visualizar todas las reservas.
-- Visualizar disponibilidad de cualquier espacio.
-- Crear, eliminar y modificar espacios.
-- Visualizar todos los espacios.
-- Crear, eliminar y modificar usuarios.
-- Visualizar todos los usuarios.
-- Asignar roles.
+## 🚀 Cómo Empezar (Getting Started)
 
-## 🧑‍🤝‍🧑 Roles de Usuario
+La forma más rápida y fácil de levantar todo el ecosistema de **Reservives** (Frontend web, Backend, Database) es a través de Docker.
 
-La aplicación cuenta con los siguientes roles de usuario:
+### Pre-requisitos
+* [Docker](https://www.docker.com/get-started) y Docker Compose instalados.
+* [Flutter SDK](https://docs.flutter.dev/get-started/install) (Si deseas correr la app en emuladores móbiles o desarrollar la UI localmente).
+* [Python 3.12](https://www.python.org/downloads/) (Para desarrollo local del backend sin Docker).
 
-- *Alumno/a*
-- *Profesor/a*
-- *Administrador/a*
+### Despliegue Rápido (Local)
 
-## 🏢 Espacios
+1. **Clona el repositorio**
+   ```bash
+   git clone https://github.com/gonnzaxx/RESERVIVES.git
+   cd RESERVIVES
+   ```
 
-| Característica | Valor |
-| --- | --- |
-| Nombre | Nombre del espacio |
-| Imagen | Imagen del espacio |
-| Descripción | Descripción del espacio |
-| Precio | Cuantía de créditos que debe pagar el usuario para reservar dicho espacio |
-| Reservable | Sí/No |
-| Ventana temporal (antelación con la que se puede reservar el espacio) | En días |
-| Roles que pueden reservar el espacio | Alumno/a, Profesor/a, Administrador/a |
-| Requiere autorización | Sí/No |
+2. **Levanta los contenedores**
+   La base de datos, el backend y el entorno de desarrollo web se iniciarán automáticamente.
+   ```bash
+   docker-compose up --build -d
+   ```
 
-## ✏️ Reservas
-| Característica | Valor |
-| --- | --- |
-| ID de Usuario | Identificador del usuario que realiza la reserva |
-| Nombre del Usuario | Nombre del usuario que realiza la reserva |
-| ID de Espacio | Identificador del espacio reservado |
-| Nombre del Espacio | Nombre del espacio reservado |
-| Imagen | Imagen del espacio reservado |
-| Fecha de Inicio | Fecha de inicio de la reserva |
-| Fecha de Fin | Fecha de fin de la reserva |
-| Observaciones | Observaciones de la reserva |
-| Estado | Estado de la reserva (pendiente, aceptada, rechazada) |
+3. **¡Accede a la app!**
+   * **Frontend Web**: Visita `http://localhost:2121` (Depende del puerto mapeado).
+   * **API Docs (Swagger)**: Visita `http://localhost:8000/docs`.
 
-## 👥 Usuarios
-| Característica | Valor |
-| --- | --- |
-| Nombre | Nombre del usuario |
-| Nombre de usuario | Nombre de usuario del usuario |
-| Email | Email del usuario |
-| Contraseña | Contraseña del usuario |
-| Avatar | Avatar del usuario |
-| Rol | Rol del usuario (Alumno/a, Profesor/a, Administrador/a) |
-| Créditos | Créditos del usuario disponibles para reservar |
-| Activo | Sí/No |
+### Desarrollo Local (Frontend - Flutter)
 
-## 👨‍💻 Autoría
+Si deseas trabajar estrictamente en la versión móvil:
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
 
-Este proyecto ha sido desarrollado por:
+## 🛠 Tecnologías Utilizadas
+
+### Frontend (App Móvil & Web)
+- **Framework**: [Flutter](https://flutter.dev/)
+- **Gestor de Estado**: Riverpod 3.3.1
+- **Estilos**: Theming y Localization adaptativa.
+
+### Backend (Servicio API)
+- **Framework**: Python 3 con [FastAPI](https://fastapi.tiangolo.com/)
+- **ORM**: SQLAlchemy
+- **Autenticación**: OAuth2
+
+### Base de Datos & Infraestructura
+- **Base de datos**: PostgreSQL
+- **Contenedores**: Docker Compose
+
+## 🤝 Contribuyendo
+
+1. Haz un Fork del proyecto
+2. Crea tu Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Haz Commit a tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Haz Push al Branch (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 👥 Créditos y Autoría
+
+Este proyecto ha sido posible gracias al trabajo de dos equipos en diferentes etapas:
+
+### 🚀 Inicio del Proyecto (Versión Original)
+Desarrollado inicialmente por:
 
 - [Alejandro Sánchez Monzón](https://github.com/AlejandroSanchezMonzon)
 - [Mireya Sánchez Pinzón](https://github.com/Mireyasanche)
 - [Rubén García-Redondo Marín](https://github.com/RuyMi)
+
+### 🏁 Finalización y Versión Actual
+Evolución, rediseño y despliegue final por:
+
+- [Gonzalo Santiago Ariza](https://github.com/gonnzaxx)
+- [Álvaro Lorenzo Carrillo](https://github.com/lorenZZo30)
+- [Jorge Sepúlveda Martín](https://github.com/JorgeSepul)
 
 ## 📚 Documentación
 
