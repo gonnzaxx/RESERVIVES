@@ -1,0 +1,34 @@
+# RESERVIVES - Dependencias Backend
+
+# Framework web y Servidor
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+
+# Base de datos
+sqlalchemy==2.0.37
+asyncpg==0.30.0
+alembic==1.15.1
+
+# Validación y serialización
+pydantic==2.10.6
+pydantic-settings==2.7.1
+email-validator==2.2.0
+
+# Autenticación y Seguridad
+python-jose[cryptography]==3.3.0
+msal==1.31.1
+cryptography==44.0.0
+
+# Cliente HTTP y Testing
+httpx==0.28.1
+pytest==8.3.4
+pytest-asyncio==0.25.3
+
+# Tareas programadas
+apscheduler==3.11.0
+
+# Utilidades y Almacenamiento
+python-dotenv==1.0.1
+python-multipart==0.0.20
+Pillow==11.1.0
+firebase-admin==6.6.0
