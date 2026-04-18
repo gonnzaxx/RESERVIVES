@@ -14,7 +14,7 @@ class AppConstants {
   static const String appName = 'RESERVIVES';
   static const String appTagline = 'IES Luis Vives';
 
-  // Microsoft EntraID 
+  // Microsoft EntraID
   static const String azureClientId = String.fromEnvironment(
     'AZURE_CLIENT_ID',
     defaultValue: '', // ID de cliente
