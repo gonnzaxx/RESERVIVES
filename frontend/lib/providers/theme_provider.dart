@@ -1,36 +1,17 @@
-/// Alejandro Sánchez Monzón
-/// Mireya Sánchez Pinzón
-/// Rubén García-Redondo Marín
-
 import 'package:flutter/material.dart';
-import 'package:gestion_espacios_app/preferences/app_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Clase que gestiona el tema de la aplicación.
-class ThemeProvider extends ChangeNotifier {
-  /// Preferencias de la aplicación.
-  final ThemePreference _preference = ThemePreference();
+class ThemeNotifier extends Notifier<ThemeMode> {
 
-  /// Booleano que indica si el tema es oscuro o no.
-  bool _isDarkMode = false;
-
-  /// Constructor.
-  ThemeProvider() {
-    _loadTheme();
+  @override
+  ThemeMode build() {
+    return ThemeMode.light;
   }
 
-  /// Getter del booleano que indica si el tema es oscuro o no.
-  bool get isDarkMode => _isDarkMode;
-
-  /// Función que cambia el tema.
   void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
-    _preference.setDarkMode(_isDarkMode);
-    notifyListeners();
-  }
-
-  /// Función que carga el tema.
-  Future<void> _loadTheme() async {
-    _isDarkMode = await _preference.getDarkMode();
-    notifyListeners();
+    state = (state == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
   }
 }
+final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(() {
+  return ThemeNotifier();
+});
