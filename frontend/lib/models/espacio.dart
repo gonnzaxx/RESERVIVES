@@ -1,6 +1,6 @@
 /// RESERVIVES - Modelo de Espacio.
-///
-/// Mapea la estructura de la tabla espacios y sus roles permitidos.
+
+
 library;
 
 import 'package:reservives/config/constants.dart';
