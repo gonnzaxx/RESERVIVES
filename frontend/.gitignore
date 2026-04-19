@@ -48,7 +48,7 @@ lib/firebase_options.dart
 lib/config/constants.dart
 config_*.json
 firebase.json
-
+web/firebase-messaging-sw.js
 android/app/google-services.json
 
 

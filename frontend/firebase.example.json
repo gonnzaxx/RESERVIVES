@@ -1,0 +1,25 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "reservives",
+          "appId": "${FIREBASE_ANDROID_APP_ID}",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "reservives",
+          "configurations": {
+            "android": "${FIREBASE_ANDROID_APP_ID}",
+            "ios": "${FIREBASE_IOS_APP_ID}",
+            "macos": "${FIREBASE_IOS_APP_ID}",
+            "web": "${FIREBASE_WEB_APP_ID}",
+            "windows": "${FIREBASE_WINDOWS_APP_ID}"
+          }
+        }
+      }
+    }
+  }
+}
