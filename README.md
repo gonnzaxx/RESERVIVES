@@ -128,7 +128,7 @@ Crea un archivo `.env` en `backend/` con la misma estructura que el archivo `.en
 #### Orquestación con Docker (Full Stack)
 ```bash
 # Levanta BD, Backend y Frontend Web simultáneamente
-docker-compose up --build
+docker-compose up -d --build
 ```
 ---
 
