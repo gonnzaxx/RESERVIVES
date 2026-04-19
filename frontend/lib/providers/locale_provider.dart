@@ -50,7 +50,7 @@ Future<Locale> loadInitialLocale() async {
   if (AppLocalizationsDelegateSupported.isSupportedCode(code)) {
     return Locale(code);
   }
-  
+
   // Fallback
   return const Locale('es');
 }
