@@ -23,7 +23,7 @@ class FavoritesScreen extends ConsumerWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800), // Ancho máximo profesional
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               children: [
                 Padding(
@@ -54,7 +54,7 @@ class FavoritesScreen extends ConsumerWidget {
                         Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: 20,
-                            vertical: isWeb ? 16 : 4, // Menos espacio en móvil
+                            vertical: isWeb ? 16 : 4,
                           ),
                           child: Container(
                             height: 48,
@@ -161,7 +161,6 @@ class _FavoritosList extends StatelessWidget {
           );
         }
         return ListView.separated(
-          // Padding dinámico para móvil vs web
           padding: EdgeInsets.fromLTRB(20, isWeb ? 16 : 4, 20, 100),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -227,7 +226,6 @@ class _FavoritoCard extends ConsumerWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Imagen de la card
                 Container(
                   width: 70,
                   height: 70,
@@ -247,7 +245,6 @@ class _FavoritoCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Textos
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +277,6 @@ class _FavoritoCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Botón de eliminar de favoritos
                 Material(
                   color: AppColors.error.withOpacity(0.08),
                   shape: const CircleBorder(),
