@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="metadata/logo_luisvives.png" width="200" alt="Reservives Logo" />
+  <img src="metadata/logo_luis_vives.png" width="200" alt="Reservives Logo" />
   <h1>RESERVIVES APP</h1>
   <p><strong>El sistema de gestión de reservas para recursos y espacios académicos.</strong></p>
   
