@@ -47,6 +47,10 @@ app.*.map.json
 lib/firebase_options.dart
 lib/config/constants.dart
 config_*.json
+firebase.json
+
+android/app/google-services.json
+
 
 *.local.json
 .local_configs/
