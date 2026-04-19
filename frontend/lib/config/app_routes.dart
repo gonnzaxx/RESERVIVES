@@ -10,13 +10,8 @@ import 'package:reservives/screens/cafeteria/cafeteria_screen.dart';
 import 'package:reservives/screens/home/home_screen.dart';
 import 'package:reservives/screens/login_screen.dart';
 import 'package:reservives/screens/home/notifications_screen.dart';
-import 'package:reservives/screens/profile/settings/about_screen.dart';
 import 'package:reservives/screens/profile/activity_history_screen.dart';
 import 'package:reservives/screens/profile/favorites_screen.dart';
-import 'package:reservives/screens/profile/settings/help_screen.dart';
-import 'package:reservives/screens/profile/settings/faq_screen.dart';
-import 'package:reservives/screens/profile/settings/ies_info_screen.dart';
-import 'package:reservives/screens/profile/settings/notification_preferences_screen.dart';
 import 'package:reservives/screens/profile/profile_screen.dart';
 import 'package:reservives/screens/profile/settings_screen.dart';
 import 'package:reservives/screens/bookings/bookings_screen.dart';
@@ -128,117 +123,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
 
-      // Admin BackOffice Shell
-      ShellRoute(
-        builder: (context, state, child) => AdminShellScreen(child: child),
-        routes: [
-          GoRoute(
-            path: '/admin',
-            name: 'admin',
-            pageBuilder: (context, state) =>
-            const NoTransitionPage(child: AdminDashboard()),
-            routes: [
-              GoRoute(
-                path: 'usuarios',
-                name: 'admin_usuarios',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminUsersScreen()),
-              ),
-              GoRoute(
-                path: 'reservas',
-                name: 'admin_reservas',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminBookingsScreen()),
-              ),
-              GoRoute(
-                path: 'anuncios',
-                name: 'admin_anuncios',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminAnnouncementsScreen()),
-              ),
-              GoRoute(
-                path: 'cafeteria',
-                name: 'admin_cafeteria',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminCafeteriaScreen()),
-              ),
-              GoRoute(
-                path: 'espacios',
-                name: 'admin_espacios',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminSpacesScreen()),
-              ),
-              GoRoute(
-                path: 'servicios',
-                name: 'admin_servicios',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminServicesScreen()),
-              ),
-              GoRoute(
-                path: 'configuracion',
-                name: 'admin_configuracion',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminSettingsScreen()),
-              ),
-              GoRoute(
-                path: 'incidencias',
-                name: 'admin_incidencias',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminIncidentsScreen()),
-              ),
-              GoRoute(
-                path: 'metricas',
-                name: 'admin_metricas',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminMetricsScreen()),
-              ),
-              GoRoute(
-                path: 'encuestas',
-                name: 'admin_encuestas',
-                pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AdminPollsScreen()),
-              ),
-            ],
-          ),
-        ],
-      ),
 
-      GoRoute(
-        path: '/reportar-incidencia',
-        name: 'reportar_incidencia',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: ReportIncidenciaScreen()),
-      ),
-      GoRoute(
-        path: '/votaciones',
-        name: 'votaciones',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: VotacionesScreen()),
-      ),
       GoRoute(
         path: '/notificaciones',
         name: 'notificaciones',
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: NotificationsScreen()),
       ),
-      GoRoute(
-        path: '/preferencias',
-        name: 'preferencias',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: NotificationPreferencesScreen()),
-      ),
-      GoRoute(
-        path: '/ayuda',
-        name: 'ayuda',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: HelpScreen()),
-      ),
-      GoRoute(
-        path: '/faq',
-        name: 'faq',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: FaqScreen()),
-      ),
+
       GoRoute(
         path: '/actividad',
         name: 'actividad',
@@ -265,18 +157,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'ajustes',
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: SettingsScreen()),
-      ),
-      GoRoute(
-        path: '/acerca-de',
-        name: 'acerca_de',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: AboutScreen()),
-      ),
-      GoRoute(
-        path: '/ies-info',
-        name: 'ies_info',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: IesInfoScreen()),
       ),
     ],
     debugLogDiagnostics: kDebugMode,

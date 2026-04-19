@@ -131,11 +131,10 @@ class ActivityHistoryScreen extends ConsumerWidget {
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end, // Alinea todo a la derecha
+                                      mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         if (isWeb) const Spacer(),
 
-                                        // El botón de cancelar se expande en móvil para llenar el espacio sobrante
                                         Expanded(
                                           flex: isWeb ? 0 : 1,
                                           child: SizedBox(
@@ -186,7 +185,6 @@ class ActivityHistoryScreen extends ConsumerWidget {
     );
   }
 
-  // Métodos _handleCancel, _statusColor y _buildSkeleton permanecen igual...
   Future<void> _handleCancel(BuildContext context, WidgetRef ref, dynamic item, bool isServicio) async {
     final confirm = await RvAlerts.confirm(
       context,
