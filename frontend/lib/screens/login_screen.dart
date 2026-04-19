@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/auth_service.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -19,6 +20,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoadingMicrosoft = false;
+  bool _isLoadingBypass = false;
 
   Future<void> _loginMicrosoft() async {
     setState(() => _isLoadingMicrosoft = true);
@@ -26,6 +28,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted) setState(() => _isLoadingMicrosoft = false);
 
     if (!mounted) return;
+    if (error != null) {
+      RvAlerts.error(context, error);
+    }
+  }
+
+  Future<void> _loginBypass() async {
+    setState(() => _isLoadingBypass = true);
+    await ref.read(authProvider.notifier).loginDevBypass();
+    if (mounted) setState(() => _isLoadingBypass = false);
+
+    if (!mounted) return;
+    final error = ref.read(authProvider).error;
     if (error != null) {
       RvAlerts.error(context, error);
     }
@@ -124,6 +138,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   width: 30,
                                   height: 30,
                                 ),
+                              ),
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: _isLoadingBypass ? null : _loginBypass,
+                                child: _isLoadingBypass
+                                    ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                                    : const Text('Entrar sin autenticar (temporal)'),
                               ),
                             ],
                           ),

@@ -1,7 +1,7 @@
 name: reservives
 description: "App de Reservas de IES Luis Vives"
 
-publish_to: 'none'
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
@@ -26,6 +26,9 @@ dependencies:
   firebase_core: ^4.1.1
   firebase_messaging: ^16.0.1
   flutter_local_notifications: ^19.4.0
+
+  # Autenticación OAuth2 multiplataforma (Microsoft EntraID)
+  flutter_appauth: ^8.0.1
 
   # Almacenamiento local
   shared_preferences: ^2.2.2

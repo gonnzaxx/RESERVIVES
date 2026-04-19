@@ -206,3 +206,4 @@ String _toFriendlyMessage(Object error) {
   if (error is ApiException) return error.message;
   return 'No se pudo completar la operación. Inténtalo de nuevo.';
 }
+

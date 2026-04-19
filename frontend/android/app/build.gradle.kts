@@ -30,6 +30,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Redirect URI scheme para flutter_appauth (Microsoft OAuth2)
+        // Debe coincidir con AppConstants.azureRedirectUri en constants.dart
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "msauth.com.example.reservives")
     }
 
     buildTypes {

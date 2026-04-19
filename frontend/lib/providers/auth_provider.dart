@@ -8,7 +8,6 @@ import 'package:reservives/models/usuario.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/services/push_notifications_service.dart';
 
-import 'package:reservives/main.dart';
 
 class AuthState {
   final bool isLoading;
@@ -61,13 +60,6 @@ class AuthNotifier extends Notifier<AuthState> {
       _token = _prefs?.getString('auth_token');
       final userDataStr = _prefs?.getString('user_data');
 
-      if (extractedMicrosoftToken != null) {
-        final tokenToUse = extractedMicrosoftToken!;
-        extractedMicrosoftToken = null;
-        unawaited(loginWithMicrosoft(tokenToUse));
-        return;
-      }
-
       if (_token != null && userDataStr != null) {
         final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
         state = state.copyWith(
@@ -77,7 +69,17 @@ class AuthNotifier extends Notifier<AuthState> {
         );
         unawaited(ref.read(pushNotificationsServiceProvider).syncTokenWithBackend());
       } else {
-        await logout();
+        // Si durante la inicializacion ya hubo login manual (p.ej. bypass),
+        // no sobrescribimos ese estado.
+        if (state.user == null) {
+          state = state.copyWith(
+            isLoading: false,
+            user: null,
+            error: null,
+          );
+        } else {
+          state = state.copyWith(isLoading: false, error: null);
+        }
       }
     } catch (_) {
       state = state.copyWith(
@@ -96,6 +98,25 @@ class AuthNotifier extends Notifier<AuthState> {
       final response = await apiClient.post(
         '/auth/login',
         body: {'microsoft_token': microsoftToken},
+      );
+      await _handleLoginSuccess(response as Map<String, dynamic>);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        user: null,
+        error: e is ApiException ? e.message : e.toString(),
+      );
+    }
+  }
+
+  Future<void> loginDevBypass({String? email}) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.post(
+        '/auth/login-dev',
+        body: email == null || email.isEmpty ? {} : {'email': email},
       );
       await _handleLoginSuccess(response as Map<String, dynamic>);
     } catch (e) {

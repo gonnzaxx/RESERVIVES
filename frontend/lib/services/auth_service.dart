@@ -1,10 +1,13 @@
 /// RESERVIVES - Authentication Service
+///
+/// Usa flutter_appauth (AppAuth SDK) para autenticación OAuth2 nativa
+/// con PKCE — funciona en Android e iOS sin depender de dart:html.
 
 library;
 
 import 'dart:typed_data';
+import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/config/constants.dart';
@@ -17,34 +20,35 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 class AuthService {
   final Ref _ref;
+  final FlutterAppAuth _appAuth = const FlutterAppAuth();
+
   AuthService(this._ref);
 
   Future<String?> loginWithMicrosoft() async {
     try {
-      final authUrl = Uri.parse(
-        'https://login.microsoftonline.com/${AppConstants.azureTenantId}/oauth2/v2.0/authorize'
-            '?client_id=${AppConstants.azureClientId}'
-            '&response_type=id_token token'
-            '&scope=${Uri.encodeComponent('openid profile email User.Read')}'
-            '&response_mode=fragment'
-            '&nonce=123456',
+      final result = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          AppConstants.azureClientId,
+          AppConstants.azureRedirectUri,
+          issuer:
+          'https://login.microsoftonline.com/${AppConstants.azureTenantId}/v2.0',
+          scopes: ['openid', 'profile', 'email', 'offline_access', 'User.Read'],
+        ),
       );
 
-      // Abrir URL de login de Microsoft
-      if (await canLaunchUrl(authUrl)) {
-        await launchUrl(
-          authUrl,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
-      } else {
-        return 'No se pudo abrir el navegador para iniciar sesión';
+      if (result == null || result.accessToken == null) {
+        return 'No se pudo obtener el token de acceso de Microsoft.';
       }
+
+      // Enviar el access token al backend para crear sesión en RESERVIVES
+      await _ref.read(authProvider.notifier).loginWithMicrosoft(result.accessToken!);
       return null;
+    } on FlutterAppAuthUserCancelledException {
+      // El usuario cerró el navegador — no es un error
+      return null;
+    } on FlutterAppAuthPlatformException catch (e) {
+      return 'Error de autenticación: ${e.message}';
     } catch (e) {
-      if (e is ApiException) {
-        return e.message;
-      }
       return 'Error de conexión con Microsoft EntraID: $e';
     }
   }

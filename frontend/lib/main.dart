@@ -1,4 +1,5 @@
-/// RESERVIVES - Clase principal de la aplicación
+/// RESERVIVES - Punto de entrada de la aplicación Flutter
+///
 library;
 
 import 'package:flutter/material.dart';
@@ -13,23 +14,9 @@ import 'package:reservives/providers/locale_provider.dart';
 import 'package:reservives/providers/theme_provider.dart';
 import 'package:reservives/services/push_notifications_service.dart';
 
-import 'dart:html' as html;
-import 'package:flutter_web_plugins/url_strategy.dart';
-
-String? extractedMicrosoftToken;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final rawHash = html.window.location.hash;
-  if (rawHash.contains('access_token=')) {
-    final cleanHash = rawHash.startsWith('#') ? rawHash.substring(1) : rawHash;
-    final params = Uri.splitQueryString(cleanHash);
-    extractedMicrosoftToken = params['access_token'];
-    html.window.history.replaceState(null, 'Reservives', '/');
-  }
-
-  usePathUrlStrategy();
   final initialLocale = await loadInitialLocale();
   Intl.defaultLocale = initialLocale.languageCode;
   await initializeDateFormatting(initialLocale.languageCode, null);

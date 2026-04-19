@@ -37,7 +37,7 @@ class ApiClient {
   dynamic _processResponse(http.Response response) {
     if (response.statusCode == 401) {
       _ref.read(authProvider.notifier).logout();
-      throw ApiException('Sesión expirada. Por favor, vuelve a iniciar sesión.', 401);
+      throw ApiException('SesiÃ³n expirada. Por favor, vuelve a iniciar sesiÃ³n.', 401);
     }
     dynamic body;
     if (response.body.isNotEmpty) {
@@ -159,3 +159,4 @@ class ApiClient {
     }
   }
 }
+
