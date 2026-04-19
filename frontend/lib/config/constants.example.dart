@@ -1,5 +1,4 @@
 /// RESERVIVES - Plantilla de Constantes.
-/// Copia este archivo como constants.dart y rellena tus valores.
 library;
 
 class AppConstants {
