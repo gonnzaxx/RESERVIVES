@@ -27,8 +27,8 @@ dependencies:
   firebase_messaging: ^16.0.1
   flutter_local_notifications: ^19.4.0
 
-  # Autenticación OAuth2 multiplataforma (Microsoft EntraID)
-  flutter_appauth: ^8.0.1
+  # Autenticación OAuth2 multiplataforma
+  oauth2_client: ^4.2.4
 
   # Almacenamiento local
   shared_preferences: ^2.2.2

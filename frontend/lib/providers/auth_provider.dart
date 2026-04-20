@@ -1,177 +1,165 @@
-library;
-
-import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:oauth2_client/oauth2_client.dart';
+import 'package:reservives/config/constants.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/services/api_client.dart';
-import 'package:reservives/services/push_notifications_service.dart';
 
-
+/// Estado de la autenticación
 class AuthState {
-  final bool isLoading;
   final Usuario? user;
+  final String? token;
+  final bool isLoading;
   final String? error;
 
-  const AuthState({
-    this.isLoading = true,
+  AuthState({
     this.user,
+    this.token,
+    this.isLoading = false,
     this.error,
   });
 
-  bool get isAuthenticated => user != null;
+  bool get isAuthenticated => token != null;
 
   AuthState copyWith({
+    Usuario? user,
+    String? token,
     bool? isLoading,
-    Object? user = _authSentinel,
-    Object? error = _authSentinel,
+    String? error,
   }) {
     return AuthState(
+      user: user ?? this.user,
+      token: token ?? this.token,
       isLoading: isLoading ?? this.isLoading,
-      user: identical(user, _authSentinel) ? this.user : user as Usuario?,
-      error: identical(error, _authSentinel) ? this.error : error as String?,
+      error: error ?? this.error,
     );
   }
 }
 
-const Object _authSentinel = Object();
+/// Configuración de Azure Entra ID
+String get _clientId => AppConstants.azureClientId;
+String get _tenantId => AppConstants.azureTenantId;
+String get _redirectUri => kIsWeb
+    ? AppConstants.azureRedirectUriWeb
+    : AppConstants.azureRedirectUriNative;
+String get _customUriScheme => kIsWeb
+    ? ''
+    : AppConstants.azureCustomScheme;
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
-  return AuthNotifier();
-});
+List<String> get _scopes => [
+  'openid',
+  'profile',
+  'email',
+  'User.Read',
+  'offline_access',
+];
 
-class AuthNotifier extends Notifier<AuthState> {
-
-  SharedPreferences? _prefs;
-  String? _token;
-
-  String? get token => _token;
-
+class AuthProvider extends Notifier<AuthState> {
   @override
   AuthState build() {
-    _init();
-    return const AuthState();
+    return AuthState();
   }
 
-  Future<void> _init() async {
-    try {
-      _prefs = await SharedPreferences.getInstance();
-      _token = _prefs?.getString('auth_token');
-      final userDataStr = _prefs?.getString('user_data');
+  String? get token => state.token;
 
-      if (_token != null && userDataStr != null) {
-        final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
-        state = state.copyWith(
-          isLoading: false,
-          user: Usuario.fromJson(userData),
-          error: null,
-        );
-        unawaited(ref.read(pushNotificationsServiceProvider).syncTokenWithBackend());
-      } else {
-        // Si durante la inicializacion ya hubo login manual (p.ej. bypass),
-        // no sobrescribimos ese estado.
-        if (state.user == null) {
-          state = state.copyWith(
-            isLoading: false,
-            user: null,
-            error: null,
-          );
-        } else {
-          state = state.copyWith(isLoading: false, error: null);
-        }
-      }
-    } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        user: null,
-        error: 'Error cargando sesión local',
-      );
-    }
-  }
-
-  Future<void> loginWithMicrosoft(String microsoftToken) async {
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(
-        '/auth/login',
-        body: {'microsoft_token': microsoftToken},
-      );
-      await _handleLoginSuccess(response as Map<String, dynamic>);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        user: null,
-        error: e is ApiException ? e.message : e.toString(),
-      );
-    }
-  }
-
-  Future<void> loginDevBypass({String? email}) async {
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(
-        '/auth/login-dev',
-        body: email == null || email.isEmpty ? {} : {'email': email},
-      );
-      await _handleLoginSuccess(response as Map<String, dynamic>);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        user: null,
-        error: e is ApiException ? e.message : e.toString(),
-      );
-    }
-  }
-
-  Future<void> _handleLoginSuccess(Map<String, dynamic> response) async {
-    _token = response['access_token'] as String?;
-    final userMap = response['user'] as Map<String, dynamic>;
-    final user = Usuario.fromJson(userMap);
-
-    await _prefs?.setString('auth_token', _token ?? '');
-    await _prefs?.setString('user_data', jsonEncode(userMap));
-
-    state = state.copyWith(
-      isLoading: false,
-      user: user,
-      error: null,
+  OAuth2Client _createClient() {
+    return OAuth2Client(
+      authorizeUrl: 'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/authorize',
+      tokenUrl: 'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/token',
+      redirectUri: _redirectUri,
+      customUriScheme: _customUriScheme,
     );
-    unawaited(ref.read(pushNotificationsServiceProvider).syncTokenWithBackend());
+  }
+
+  /// Inicia el flujo completo de login
+  Future<void> login() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final client = _createClient();
+
+      final tokenResponse = await client.getTokenWithAuthCodeFlow(
+        clientId: _clientId,
+        scopes: _scopes,
+      );
+
+      final microsoftToken = tokenResponse.accessToken;
+      if (microsoftToken == null) {
+        state = state.copyWith(isLoading: false, error: 'No se obtuvo token de Microsoft');
+        return;
+      }
+
+      state = state.copyWith(token: null);
+
+      final apiClient = ref.read(apiClientProvider);
+      final loginResponse = await apiClient.post('/auth/login', body: {
+        'microsoft_token': microsoftToken,
+      });
+
+      final backendToken = loginResponse['access_token'] as String;
+      final userData = Usuario.fromJson(loginResponse['user'] as Map<String, dynamic>);
+
+      state = state.copyWith(
+        token: backendToken,
+        user: userData,
+        isLoading: false,
+      );
+
+      if (kDebugMode) print('Login correctly synchronized with Backend');
+    } catch (e) {
+      if (kDebugMode) print('Login failed: $e');
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Refresca los datos del usuario actual desde la API (/auth/me)
+  Future<void> refreshCurrentUser() async {
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.get('/auth/me');
+      final user = Usuario.fromJson(response as Map<String, dynamic>);
+      state = state.copyWith(user: user);
+    } catch (e) {
+      if (kDebugMode) print('Failed to refresh user: $e');
+    }
+  }
+
+  Future<void> loginWithMicrosoft(String token) async {
+    state = state.copyWith(token: token);
+    await refreshCurrentUser();
+  }
+
+  Future<void> updateUserData(Usuario user) async {
+    state = state.copyWith(user: user);
+  }
+
+  Future<void> loginDevBypass() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final loginResponse = await apiClient.post('/auth/login-dev', body: {
+        'email': 'dev@alumno.iesluisvives.org',
+      });
+
+      final backendToken = loginResponse['access_token'] as String;
+      final userData = Usuario.fromJson(loginResponse['user'] as Map<String, dynamic>);
+
+      state = state.copyWith(
+        token: backendToken,
+        user: userData,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 
   Future<void> logout() async {
-    _token = null;
-    await _prefs?.remove('auth_token');
-    await _prefs?.remove('user_data');
-
-    state = state.copyWith(
-      isLoading: false,
-      user: null,
-      error: null,
-    );
-  }
-
-  Future<void> updateUserData(Usuario newUser) async {
-    if (state.user != null && state.user!.id == newUser.id) {
-      await _prefs?.setString('user_data', jsonEncode(newUser.toJson()));
-      state = state.copyWith(user: newUser, error: null);
-    }
-  }
-
-  Future<void> refreshCurrentUser() async {
-    final currentUser = state.user;
-    if (currentUser == null) return;
-
-    try {
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.get('/usuarios/${currentUser.id}');
-      await updateUserData(Usuario.fromJson(response as Map<String, dynamic>));
-    } catch (_) {
-    }
+    state = AuthState();
   }
 }
+
+final authProvider = NotifierProvider<AuthProvider, AuthState>(() {
+  return AuthProvider();
+});

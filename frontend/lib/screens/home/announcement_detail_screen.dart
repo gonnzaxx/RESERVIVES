@@ -28,102 +28,214 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
   @override
   Widget build(BuildContext context) {
     final anunciosAsync = ref.watch(anunciosProvider);
-    final size = MediaQuery.of(context).size;
-    final bool isWide = size.width > 800;
 
     return Scaffold(
-      body: SafeArea(
-        child: anunciosAsync.when(
-          data: (anuncios) {
-            final matches = anuncios.where((a) => a.id == widget.anuncioId);
-            final anuncio = matches.isEmpty ? null : matches.first;
-            if (anuncio == null) {
-              return RvEmptyState(
-                icon: Icons.article_outlined,
-                title: context.tr('announcement.notFoundTitle'),
-                subtitle: context.tr('announcement.notFoundSubtitle'),
-              );
-            }
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: RvGhostIconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            onTap: () => context.pop(),
+          ),
+        ),
+      ),
+      body: anunciosAsync.when(
+        data: (anuncios) {
+          final matches = anuncios.where((a) => a.id == widget.anuncioId);
+          final anuncio = matches.isEmpty ? null : matches.first;
 
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RvGhostIconButton(
-                        icon: Icons.arrow_back_rounded,
-                        onTap: () => context.pop(),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(anuncio.titulo, style: Theme.of(context).textTheme.headlineLarge),
-                      const SizedBox(height: 10),
-                      Text(
-                        DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode).format(anuncio.fechaPublicacion),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 18),
-                      if (anuncio.imagenUrl != null && anuncio.imagenUrl!.isNotEmpty) ...[
-                        RvImage(
-                          imageUrl: anuncio.imagenUrl!,
-                          width: double.infinity,
-                          height: isWide ? 400 : 250,
-                          fit: BoxFit.cover,
-                          borderRadius: BorderRadius.circular(24),
-                          fallbackWidget: _AnnouncementImageError(
-                            message: context.tr('common.imageLoadError'),
-                            height: isWide ? 400 : 250,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      Text(
-                        anuncio.contenido,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.65),
-                      ),
-                      if (anuncio.nombreAutor != null) ...[
-                        const SizedBox(height: 20),
-                        Text(
-                          anuncio.nombreAutor!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+          if (anuncio == null) {
+            return RvEmptyState(
+              icon: Icons.article_outlined,
+              title: context.tr('announcement.notFoundTitle'),
+              subtitle: context.tr('announcement.notFoundSubtitle'),
             );
-          },
-          loading: () => Center(
+          }
+
+          return Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 20),
-                    const RvSkeleton(width: 40, height: 40, borderRadius: 20),
-                    const SizedBox(height: 30),
-                    const RvSkeleton(width: double.infinity, height: 32),
-                    const SizedBox(height: 10),
-                    const RvSkeleton(width: 200, height: 32),
-                    const SizedBox(height: 20),
-                    const RvSkeleton(width: 100, height: 16),
-                    const SizedBox(height: 30),
-                    RvSkeleton(width: double.infinity, height: isWide ? 400 : 200, borderRadius: 24),
-                    const SizedBox(height: 20),
-                    const RvSkeleton(width: double.infinity, height: 16),
-                    const SizedBox(height: 10),
-                    const RvSkeleton(width: double.infinity, height: 16),
+                    if (anuncio.imagenUrl != null && anuncio.imagenUrl!.isNotEmpty) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 25,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: RvImage(
+                            imageUrl: anuncio.imagenUrl!,
+                            width: double.infinity,
+                            height: 320,
+                            fit: BoxFit.cover,
+                            fallbackWidget: _AnnouncementImageError(
+                              message: context.tr('common.imageLoadError'),
+                              height: 320,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat('d MMMM, yyyy', Localizations.localeOf(context).languageCode)
+                              .format(anuncio.fechaPublicacion),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      anuncio.titulo,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      anuncio.contenido,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        height: 1.8,
+                        fontSize: 17,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (anuncio.nombreAutor != null) ...[
+                      const SizedBox(height: 48),
+                      _AuthorCard(nombreAutor: anuncio.nombreAutor!),
+                    ],
                   ],
                 ),
               ),
             ),
+          );
+        },
+        loading: () => const _LoadingSkeleton(),
+        error: (error, _) => const Center(child: RvApiErrorState()),
+      ),
+    );
+  }
+}
+
+class _AuthorCard extends StatelessWidget {
+  final String nombreAutor;
+
+  const _AuthorCard({required this.nombreAutor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            child: Text(
+              nombreAutor[0].toUpperCase(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          error: (error, _) => const Center(child: RvApiErrorState()),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('announcement.authorLabel'),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                Text(
+                  nombreAutor,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const RvSkeleton(width: double.infinity, height: 320, borderRadius: 28),
+              const SizedBox(height: 32),
+              const RvSkeleton(width: 140, height: 20, borderRadius: 8),
+              const SizedBox(height: 16),
+              const RvSkeleton(width: double.infinity, height: 45),
+              const SizedBox(height: 12),
+              const RvSkeleton(width: 250, height: 45),
+              const SizedBox(height: 40),
+              ...List.generate(6, (index) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: RvSkeleton(width: double.infinity, height: 16),
+              )),
+            ],
+          ),
         ),
       ),
     );
@@ -136,7 +248,7 @@ class _AnnouncementImageError extends StatelessWidget {
 
   const _AnnouncementImageError({
     required this.message,
-    this.height = 200,
+    required this.height,
   });
 
   @override
@@ -144,26 +256,20 @@ class _AnnouncementImageError extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: height,
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.35)),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.broken_image_outlined,
-            size: 34,
-            color: Theme.of(context).textTheme.bodySmall?.color,
+            Icons.image_not_supported_outlined,
+            size: 48,
+            color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          const SizedBox(height: 12),
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
