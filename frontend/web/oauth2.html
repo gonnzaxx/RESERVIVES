@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OAuth2 Authentication</title>
+  <script>
+    // This script takes the redirect URI from Entra ID and passes it
+    // back to the main Flutter web application window.
+    window.opener.postMessage(window.location.href, '*');
+    window.close();
+  </script>
+</head>
+<body>
+<p>Authentication complete! You can safely close this window.</p>
+</body>
+</html>
