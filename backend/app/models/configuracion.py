@@ -1,7 +1,7 @@
 """
 Modelo de Configuración.
 
-En esta clase creamos la tabla clave-valor para parámetros configurables de la aplicación.
+Representa la tabla clave-valor para los parámetros configurables de la aplicación.
 Permite al administrador modificar valores sin tocar código.
 """
 

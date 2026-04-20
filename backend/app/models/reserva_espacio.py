@@ -1,9 +1,10 @@
 """
 Modelo de Reserva de Servicio.
 
-Gestiona la relación de las reservas de los servicios.
+Gestiona la relación de las reservas con los espacios.
 """
 
+import enum
 import uuid
 from datetime import datetime
 
@@ -11,13 +12,21 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+
 from app.database import Base
-from app.models.reserva_espacio import EstadoReserva
 
 
-class ReservaServicio(Base):
-    """Modelo SQLAlchemy para la tabla reservas_servicios."""
-    __tablename__ = "reservas_servicios"
+class EstadoReserva(str, enum.Enum):
+    """Estados posibles de una reserva."""
+    PENDIENTE = "PENDIENTE"
+    APROBADA = "APROBADA"
+    RECHAZADA = "RECHAZADA"
+    CANCELADA = "CANCELADA"
+
+
+class ReservaEspacio(Base):
+    """Modelo SQLAlchemy para la tabla reservas_espacios."""
+    __tablename__ = "reservas_espacios"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -25,8 +34,8 @@ class ReservaServicio(Base):
     usuario_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False
     )
-    servicio_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("servicios.id", ondelete="CASCADE"), nullable=False
+    espacio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("espacios.id", ondelete="CASCADE"), nullable=False
     )
     fecha_inicio: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fecha_fin: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -37,7 +46,7 @@ class ReservaServicio(Base):
         default=EstadoReserva.PENDIENTE
     )
     tokens_consumidos: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    # Tramo horario asignado (nullable para la compatibilidad con reservas antiguas)
+    # Tramo horario asignado (nullable para compatibilidad con reservas antiguas)
     tramo_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("tramos_horarios.id", ondelete="SET NULL"),
@@ -51,9 +60,9 @@ class ReservaServicio(Base):
     )
 
     # Relaciones
-    usuario = relationship("Usuario", back_populates="reservas_servicios")
-    servicio = relationship("Servicio", back_populates="reservas")
+    usuario = relationship("Usuario", back_populates="reservas")
+    espacio = relationship("Espacio", back_populates="reservas")
     tramo = relationship("TramoHorario", foreign_keys=[tramo_id])
 
     def __repr__(self) -> str:
-        return f"<ReservaServicio {self.id} - {self.estado.value}>"
+        return f"<ReservaEspacio {self.id} - {self.estado.value}>"

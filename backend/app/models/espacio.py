@@ -55,14 +55,18 @@ class Espacio(Base):
         "EspacioRolPermitido", back_populates="espacio",
         lazy="selectin", cascade="all, delete-orphan"
     )
-    reservas = relationship("Reserva", back_populates="espacio", lazy="selectin")
+    reservas = relationship("ReservaEspacio", back_populates="espacio", lazy="selectin")
+    tramos_permitidos = relationship(
+        "EspacioTramoPermitido", back_populates="espacio",
+        lazy="selectin", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Espacio {self.nombre} ({self.tipo.value})>"
 
 
 class EspacioRolPermitido(Base):
-    """Tabla intermedia: qué roles pueden reservar cada espacio."""
+    """Tabla intermedia para saber qué roles pueden reservar cada espacio."""
     __tablename__ = "espacio_rol_permitido"
 
     id: Mapped[uuid.UUID] = mapped_column(

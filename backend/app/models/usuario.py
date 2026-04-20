@@ -1,11 +1,8 @@
 """
 Modelo de Usuario.
-Esta clase representa a los usuarios registrados en la aplicacion.
-La autenticación de estos se realiza mediante Microsoft EntraID.
-El rol de cada usuario se determina automáticamente por el dominio del email:
-  - @alumno.iesluisvives.org → ALUMNO
-  - @profesor.iesluisvives.org → PROFESOR
-  - @iesluisvives.org → ADMINISTRADOR
+
+Gestiona la información y los tipos de usuarios.
+Para la autenticación se utiliza Microsoft EntraID
 """
 
 import enum
@@ -20,14 +17,14 @@ from app.database import Base
 
 
 class RolUsuario(str, enum.Enum):
-    """Definimos los roles disponibles en la aplicación."""
+    """Roles disponibles en la aplicación."""
     ALUMNO = "ALUMNO"
     PROFESOR = "PROFESOR"
     ADMIN = "ADMIN"
 
 
 class Usuario(Base):
-    """Usamos SQLAlchemy para crear el modelo de la tabla usuarios."""
+    """Modelo SQLAlchemy para la tabla usuarios."""
     __tablename__ = "usuarios"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -53,12 +50,13 @@ class Usuario(Base):
     )
 
     # Relaciones
-    reservas = relationship("Reserva", back_populates="usuario", lazy="selectin")
+    reservas = relationship("ReservaEspacio", back_populates="usuario", lazy="selectin")
     anuncios = relationship("Anuncio", back_populates="autor", lazy="selectin")
     historial_tokens = relationship("HistorialTokens", back_populates="usuario", lazy="selectin")
     reservas_servicios = relationship("ReservaServicio", back_populates="usuario", lazy="selectin")
     notificaciones = relationship("Notificacion", back_populates="usuario", lazy="noload")
     dispositivos_push = relationship("DispositivoPush", back_populates="usuario", lazy="noload")
+    incidencias = relationship("Incidencia", back_populates="usuario", lazy="noload")
     preferencias_notificacion = relationship(
         "PreferenciasNotificacion",
         back_populates="usuario",

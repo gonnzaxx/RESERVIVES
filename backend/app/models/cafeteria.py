@@ -1,8 +1,10 @@
 """
 Modelos de Cafetería.
 
-En estas clases definimos los modelos de Categorías y productos de la cafetería del instituto.
-De momento son solo informativos pero la estructura está preparada para futuras funcionalidades de reserva.
+Representa la información y relación de las categorías y
+los productos de la cafetería.
+De momento la utilidad es únicamente informativas pero la estructura está
+preparada para futuras funcionalidades de reserva.
 """
 
 import uuid

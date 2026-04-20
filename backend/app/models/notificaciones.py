@@ -1,9 +1,9 @@
 """
 Modelo de Notificaciones.
-En este script se encuentran los "enum" para llas opciones de Tipo, Canal y estado de entrega y el modelo de las notificaciones.
-Además tambien se gestina el registro de tokens push
-Notificaciones dentro de la app (IN-APP), preferencias de usuario, historial de entregas
-y registro de tokens push.
+
+Gestiona la informacion de las notificaciones dentro de la app (IN-APP),
+preferencias de usuario, historial de entregas, tipos y estados y el
+registro de tokens push.
 """
 
 import enum
@@ -41,6 +41,7 @@ class EstadoEntregaNotificacion(str, enum.Enum):
 
 
 class Notificacion(Base):
+    """Modelo SQLAlchemy para la tabla notificaciones."""
     __tablename__ = "notificaciones"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -70,8 +71,8 @@ class Notificacion(Base):
 
 
 class PreferenciasNotificacion(Base):
+    """Modelo SQLAlchemy para la tabla preferencias_notificacion."""
     __tablename__ = "preferencias_notificacion"
-
     usuario_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("usuarios.id", ondelete="CASCADE"),
@@ -95,8 +96,9 @@ class PreferenciasNotificacion(Base):
 
 
 class NotificacionEntrega(Base):
-    __tablename__ = "notificacion_entregas"
 
+    __tablename__ = "notificacion_entregas"
+    """Modelo SQLAlchemy para la tabla notificacion_entregas."""
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
@@ -126,16 +128,13 @@ class NotificacionEntrega(Base):
     notificacion = relationship("Notificacion", back_populates="entregas")
 
 
-"""Esta clase registra los tokens de acceso únicos para cada dispositivo físico del usuario.
-   A diferencia del historial de notificaciones (que es global), esta tabla permite dirigir
-   las alertas de tiempo real a dispositivos específicos (móvil, tablet, navegador) de
-   forma independiente"""
+
 class DispositivoPush(Base):
+    """Modelo SQLAlchemy para la tabla notificacion_entregas."""
     __tablename__ = "dispositivos_push"
     __table_args__ = (
         UniqueConstraint("usuario_id", "token", name="uq_dispositivo_push_usuario_token"),
     )
-
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )

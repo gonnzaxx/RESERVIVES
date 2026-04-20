@@ -1,7 +1,7 @@
 """
 Modelo de Servicio del Instituto.
-En este script se encuentran el modelo común de los servicios que ofrecen los distintos cursos del instituto
-como: peluquería, impresión 3D, realidad virtual, etc. Y que son reservables.
+
+Gestiona la información de los servicios ofrecidos por el centro.
 """
 
 import uuid
@@ -14,9 +14,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class ServicioInstituto(Base):
-    """Usamos SQLAlchemy para crear el modelo de la tabla servicios_instituto."""
-    __tablename__ = "servicios_instituto"
+class Servicio(Base):
+    """Modelo SQLAlchemy para la tabla servicios."""
+    __tablename__ = "servicios"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -38,8 +38,11 @@ class ServicioInstituto(Base):
     )
 
     # Relaciones
-    reservas = relationship("ReservaServicio", back_populates="servicio", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True
-)
+    reservas = relationship("ReservaServicio", back_populates="servicio", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
+    tramos_permitidos = relationship(
+        "ServicioTramoPermitido", back_populates="servicio",
+        lazy="selectin", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
-        return f"<ServicioInstituto '{self.nombre}'>"
+        return f"<Servicio '{self.nombre}'>"

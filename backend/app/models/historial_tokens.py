@@ -2,8 +2,8 @@
 Modelo de Historial de Tokens.
 
 Registro de todos los movimientos de tokens:
-recargas mensuales, consumos por reservas, ajustes del admin
-y devoluciones por cancelación de reservas.
+recargas mensuales, consumos por reservas, ajustes
+del admin y devoluciones por cancelación de reservas.
 """
 
 import enum
