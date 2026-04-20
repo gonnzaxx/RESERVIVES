@@ -531,6 +531,8 @@
     "onboarding.slide3.title": "Cafe at a Click",
     "onboarding.slide3.subtitle": "Check today's menu, available products, and discover everything the cafe has to offer.",
     "onboarding.slide4.title": "Stay Informed",
-    "onboarding.slide4.subtitle": "Receive important notifications about your bookings, school announcements and more."
+    "onboarding.slide4.subtitle": "Receive important notifications about your bookings, school announcements and more.",
+
+    "announcement.authorLabel": "Published by"
 }
 
