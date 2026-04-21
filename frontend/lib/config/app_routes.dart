@@ -4,12 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/screens/home/home_screen.dart';
 import 'package:reservives/screens/home/announcement_detail_screen.dart';
+import 'package:reservives/screens/home/notifications_screen.dart';
 import 'package:reservives/screens/bookings/space_booking_screen.dart';
 import 'package:reservives/screens/cafeteria/cafeteria_screen.dart';
-import 'package:reservives/screens/home/home_screen.dart';
-import 'package:reservives/screens/login_screen.dart';
-import 'package:reservives/screens/home/notifications_screen.dart';
 import 'package:reservives/screens/profile/activity_history_screen.dart';
 import 'package:reservives/screens/profile/favorites_screen.dart';
 import 'package:reservives/screens/profile/profile_screen.dart';
@@ -18,6 +17,10 @@ import 'package:reservives/screens/bookings/bookings_screen.dart';
 import 'package:reservives/screens/shell_screen.dart';
 import 'package:reservives/screens/welcome_screen.dart';
 import 'package:reservives/screens/onboarding_screen.dart';
+import 'package:reservives/screens/login_screen.dart';
+import 'package:reservives/screens/admin/admin_shell_screen.dart';
+import 'package:reservives/screens/admin/admin_users_screen.dart';
+import 'package:reservives/screens/admin/admin_dashboard.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
   _RouterRefreshNotifier(this.ref) {
@@ -123,6 +126,56 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
 
+      // Admin BackOffice Shell
+      ShellRoute(
+        builder: (context, state, child) => AdminShellScreen(child: child),
+        routes: [
+          GoRoute(
+            path: '/admin',
+            name: 'admin',
+            pageBuilder: (context, state) =>
+            const NoTransitionPage(child: AdminDashboard()),
+            routes: [
+              GoRoute(
+                path: 'usuarios',
+                name: 'admin_usuarios',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminUsersScreen()),
+              ),
+              GoRoute(
+                path: 'reservas',
+                name: 'admin_reservas',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminBookingsScreen()),
+              ),
+              GoRoute(
+                path: 'anuncios',
+                name: 'admin_anuncios',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminAnnouncementsScreen()),
+              ),
+              GoRoute(
+                path: 'cafeteria',
+                name: 'admin_cafeteria',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminCafeteriaScreen()),
+              ),
+              GoRoute(
+                path: 'espacios',
+                name: 'admin_espacios',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminSpacesScreen()),
+              ),
+              GoRoute(
+                path: 'servicios',
+                name: 'admin_servicios',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminServicesScreen()),
+              ),
+            ],
+          ),
+        ],
+      ),
 
       GoRoute(
         path: '/notificaciones',
