@@ -1,10 +1,3 @@
-"""
-Repositorio de Reservas.
-
-Esta clase contiene las operaciones de acceso a datos para las reservas de espacios.
-También incluye consultas para la detección de solapamiento de reservas.
-"""
-
 import uuid
 from datetime import datetime
 
@@ -16,7 +9,7 @@ from app.models.reserva_espacio import ReservaEspacio, EstadoReserva
 from app.repositories.base import BaseRepository
 
 
-class ReservaRepository(BaseRepository[ReservaEspacio]):
+class ReservaEspacioRepository(BaseRepository[ReservaEspacio]):
     """Repositorio para operaciones con reservas de espacios."""
 
     def __init__(self, session: AsyncSession):
@@ -34,7 +27,7 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         return result.scalar_one_or_none()
 
     async def get_by_usuario(
-            self, usuario_id: uuid.UUID, skip: int = 0, limit: int = 50
+        self, usuario_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> list[ReservaEspacio]:
         """Obtiene las reservas de un usuario con sus relaciones."""
         result = await self.session.execute(
@@ -51,7 +44,7 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         return list(result.scalars().all())
 
     async def get_by_espacio(
-            self, espacio_id: uuid.UUID, skip: int = 0, limit: int = 50
+        self, espacio_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> list[ReservaEspacio]:
         """Obtiene las reservas de un espacio con sus relaciones."""
         result = await self.session.execute(
@@ -67,11 +60,11 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         return list(result.scalars().all())
 
     async def check_solapamiento(
-            self,
-            espacio_id: uuid.UUID,
-            fecha_inicio: datetime,
-            fecha_fin: datetime,
-            excluir_reserva_id: uuid.UUID | None = None,
+        self,
+        espacio_id: uuid.UUID,
+        fecha_inicio: datetime,
+        fecha_fin: datetime,
+        excluir_reserva_id: uuid.UUID | None = None,
     ) -> bool:
         """
         Verifica si existe una reserva solapada en el mismo espacio.
@@ -108,7 +101,7 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         return int(result.scalar_one() or 0)
 
     async def get_by_estado(
-            self, estado: EstadoReserva, skip: int = 0, limit: int = 50
+        self, estado: EstadoReserva, skip: int = 0, limit: int = 50
     ) -> list[ReservaEspacio]:
         """Obtiene reservas filtradas por estado con sus relaciones."""
         result = await self.session.execute(
@@ -125,7 +118,7 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         return list(result.scalars().all())
 
     async def get_all_with_relations(
-            self, skip: int = 0, limit: int = 50
+        self, skip: int = 0, limit: int = 50
     ) -> list[ReservaEspacio]:
         """Obtiene todas las reservas con usuario, espacio y tramo cargados."""
         result = await self.session.execute(
@@ -144,7 +137,7 @@ class ReservaRepository(BaseRepository[ReservaEspacio]):
         """Obtiene todas las reservas activas para un espacio en un día concreto."""
         inicio_dia = fecha.replace(hour=0, minute=0, second=0, microsecond=0)
         fin_dia = fecha.replace(hour=23, minute=59, second=59, microsecond=999999)
-
+        
         result = await self.session.execute(
             select(ReservaEspacio).where(
                 and_(
