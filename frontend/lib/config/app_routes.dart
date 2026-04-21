@@ -21,6 +21,11 @@ import 'package:reservives/screens/login_screen.dart';
 import 'package:reservives/screens/admin/admin_shell_screen.dart';
 import 'package:reservives/screens/admin/admin_users_screen.dart';
 import 'package:reservives/screens/admin/admin_dashboard.dart';
+import 'package:reservives/screens/admin/admin_bookings_screen.dart';
+import 'package:reservives/screens/admin/admin_services_screen.dart';
+import 'package:reservives/screens/admin/admin_spaces_screen.dart';
+import 'package:reservives/screens/admin/admin_announcements_screen.dart';
+import 'package:reservives/screens/admin/admin_cafeteria_screen.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
   _RouterRefreshNotifier(this.ref) {
