@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/core/errors/app_error.dart';
+
 import 'package:reservives/l10n/app_localizations.dart';
 
 class RvHoverable extends StatefulWidget {
@@ -711,14 +711,14 @@ class RvApiErrorState extends StatelessWidget {
   final String? title;
   final String? subtitle;
   final VoidCallback? onRetry;
-  final AppFailure? failure;
+  final Object? error;
 
   const RvApiErrorState({
     super.key,
     this.title,
     this.subtitle,
     this.onRetry,
-    this.failure,
+    this.error,
   });
 
   @override
@@ -728,19 +728,11 @@ class RvApiErrorState extends StatelessWidget {
 
     final resolvedTitle = () {
       if (title != null) return title!;
-      if (failure is NetworkFailure) return loc.translate('error.no_connection_title');
-      if (failure is ServerFailure) return loc.translate('error.server_unavailable_title');
       return loc.translate('error.data_load_failed_title');
     }();
 
     final resolvedSubtitle = () {
       if (subtitle != null) return subtitle!;
-      if (failure is NetworkFailure) {
-        return loc.translate('error.no_connection_subtitle');
-      }
-      if (failure is ServerFailure) {
-        return loc.translate('error.server_unavailable_subtitle');
-      }
       return loc.translate('error.retry_default_subtitle');
     }();
 
@@ -757,9 +749,7 @@ class RvApiErrorState extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                failure is NetworkFailure
-                    ? Icons.wifi_off_rounded
-                    : Icons.cloud_off_rounded,
+                Icons.cloud_off_rounded,
                 size: 64,
                 color: AppColors.error,
               ),
