@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/l10n/app_localizations.dart';
 
-/// Returns the next valid weekday date (Mon-Fri).
 DateTime nextWeekdayDate(DateTime date) {
   if (date.weekday == DateTime.saturday) {
     return date.add(const Duration(days: 2));
