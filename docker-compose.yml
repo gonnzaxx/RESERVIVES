@@ -22,10 +22,8 @@ services:
     image: postgres:16-alpine
     container_name: reservives-db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - ./backend/.env
     ports:
       - "5432:5432"
     volumes:
@@ -49,12 +47,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      APP_DEBUG: ${APP_DEBUG:-false}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
-      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH}
     ports:
       - "8000:8000"
     depends_on:

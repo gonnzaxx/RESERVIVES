@@ -25,7 +25,7 @@ class EstadoReserva(str, enum.Enum):
 
 
 class ReservaEspacio(Base):
-    """Modelo SQLAlchemy para la tabla reservas_espacios."""
+    """Modelo SQLAlchemy para la tabla 'reservas_espacios'."""
     __tablename__ = "reservas_espacios"
 
     id: Mapped[uuid.UUID] = mapped_column(

@@ -24,7 +24,7 @@ class RolUsuario(str, enum.Enum):
 
 
 class Usuario(Base):
-    """Modelo SQLAlchemy para la tabla usuarios."""
+    """Modelo SQLAlchemy para la tabla 'usuarios'."""
     __tablename__ = "usuarios"
 
     id: Mapped[uuid.UUID] = mapped_column(

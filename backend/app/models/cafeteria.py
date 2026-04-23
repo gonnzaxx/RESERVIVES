@@ -19,7 +19,7 @@ from app.database import Base
 
 
 class CategoriaCafeteria(Base):
-    """Modelo SQLAlchemy para la tabla categorias_cafeteria."""
+    """Modelo SQLAlchemy para la tabla 'categorias_cafeteria'."""
     __tablename__ = "categorias_cafeteria"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -45,7 +45,7 @@ class CategoriaCafeteria(Base):
 
 
 class ProductoCafeteria(Base):
-    """Modelo SQLAlchemy para la tabla productos_cafeteria."""
+    """Modelo SQLAlchemy para la tabla 'productos_cafeteria'."""
     __tablename__ = "productos_cafeteria"
 
     id: Mapped[uuid.UUID] = mapped_column(

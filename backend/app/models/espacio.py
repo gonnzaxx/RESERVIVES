@@ -23,7 +23,7 @@ class TipoEspacio(str, enum.Enum):
 
 
 class Espacio(Base):
-    """Modelo SQLAlchemy para la tabla espacios."""
+    """Modelo SQLAlchemy para la tabla 'espacios'."""
     __tablename__ = "espacios"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -66,7 +66,7 @@ class Espacio(Base):
 
 
 class EspacioRolPermitido(Base):
-    """Tabla intermedia para saber qué roles pueden reservar cada espacio."""
+    """Tabla intermedia: qué roles pueden reservar cada espacio."""
     __tablename__ = "espacio_rol_permitido"
 
     id: Mapped[uuid.UUID] = mapped_column(

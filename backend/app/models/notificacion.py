@@ -26,6 +26,9 @@ class TipoNotificacion(str, enum.Enum):
     NUEVA_RESERVA_PENDIENTE = "NUEVA_RESERVA_PENDIENTE"
     RESERVA_CANCELADA = "RESERVA_CANCELADA"
     RECARGA_TOKENS = "RECARGA_TOKENS"
+    NUEVA_ENCUESTA = "NUEVA_ENCUESTA"
+    NUEVA_INCIDENCIA = "NUEVA_INCIDENCIA"
+    INCIDENCIA_RESUELTA = "INCIDENCIA_RESUELTA"
 
 
 class CanalNotificacion(str, enum.Enum):
@@ -41,7 +44,6 @@ class EstadoEntregaNotificacion(str, enum.Enum):
 
 
 class Notificacion(Base):
-    """Modelo SQLAlchemy para la tabla notificaciones."""
     __tablename__ = "notificaciones"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -57,6 +59,7 @@ class Notificacion(Base):
     titulo: Mapped[str] = mapped_column(String(180), nullable=False)
     mensaje: Mapped[str] = mapped_column(Text, nullable=False)
     leida: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    referencia_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -71,8 +74,8 @@ class Notificacion(Base):
 
 
 class PreferenciasNotificacion(Base):
-    """Modelo SQLAlchemy para la tabla preferencias_notificacion."""
     __tablename__ = "preferencias_notificacion"
+
     usuario_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("usuarios.id", ondelete="CASCADE"),
@@ -96,9 +99,8 @@ class PreferenciasNotificacion(Base):
 
 
 class NotificacionEntrega(Base):
-
     __tablename__ = "notificacion_entregas"
-    """Modelo SQLAlchemy para la tabla notificacion_entregas."""
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
@@ -128,13 +130,12 @@ class NotificacionEntrega(Base):
     notificacion = relationship("Notificacion", back_populates="entregas")
 
 
-
 class DispositivoPush(Base):
-    """Modelo SQLAlchemy para la tabla notificacion_entregas."""
     __tablename__ = "dispositivos_push"
     __table_args__ = (
         UniqueConstraint("usuario_id", "token", name="uq_dispositivo_push_usuario_token"),
     )
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )

@@ -14,7 +14,6 @@ from app.database import Base
 
 
 class Encuesta(Base):
-    """Modelo SQLAlchemy para la tabla encuestas."""
     __tablename__ = "encuestas"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -38,7 +37,6 @@ class Encuesta(Base):
 
 
 class EncuestaOpcion(Base):
-    """Modelo SQLAlchemy para la tabla encuesta_opciones."""
     __tablename__ = "encuesta_opciones"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -47,7 +45,6 @@ class EncuestaOpcion(Base):
     encuesta_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("encuestas.id", ondelete="CASCADE"), nullable=False
     )
-
     texto: Mapped[str] = mapped_column(String(255), nullable=False)
     orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -56,7 +53,6 @@ class EncuestaOpcion(Base):
 
 
 class VotoEncuesta(Base):
-    """Modelo SQLAlchemy para la tabla votos_encuesta."""
     __tablename__ = "votos_encuesta"
 
     id: Mapped[uuid.UUID] = mapped_column(

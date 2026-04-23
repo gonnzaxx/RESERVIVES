@@ -26,7 +26,7 @@ class TipoMovimientoToken(str, enum.Enum):
 
 
 class HistorialTokens(Base):
-    """Modelo SQLAlchemy para la tabla historial_tokens."""
+    """Modelo SQLAlchemy para la tabla 'historial_tokens'."""
     __tablename__ = "historial_tokens"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -42,7 +42,7 @@ class HistorialTokens(Base):
     )
     motivo: Mapped[str | None] = mapped_column(String(300))
     reserva_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("reservas.id", ondelete="SET NULL")
+        UUID(as_uuid=True), ForeignKey("reservas_espacios.id", ondelete="SET NULL")
     )
     reserva_servicio_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("reservas_servicios.id", ondelete="SET NULL")

@@ -16,7 +16,7 @@ from app.models.reserva_espacio import EstadoReserva
 
 
 class ReservaServicio(Base):
-    """Modelo SQLAlchemy para la tabla reservas_servicios."""
+    """Modelo SQLAlchemy para la tabla 'reservas_servicios'."""
     __tablename__ = "reservas_servicios"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -37,7 +37,7 @@ class ReservaServicio(Base):
         default=EstadoReserva.PENDIENTE
     )
     tokens_consumidos: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    # Tramo horario asignado (nullable para la compatibilidad con reservas antiguas)
+    # Tramo horario asignado (nullable para compatibilidad con reservas antiguas)
     tramo_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("tramos_horarios.id", ondelete="SET NULL"),

@@ -16,7 +16,7 @@ from app.database import Base
 
 
 class Anuncio(Base):
-    """Modelo SQLAlchemy para la tabla anuncios."""
+    """Modelo SQLAlchemy para la tabla 'anuncios'."""
     __tablename__ = "anuncios"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -43,6 +43,28 @@ class Anuncio(Base):
 
     # Relaciones
     autor = relationship("Usuario", back_populates="anuncios")
+    visualizaciones = relationship("AnuncioVisualizacion", back_populates="anuncio", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Anuncio '{self.titulo}'>"
+
+
+class AnuncioVisualizacion(Base):
+    """Modelo para contar las visualizaciones de anuncios."""
+    __tablename__ = "anuncio_visualizaciones"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    anuncio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("anuncios.id", ondelete="CASCADE"), nullable=False
+    )
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relaciones
+    anuncio = relationship("Anuncio", back_populates="visualizaciones")

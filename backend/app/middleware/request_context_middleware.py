@@ -1,5 +1,5 @@
 """
-Middleware para request_id y logging  por petición.
+Middleware para request_id y logging por petición.
 """
 
 from __future__ import annotations

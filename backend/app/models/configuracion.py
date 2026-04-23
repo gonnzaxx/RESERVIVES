@@ -16,7 +16,7 @@ from app.database import Base
 
 
 class Configuracion(Base):
-    """Modelo SQLAlchemy para la tabla configuracion."""
+    """Modelo SQLAlchemy para la tabla 'configuracion'."""
     __tablename__ = "configuracion"
 
     id: Mapped[uuid.UUID] = mapped_column(

@@ -4,7 +4,6 @@ Modelo de la seccion Favorito.
 Gestiona la relación de los usuarios con sus espacios o servicios más usados.
 """
 
-
 import uuid
 from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func
@@ -13,11 +12,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 class FavoritoEspacio(Base):
-    """Modelo SQLAlchemy para la tabla favoritos_espacios."""
     __tablename__ = "favoritos_espacios"
     __table_args__ = (
         UniqueConstraint("usuario_id", "espacio_id", name="uq_favorito_espacio"),
     )
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
@@ -38,7 +37,6 @@ class FavoritoEspacio(Base):
     espacio = relationship("Espacio")
 
 class FavoritoServicio(Base):
-    """Modelo SQLAlchemy para la tabla favoritos_servicios."""
     __tablename__ = "favoritos_servicios"
     __table_args__ = (
         UniqueConstraint("usuario_id", "servicio_id", name="uq_favorito_servicio"),

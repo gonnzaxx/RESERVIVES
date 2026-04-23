@@ -3,6 +3,7 @@ Modelo de Historial de Tokens.
 
 Registro de las incidencias.
 """
+
 import enum
 import uuid
 from datetime import datetime
@@ -21,8 +22,8 @@ class EstadoIncidencia(str, enum.Enum):
 
 
 class Incidencia(Base):
-    """Modelo de SQLAlchemy para la tabla incidencias."""
     __tablename__ = "incidencias"
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )

@@ -1,8 +1,8 @@
 """
-Modelo de Tramo Horario.
+RESERVIVES - Modelo de Tramo Horario.
 
 Gestiona los tramos fijos del instituto y su configuración
-por espacio y servicio.
+por espacio/servicio.
 """
 
 import uuid
@@ -16,8 +16,6 @@ from app.database import Base
 
 
 class TramoHorario(Base):
-    """Modelo SQLAlchemy de la tabla tramos_horarios"""
-
     """
     Tramos horarios fijos del instituto.
     Se inicializan una vez en la base de datos y nunca cambian su hora.
@@ -47,11 +45,10 @@ class TramoHorario(Base):
 
 
 class EspacioTramoPermitido(Base):
-    """Modelo SQLAlchemy de la tabla espacio_tramos_permitidos"""
     """
     Configura qué tramos permite cada espacio.
-    - Sin registros para un espacio: todos los tramos están permitidos.
-    - Con registros: solo esos tramos están permitidos.
+    - Sin registros para un espacio → TODOS los tramos están permitidos.
+    - Con registros → SOLO esos tramos están permitidos.
     """
     __tablename__ = "espacio_tramos_permitidos"
 

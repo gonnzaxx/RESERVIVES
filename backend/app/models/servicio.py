@@ -15,7 +15,7 @@ from app.database import Base
 
 
 class Servicio(Base):
-    """Modelo SQLAlchemy para la tabla servicios."""
+    """Modelo SQLAlchemy para la tabla 'servicios'."""
     __tablename__ = "servicios"
 
     id: Mapped[uuid.UUID] = mapped_column(
