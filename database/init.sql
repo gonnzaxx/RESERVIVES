@@ -1,20 +1,20 @@
 -- ============================================================
--- RESERVIVES - Script de inicialización de Base de Datos
+-- RESERVIVES - Script de inicializaciÃ³n de Base de Datos
 -- IES Luis Vives - TFG DAM
 -- ============================================================
--- Este script crea todas las tablas, tipos enumerados, índices
--- y constraints necesarios para la aplicación RESERVIVES.
+-- Este script crea todas las tablas, tipos enumerados, Ã­ndices
+-- y constraints necesarios para la aplicaciÃ³n RESERVIVES.
 -- ============================================================
 
 -- Extensiones necesarias
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";   -- Generación de UUIDs
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";   -- GeneraciÃ³n de UUIDs
 CREATE EXTENSION IF NOT EXISTS "btree_gist";  -- Para exclusion constraints con tsrange
 
 -- ============================================================
 -- TIPOS ENUMERADOS
 -- ============================================================
 
--- Roles de usuario en la aplicación
+-- Roles de usuario en la aplicaciÃ³n
 CREATE TYPE rol_usuario AS ENUM ('ALUMNO', 'PROFESOR', 'ADMIN');
 
 -- Tipos de espacio reservable
@@ -49,8 +49,8 @@ CREATE TYPE estado_entrega_notificacion AS ENUM ('ENVIADA', 'FALLIDA', 'LEIDA');
 -- TABLA: USUARIOS
 -- ============================================================
 -- Almacena los datos de todos los usuarios registrados.
--- La autenticación se realiza mediante Microsoft EntraID.
--- El rol se determina automáticamente por el dominio del email.
+-- La autenticaciÃ³n se realiza mediante Microsoft EntraID.
+-- El rol se determina automÃ¡ticamente por el dominio del email.
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE usuarios (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
-    -- Restricción: el email debe ser del dominio del instituto
+    -- RestricciÃ³n: el email debe ser del dominio del instituto
     CONSTRAINT chk_email_dominio CHECK (
         email LIKE '%@alumno.iesluisvives.org' OR
         email LIKE '%@profesor.iesluisvives.org' OR
@@ -72,7 +72,7 @@ CREATE TABLE usuarios (
     )
 );
 
--- Índices para búsquedas frecuentes
+-- Ãndices para bÃºsquedas frecuentes
 CREATE INDEX idx_usuarios_email ON usuarios(email);
 CREATE INDEX idx_usuarios_rol ON usuarios(rol);
 CREATE INDEX idx_usuarios_activo ON usuarios(activo);
@@ -92,7 +92,7 @@ CREATE TABLE espacios (
     precio_tokens INTEGER NOT NULL DEFAULT 0,   -- Coste en tokens para alumnos
     reservable BOOLEAN NOT NULL DEFAULT TRUE,
     requiere_autorizacion BOOLEAN NOT NULL DEFAULT FALSE,
-    antelacion_dias INTEGER NOT NULL DEFAULT 7,  -- Días de antelación para reservar
+    antelacion_dias INTEGER NOT NULL DEFAULT 7,  -- DÃ­as de antelaciÃ³n para reservar
     ubicacion VARCHAR(200),
     capacidad INTEGER,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -107,7 +107,7 @@ CREATE INDEX idx_espacios_reservable ON espacios(reservable);
 -- ============================================================
 -- TABLA: ESPACIO_ROL_PERMITIDO
 -- ============================================================
--- Relación N:M entre espacios y roles que pueden reservarlos.
+-- RelaciÃ³n N:M entre espacios y roles que pueden reservarlos.
 CREATE TABLE espacio_rol_permitido (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
@@ -120,11 +120,11 @@ CREATE TABLE espacio_rol_permitido (
 CREATE INDEX idx_espacio_rol_espacio ON espacio_rol_permitido(espacio_id);
 
 -- ============================================================
--- TABLA: RESERVAS
+-- TABLA: RESERVAS_ESPACIOS
 -- ============================================================
 -- Reservas de espacios realizadas por los usuarios.
 -- Incluye control de solapamiento mediante EXCLUDE constraint.
-CREATE TABLE reservas (
+CREATE TABLE reservas_espacios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
@@ -140,22 +140,22 @@ CREATE TABLE reservas (
     CONSTRAINT chk_fechas_reserva CHECK (fecha_fin > fecha_inicio),
 
     -- EXCLUSION CONSTRAINT: impide reservas solapadas en el mismo espacio
-    -- Solo aplica a reservas que están PENDIENTES o APROBADAS
+    -- Solo aplica a reservas que estÃ¡n PENDIENTES o APROBADAS
     CONSTRAINT excl_reserva_solapada EXCLUDE USING gist (
         espacio_id WITH =,
         tstzrange(fecha_inicio, fecha_fin) WITH &&
     ) WHERE (estado IN ('PENDIENTE', 'APROBADA'))
 );
 
-CREATE INDEX idx_reservas_usuario ON reservas(usuario_id);
-CREATE INDEX idx_reservas_espacio ON reservas(espacio_id);
-CREATE INDEX idx_reservas_estado ON reservas(estado);
-CREATE INDEX idx_reservas_fechas ON reservas(fecha_inicio, fecha_fin);
+CREATE INDEX idx_reservas_usuario ON reservas_espacios(usuario_id);
+CREATE INDEX idx_reservas_espacio ON reservas_espacios(espacio_id);
+CREATE INDEX idx_reservas_estado ON reservas_espacios(estado);
+CREATE INDEX idx_reservas_fechas ON reservas_espacios(fecha_inicio, fecha_fin);
 
 -- ============================================================
 -- TABLA: ANUNCIOS
 -- ============================================================
--- Tablón de anuncios gestionado por el administrador.
+-- TablÃ³n de anuncios gestionado por el administrador.
 CREATE TABLE anuncios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     autor_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -177,7 +177,7 @@ CREATE INDEX idx_anuncios_fecha_pub ON anuncios(fecha_publicacion);
 -- ============================================================
 -- TABLA: CATEGORIAS_CAFETERIA
 -- ============================================================
--- Categorías para organizar productos de la cafetería.
+-- CategorÃ­as para organizar productos de la cafeterÃ­a.
 CREATE TABLE categorias_cafeteria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
@@ -191,7 +191,7 @@ CREATE TABLE categorias_cafeteria (
 -- ============================================================
 -- TABLA: PRODUCTOS_CAFETERIA
 -- ============================================================
--- Productos que ofrece la cafetería del instituto (informativo).
+-- Productos que ofrece la cafeterÃ­a del instituto (informativo).
 CREATE TABLE productos_cafeteria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     categoria_id UUID NOT NULL REFERENCES categorias_cafeteria(id) ON DELETE CASCADE,
@@ -210,10 +210,10 @@ CREATE INDEX idx_productos_categoria ON productos_cafeteria(categoria_id);
 CREATE INDEX idx_productos_disponible ON productos_cafeteria(disponible);
 
 -- ============================================================
--- TABLA: SERVICIOS_INSTITUTO
+-- TABLA: SERVICIOS
 -- ============================================================
--- Servicios ofrecidos por departamentos (Peluquería, Impresión 3D, etc).
-CREATE TABLE servicios_instituto (
+-- Servicios ofrecidos por departamentos (PeluquerÃ­a, ImpresiÃ³n 3D, etc).
+CREATE TABLE servicios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(150) NOT NULL,
     descripcion TEXT,
@@ -231,11 +231,11 @@ CREATE TABLE servicios_instituto (
 -- ============================================================
 -- TABLA: RESERVAS_SERVICIOS
 -- ============================================================
--- Reservas de servicios específicos.
+-- Reservas de servicios especÃ­ficos.
 CREATE TABLE reservas_servicios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    servicio_id UUID NOT NULL REFERENCES servicios_instituto(id) ON DELETE CASCADE,
+    servicio_id UUID NOT NULL REFERENCES servicios(id) ON DELETE CASCADE,
     fecha_inicio TIMESTAMP WITH TIME ZONE NOT NULL,
     fecha_fin TIMESTAMP WITH TIME ZONE NOT NULL,
     observaciones TEXT,
@@ -261,14 +261,14 @@ CREATE INDEX idx_reservas_servicios_estado ON reservas_servicios(estado);
 -- TABLA: HISTORIAL_TOKENS
 -- ============================================================
 -- Registro de todos los movimientos de tokens de los usuarios.
--- Permite auditoría completa de recargas y consumos.
+-- Permite auditorÃ­a completa de recargas y consumos.
 CREATE TABLE historial_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     cantidad INTEGER NOT NULL,                   -- Positivo = recarga, negativo = consumo
     tipo tipo_movimiento_token NOT NULL,
     motivo VARCHAR(300),
-    reserva_id UUID REFERENCES reservas(id) ON DELETE SET NULL,
+    reserva_id UUID REFERENCES reservas_espacios(id) ON DELETE SET NULL,
     reserva_servicio_id UUID REFERENCES reservas_servicios(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -370,7 +370,7 @@ CREATE INDEX idx_favoritos_espacios_usuario ON favoritos_espacios(usuario_id);
 CREATE TABLE favoritos_servicios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    servicio_id UUID NOT NULL REFERENCES servicios_instituto(id) ON DELETE CASCADE,
+    servicio_id UUID NOT NULL REFERENCES servicios(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
@@ -401,8 +401,6 @@ CREATE INDEX idx_incidencias_usuario ON incidencias(usuario_id);
 -- ============================================================
 -- TABLA: CONFIGURACION
 -- ============================================================
--- Configuración general de la aplicación (clave-valor).
--- Permite al admin ajustar parámetros sin tocar código.
 CREATE TABLE configuracion (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     clave VARCHAR(100) NOT NULL UNIQUE,
@@ -412,19 +410,20 @@ CREATE TABLE configuracion (
 );
 
 -- ============================================================
--- DATOS INICIALES DE CONFIGURACIÓN
+-- DATOS INICIALES DE CONFIGURACIÃ“N
 -- ============================================================
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('tokens_mensuales_alumno', '20', 'Cantidad de tokens que recibe cada alumno el día 1 de cada mes'),
-    ('hora_inicio_reservas', '08:00', 'Hora más temprana a la que se puede hacer una reserva'),
-    ('hora_fin_reservas', '21:00', 'Hora más tardía a la que puede terminar una reserva'),
-    ('duracion_minima_reserva_minutos', '30', 'Duración mínima de una reserva en minutos'),
-    ('duracion_maxima_reserva_minutos', '120', 'Duración máxima de una reserva en minutos'),
-    ('max_reservas_activas_alumno', '3', 'Máximo de reservas activas simultáneas para alumnos'),
-    ('max_reservas_activas_profesor', '5', 'Máximo de reservas activas simultáneas para profesores');
+    ('tokens_mensuales_alumno', '20', 'Cantidad de tokens que recibe cada alumno el dÃ­a 1 de cada mes'),
+    ('hora_inicio_reservas', '08:00', 'Hora mÃ¡s temprana a la que se puede hacer una reserva'),
+    ('hora_fin_reservas', '21:00', 'Hora mÃ¡s tardÃ­a a la que puede terminar una reserva'),
+    ('duracion_minima_reserva_minutos', '30', 'DuraciÃ³n mÃ­nima de una reserva en minutos'),
+    ('duracion_maxima_reserva_minutos', '120', 'DuraciÃ³n mÃ¡xima de una reserva en minutos'),
+    ('max_reservas_activas_alumno', '3', 'MÃ¡ximo de reservas activas simultÃ¡neas para alumnos'),
+    ('max_reservas_activas_profesor', '5', 'Maximo de reservas activas simultaneas para profesores'),
+    ('auth_dev_bypass_enabled', 'true', 'Permite login temporal sin OAuth en desarrollo');
 
 -- ============================================================
--- FUNCIÓN: Actualizar updated_at automáticamente
+-- FUNCIÃ“N: Actualizar updated_at automÃ¡ticamente
 -- ============================================================
 CREATE OR REPLACE FUNCTION actualizar_updated_at()
 RETURNS TRIGGER AS $$
@@ -444,7 +443,7 @@ CREATE TRIGGER trg_espacios_updated_at
     FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
 CREATE TRIGGER trg_reservas_updated_at
-    BEFORE UPDATE ON reservas
+    BEFORE UPDATE ON reservas_espacios
     FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
 CREATE TRIGGER trg_anuncios_updated_at
@@ -456,7 +455,7 @@ CREATE TRIGGER trg_productos_updated_at
     FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
 CREATE TRIGGER trg_servicios_updated_at
-    BEFORE UPDATE ON servicios_instituto
+    BEFORE UPDATE ON servicios
     FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
 CREATE TRIGGER trg_reservas_servicios_updated_at
@@ -539,23 +538,23 @@ CREATE TABLE anuncio_visualizaciones (
 CREATE INDEX idx_anuncio_vis_anuncio ON anuncio_visualizaciones(anuncio_id);
 
 -- ============================================================
--- ACTUALIZACIÓN DE CONFIGURACIÓN GLOBAL
+-- ACTUALIZACIÃ“N DE CONFIGURACIÃ“N GLOBAL
 -- ============================================================
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('dias_caducidad_anuncio_defecto', '10', 'Días tras los cuales un anuncio expira si no tiene fecha fija'),
-    ('se_permiten_reservas', 'true', 'Si es false, deshabilita la creación de nuevas reservas');
+    ('dias_caducidad_anuncio_defecto', '10', 'DÃ­as tras los cuales un anuncio expira si no tiene fecha fija'),
+    ('se_permiten_reservas', 'true', 'Si es false, deshabilita la creaciÃ³n de nuevas reservas');
 
 
 -- ============================================================
 -- TABLA: TRAMOS_HORARIOS
 -- ============================================================
--- Catálogo de tramos horarios fijos del instituto.
+-- CatÃ¡logo de tramos horarios fijos del instituto.
 -- Inmutable una vez insertado; los admins solo configuran
--- qué tramos permite cada espacio/servicio.
+-- quÃ© tramos permite cada espacio/servicio.
 CREATE TABLE tramos_horarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(50) NOT NULL,
-    turno VARCHAR(10) NOT NULL,          -- 'MAÑANA' | 'TARDE'
+    turno VARCHAR(10) NOT NULL,          -- 'MAÃ‘ANA' | 'TARDE'
     numero INTEGER NOT NULL,             -- Orden dentro del turno (0 = RECREO)
     hora_inicio TIME NOT NULL,
     hora_fin TIME NOT NULL,
@@ -571,9 +570,9 @@ CREATE INDEX idx_tramos_activo ON tramos_horarios(activo);
 -- ============================================================
 -- TABLA: ESPACIO_TRAMOS_PERMITIDOS
 -- ============================================================
--- Configura qué tramos puede usar cada espacio.
--- Sin registros → todos los tramos están permitidos.
--- Con registros → solo esos tramos disponibles.
+-- Configura quÃ© tramos puede usar cada espacio.
+-- Sin registros â†’ todos los tramos estÃ¡n permitidos.
+-- Con registros â†’ solo esos tramos disponibles.
 CREATE TABLE espacio_tramos_permitidos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
@@ -589,7 +588,7 @@ CREATE INDEX idx_esp_tramo_espacio ON espacio_tramos_permitidos(espacio_id);
 -- ============================================================
 CREATE TABLE servicio_tramos_permitidos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    servicio_id UUID NOT NULL REFERENCES servicios_instituto(id) ON DELETE CASCADE,
+    servicio_id UUID NOT NULL REFERENCES servicios(id) ON DELETE CASCADE,
     tramo_id UUID NOT NULL REFERENCES tramos_horarios(id) ON DELETE CASCADE,
 
     CONSTRAINT uq_servicio_tramo UNIQUE (servicio_id, tramo_id)
@@ -601,11 +600,12 @@ CREATE INDEX idx_srv_tramo_servicio ON servicio_tramos_permitidos(servicio_id);
 -- FK: tramo_id en las tablas de reservas
 -- ============================================================
 -- Campo nullable para compatibilidad con reservas anteriores al sistema de tramos.
-ALTER TABLE reservas
+ALTER TABLE reservas_espacios
     ADD COLUMN tramo_id UUID REFERENCES tramos_horarios(id) ON DELETE SET NULL;
 
 ALTER TABLE reservas_servicios
     ADD COLUMN tramo_id UUID REFERENCES tramos_horarios(id) ON DELETE SET NULL;
 
-CREATE INDEX idx_reservas_tramo ON reservas(tramo_id);
+CREATE INDEX idx_reservas_tramo ON reservas_espacios(tramo_id);
 CREATE INDEX idx_reservas_servicios_tramo ON reservas_servicios(tramo_id);
+

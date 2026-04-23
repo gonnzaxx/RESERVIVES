@@ -127,7 +127,7 @@ INSERT INTO productos_cafeteria (categoria_id, nombre, descripcion, precio, disp
 -- ============================================================
 -- SERVICIOS DEL INSTITUTO
 -- ============================================================
-INSERT INTO servicios_instituto (id, nombre, descripcion, ubicacion, horario, precio_tokens, antelacion_dias, activo, orden) VALUES
+INSERT INTO servicios (id, nombre, descripcion, ubicacion, horario, precio_tokens, antelacion_dias, activo, orden) VALUES
     ('20000000-0000-0000-0000-000000000001', 'Peluquería',
      'Servicio de peluquería ofrecido por alumnos del ciclo de Estilismo y Dirección de Peluquería. Cortes, tintes, peinados y tratamientos capilares.',
      'Edificio Talleres - Planta Baja', 'Lunes a Viernes: 10:00 - 13:00', 0, 7, TRUE, 1),
@@ -144,7 +144,7 @@ INSERT INTO servicios_instituto (id, nombre, descripcion, ubicacion, horario, pr
 -- ============================================================
 -- RESERVAS DE EJEMPLO
 -- ============================================================
-INSERT INTO reservas (usuario_id, espacio_id, fecha_inicio, fecha_fin, observaciones, estado, tokens_consumidos) VALUES
+INSERT INTO reservas_espacios (usuario_id, espacio_id, fecha_inicio, fecha_fin, observaciones, estado, tokens_consumidos) VALUES
     -- Alumno reserva pista de fútbol (mañana)
     ('c0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
      NOW() + INTERVAL '1 day' + TIME '10:00', NOW() + INTERVAL '1 day' + TIME '11:00',
@@ -204,3 +204,12 @@ INSERT INTO tramos_horarios (nombre, turno, numero, hora_inicio, hora_fin, es_re
     ('Clase 5',  'TARDE',  5, '19:20', '20:15', FALSE),
     ('Clase 6',  'TARDE',  6, '20:15', '21:10', FALSE)
 ON CONFLICT (turno, numero) DO NOTHING;
+
+-- ============================================================
+-- CONFIGURACION PARA LOGIN DEV (sin OAuth)
+-- ============================================================
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+    ('auth_dev_bypass_enabled', 'true', 'Permite login temporal sin OAuth en desarrollo')
+ON CONFLICT (clave) DO UPDATE
+SET valor = EXCLUDED.valor,
+    descripcion = EXCLUDED.descripcion;

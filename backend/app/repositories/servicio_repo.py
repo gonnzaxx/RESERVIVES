@@ -6,20 +6,20 @@ Esta clase simplemente obtendrá los servicios activos.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.servicio import ServicioInstituto
+from app.models.servicio import Servicio
 from app.repositories.base import BaseRepository
 
 
-class ServicioRepository(BaseRepository[ServicioInstituto]):
+class ServicioRepository(BaseRepository[Servicio]):
 
     def __init__(self, session: AsyncSession):
-        super().__init__(ServicioInstituto, session)
+        super().__init__(Servicio, session)
 
-    async def get_activos(self) -> list[ServicioInstituto]:
+    async def get_activos(self) -> list[Servicio]:
         """Obtiene todos los servicios activos ordenados."""
         result = await self.session.execute(
-            select(ServicioInstituto)
-            .where(ServicioInstituto.activo == True)
-            .order_by(ServicioInstituto.orden)
+            select(Servicio)
+            .where(Servicio.activo == True)
+            .order_by(Servicio.orden)
         )
         return list(result.scalars().all())
