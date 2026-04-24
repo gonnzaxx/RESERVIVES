@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/auth_service.dart';
 import 'package:reservives/widgets/design_system.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 
 DateTime nextWeekdayDate(DateTime date) {
   if (date.weekday == DateTime.saturday) {

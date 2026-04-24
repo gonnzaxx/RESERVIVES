@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/screens/bookings/widgets/spaces_tab.dart';
 import 'package:reservives/screens/bookings/widgets/my_bookings_tab.dart';

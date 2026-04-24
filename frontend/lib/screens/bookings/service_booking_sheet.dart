@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/servicio.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';

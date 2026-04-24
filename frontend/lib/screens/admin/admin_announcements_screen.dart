@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/anuncio.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
 import 'package:reservives/services/api_client.dart';

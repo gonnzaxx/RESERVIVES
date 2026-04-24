@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
 import 'package:url_launcher/url_launcher.dart';

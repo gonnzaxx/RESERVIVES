@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/espacios_provider.dart';

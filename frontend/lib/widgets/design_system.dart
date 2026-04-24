@@ -7,7 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:reservives/config/app_theme.dart';
 
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 
 class RvHoverable extends StatefulWidget {
   final Widget child;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/locale_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -90,6 +90,54 @@ class SettingsScreen extends ConsumerWidget {
                         subtitle: loc.translate('settings.history.subtitle'),
                         color: AppColors.primaryBlue,
                         onTap: () => context.pushNamed('actividad'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.notifications_active_rounded,
+                        title: loc.translate('settings.notification_prefs.title'),
+                        subtitle: loc.translate('settings.notification_prefs.subtitle'),
+                        color: Colors.orange.shade400,
+                        onTap: () => context.pushNamed('preferencias'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.school_rounded,
+                        title: loc.translate('settings.ies.title'),
+                        subtitle: loc.translate('settings.ies.subtitle'),
+                        color: const Color(0xFFD4A017),
+                        onTap: () => context.pushNamed('ies_info'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.info_outline_rounded,
+                        title: loc.translate('settings.about.title'),
+                        subtitle: loc.translate('settings.about.subtitle'),
+                        color: AppColors.accentPurple,
+                        onTap: () => context.pushNamed('acerca_de'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.report_problem_rounded,
+                        title: loc.translate('settings.incidents.title'),
+                        subtitle: loc.translate('settings.incidents.subtitle'),
+                        color: Colors.red.shade400,
+                        onTap: () => context.pushNamed('reportar_incidencia'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.question_answer_rounded,
+                        title: loc.translate('settings.faq.title'),
+                        subtitle: loc.translate('settings.faq.subtitle'),
+                        color: Colors.blueGrey,
+                        onTap: () => context.pushNamed('faq'),
+                      ),
+                      const SizedBox(height: 12),
+                      _SettingsItem(
+                        icon: Icons.help_outline_rounded,
+                        title: loc.translate('settings.help.title'),
+                        subtitle: loc.translate('settings.help.subtitle'),
+                        color: AppColors.success,
+                        onTap: () => context.pushNamed('ayuda'),
                       ),
                     ],
                   ),

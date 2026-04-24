@@ -9,7 +9,7 @@ import 'package:reservives/screens/bookings/service_booking_sheet.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 
 class ServiciosTab extends ConsumerStatefulWidget {
   const ServiciosTab({super.key});

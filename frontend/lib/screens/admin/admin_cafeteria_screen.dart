@@ -9,7 +9,7 @@ import 'package:reservives/models/cafeteria.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 
 final adminCafeteriaProvider = FutureProvider.autoDispose<List<CategoriaCafeteria>>((ref) async {
   final apiClient = ref.read(apiClientProvider);

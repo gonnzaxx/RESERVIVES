@@ -4,7 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../l10n/app_localizations.dart';
+import '../i10n/app_localizations.dart';
 
 const _languagePrefKey = 'language_code';
 

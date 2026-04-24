@@ -13,6 +13,13 @@ import 'package:reservives/screens/profile/activity_history_screen.dart';
 import 'package:reservives/screens/profile/favorites_screen.dart';
 import 'package:reservives/screens/profile/profile_screen.dart';
 import 'package:reservives/screens/profile/settings_screen.dart';
+import 'package:reservives/screens/profile/settings/help_screen.dart';
+import 'package:reservives/screens/profile/settings/faq_screen.dart';
+import 'package:reservives/screens/profile/settings/ies_info_screen.dart';
+import 'package:reservives/screens/profile/settings/notification_preferences_screen.dart';
+import 'package:reservives/screens/profile/polls_screen.dart';
+import 'package:reservives/screens/profile/settings/reports_screen.dart';
+import 'package:reservives/screens/profile/settings/about_screen.dart';
 import 'package:reservives/screens/bookings/bookings_screen.dart';
 import 'package:reservives/screens/shell_screen.dart';
 import 'package:reservives/screens/welcome_screen.dart';
@@ -183,6 +190,38 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(
+        path: '/reportar-incidencia',
+        name: 'reportar_incidencia',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: ReportIncidenciaScreen()),
+      ),
+      GoRoute(
+        path: '/votaciones',
+        name: 'votaciones',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: VotacionesScreen()),
+      ),
+
+      GoRoute(
+        path: '/preferencias',
+        name: 'preferencias',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: NotificationPreferencesScreen()),
+      ),
+      GoRoute(
+        path: '/ayuda',
+        name: 'ayuda',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: HelpScreen()),
+      ),
+      GoRoute(
+        path: '/faq',
+        name: 'faq',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: FaqScreen()),
+      ),
+
+      GoRoute(
         path: '/notificaciones',
         name: 'notificaciones',
         pageBuilder: (context, state) =>
@@ -215,6 +254,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'ajustes',
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: SettingsScreen()),
+      ),
+      GoRoute(
+        path: '/acerca-de',
+        name: 'acerca_de',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: AboutScreen()),
+      ),
+      GoRoute(
+        path: '/ies-info',
+        name: 'ies_info',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: IesInfoScreen()),
       ),
     ],
     debugLogDiagnostics: kDebugMode,

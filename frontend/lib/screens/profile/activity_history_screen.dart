@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/core/utils/datetime_utils.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/reservas_provider.dart';
 import 'package:reservives/providers/servicio_provider.dart';
 import 'package:reservives/core/utils/calendar_utils.dart';

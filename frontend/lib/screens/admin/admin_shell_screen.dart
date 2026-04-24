@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/providers/admin_websocket_provider.dart';

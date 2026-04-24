@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:reservives/config/app_routes.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/locale_provider.dart';
 import 'package:reservives/providers/theme_provider.dart';
 import 'package:reservives/services/push_notifications_service.dart';
