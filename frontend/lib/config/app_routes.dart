@@ -4,35 +4,39 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/providers/auth_provider.dart';
-import 'package:reservives/screens/home/home_screen.dart';
+import 'package:reservives/screens/admin/admin_announcements_screen.dart';
+import 'package:reservives/screens/admin/admin_bookings_screen.dart';
+import 'package:reservives/screens/admin/admin_cafeteria_screen.dart';
+import 'package:reservives/screens/admin/admin_dashboard.dart';
+import 'package:reservives/screens/admin/admin_services_screen.dart';
+import 'package:reservives/screens/admin/admin_shell_screen.dart';
+import 'package:reservives/screens/admin/admin_spaces_screen.dart';
+import 'package:reservives/screens/admin/admin_users_screen.dart';
+import 'package:reservives/screens/admin/admin_settings_screen.dart';
+import 'package:reservives/screens/admin/admin_reports_screen.dart';
+import 'package:reservives/screens/admin/admin_metrics_screen.dart';
+import 'package:reservives/screens/admin/admin_polls_screen.dart';
+import 'package:reservives/screens/profile/settings/reports_screen.dart';
 import 'package:reservives/screens/home/announcement_detail_screen.dart';
-import 'package:reservives/screens/home/notifications_screen.dart';
 import 'package:reservives/screens/bookings/space_booking_screen.dart';
 import 'package:reservives/screens/cafeteria/cafeteria_screen.dart';
+import 'package:reservives/screens/home/home_screen.dart';
+import 'package:reservives/screens/login_screen.dart';
+import 'package:reservives/screens/home/notifications_screen.dart';
+import 'package:reservives/screens/profile/settings/about_screen.dart';
 import 'package:reservives/screens/profile/activity_history_screen.dart';
 import 'package:reservives/screens/profile/favorites_screen.dart';
-import 'package:reservives/screens/profile/profile_screen.dart';
-import 'package:reservives/screens/profile/settings_screen.dart';
 import 'package:reservives/screens/profile/settings/help_screen.dart';
 import 'package:reservives/screens/profile/settings/faq_screen.dart';
 import 'package:reservives/screens/profile/settings/ies_info_screen.dart';
 import 'package:reservives/screens/profile/settings/notification_preferences_screen.dart';
-import 'package:reservives/screens/profile/polls_screen.dart';
-import 'package:reservives/screens/profile/settings/reports_screen.dart';
-import 'package:reservives/screens/profile/settings/about_screen.dart';
+import 'package:reservives/screens/profile/profile_screen.dart';
+import 'package:reservives/screens/profile/settings_screen.dart';
 import 'package:reservives/screens/bookings/bookings_screen.dart';
 import 'package:reservives/screens/shell_screen.dart';
+import 'package:reservives/screens/profile/polls_screen.dart';
 import 'package:reservives/screens/welcome_screen.dart';
 import 'package:reservives/screens/onboarding_screen.dart';
-import 'package:reservives/screens/login_screen.dart';
-import 'package:reservives/screens/admin/admin_shell_screen.dart';
-import 'package:reservives/screens/admin/admin_users_screen.dart';
-import 'package:reservives/screens/admin/admin_dashboard.dart';
-import 'package:reservives/screens/admin/admin_bookings_screen.dart';
-import 'package:reservives/screens/admin/admin_services_screen.dart';
-import 'package:reservives/screens/admin/admin_spaces_screen.dart';
-import 'package:reservives/screens/admin/admin_announcements_screen.dart';
-import 'package:reservives/screens/admin/admin_cafeteria_screen.dart';
 
 class _RouterRefreshNotifier extends ChangeNotifier {
   _RouterRefreshNotifier(this.ref) {
@@ -184,6 +188,30 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) =>
                 const NoTransitionPage(child: AdminServicesScreen()),
               ),
+              GoRoute(
+                path: 'configuracion',
+                name: 'admin_configuracion',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminSettingsScreen()),
+              ),
+              GoRoute(
+                path: 'incidencias',
+                name: 'admin_incidencias',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminIncidentsScreen()),
+              ),
+              GoRoute(
+                path: 'metricas',
+                name: 'admin_metricas',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminMetricsScreen()),
+              ),
+              GoRoute(
+                path: 'encuestas',
+                name: 'admin_encuestas',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminPollsScreen()),
+              ),
             ],
           ),
         ],
@@ -201,7 +229,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: VotacionesScreen()),
       ),
-
+      GoRoute(
+        path: '/notificaciones',
+        name: 'notificaciones',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: NotificationsScreen()),
+      ),
       GoRoute(
         path: '/preferencias',
         name: 'preferencias',
@@ -220,14 +253,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: FaqScreen()),
       ),
-
-      GoRoute(
-        path: '/notificaciones',
-        name: 'notificaciones',
-        pageBuilder: (context, state) =>
-        const NoTransitionPage(child: NotificationsScreen()),
-      ),
-
       GoRoute(
         path: '/actividad',
         name: 'actividad',
