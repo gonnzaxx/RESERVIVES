@@ -171,7 +171,7 @@
     "booking.notEnoughTokens": "No tienes suficientes tokens para esta reserva.",
     "booking.weekendNotAllowed": "Los fines de semana no se permiten reservas.",
     "booking.pendingApproval": "Esta reserva quedará pendiente de aprobación.",
-    "booking.confirm": "Confirmar reserva",
+    "booking.confirm": "Solicitar reserva",
     "favorites.removed": "Eliminado de favoritos",
     "activity.defaultReservation": "Reserva",
     "home.hero.staffTitle": "Gestiona tus espacios más rápido",
