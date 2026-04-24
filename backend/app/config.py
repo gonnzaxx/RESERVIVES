@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS_PATH: str = "firebase-credentials.example.json"
     FIREBASE_WEB_APP_URL: str = "http://localhost:3000"
 
+    # --- IA (Gemini) ---
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Devuelve la lista de orígenes CORS permitidos."""

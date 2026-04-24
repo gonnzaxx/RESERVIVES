@@ -83,7 +83,7 @@ bool hasAnyBackofficeAccess(RolUsuario role) {
   return BackofficeSection.values.any((section) => canAccessAdminSection(role, section));
 }
 
-bool canAccessMainApp(RolUsuario role) => role != RolUsuario.cafeteria;
+bool canAccessMainApp(RolUsuario role) => true;
 
 String defaultAuthenticatedRoute(Usuario user) {
   if (!canAccessMainApp(user.rol)) {
@@ -106,4 +106,3 @@ bool canAccessAdminLocation(Usuario user, String location) {
   if (section == null) return hasAnyBackofficeAccess(user.rol);
   return canAccessAdminSection(user.rol, section);
 }
-

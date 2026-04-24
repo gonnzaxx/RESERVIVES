@@ -12,6 +12,7 @@ import 'package:oauth2_client/oauth2_helper.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/providers/anuncios_provider.dart';
+import 'package:reservives/providers/ai_chat_provider.dart';
 import 'package:reservives/providers/cafeteria_provider.dart';
 import 'package:reservives/providers/encuestas_provider.dart';
 import 'package:reservives/providers/espacios_provider.dart';
@@ -56,6 +57,7 @@ class AuthService {
     _ref.invalidate(misReservasProvider);
     _ref.invalidate(misReservasServiciosProvider);
     _ref.invalidate(tramosProvider);
+    _ref.invalidate(aiChatProvider);
   }
 
   Future<bool> uploadAvatar(Uint8List bytes, String fileName) async {

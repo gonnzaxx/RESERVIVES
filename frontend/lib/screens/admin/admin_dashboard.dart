@@ -92,7 +92,6 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
     final kpisAsync = ref.watch(adminDashboardKpisProvider);
 
     return Scaffold(
@@ -111,12 +110,12 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                     children: [
                       Expanded(
                         child: Text(
-                          loc.translate('admin.dashboard.backoffice'),
+                          context.tr('admin.dashboard.backoffice'),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
                       RvBadge(
-                        label: loc.translate('admin.dashboard.badge.admin'),
+                        label: context.tr('admin.dashboard.badge.admin'),
                         icon: Icons.verified_rounded,
                         color: AppColors.success,
                       ),
@@ -124,9 +123,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                   ),
                   const SizedBox(height: 18),
                   RvPageHeader(
-                    eyebrow: loc.translate('admin.dashboard.panel.eyebrow'),
-                    title: loc.translate('admin.dashboard.panel.title'),
-                    subtitle: loc.translate('admin.dashboard.panel.subtitle'),
+                    eyebrow: context.tr('admin.dashboard.panel.eyebrow'),
+                    title: context.tr('admin.dashboard.panel.title'),
+                    subtitle: context.tr('admin.dashboard.panel.subtitle'),
                   ),
                   const SizedBox(height: 18),
 
@@ -140,7 +139,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
                         _MetricCard(
-                          title: loc.translate(
+                          title: context.tr(
                             'admin.dashboard.metrics.reservationsPending',
                           ),
                           value: kpis.reservationsPendingApproval.toString(),
@@ -148,7 +147,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                           color: AppColors.warning,
                         ),
                         _MetricCard(
-                          title: loc.translate(
+                          title: context.tr(
                             'admin.dashboard.metrics.spaces',
                           ),
                           value: kpis.summary.espaciosDisponibles.toString(),
@@ -156,13 +155,13 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                           color: AppColors.primaryBlue,
                         ),
                         _MetricCard(
-                          title: loc.translate('admin.dashboard.metrics.users'),
+                          title: context.tr('admin.dashboard.metrics.users'),
                           value: kpis.summary.totalUsuarios.toString(),
                           icon: Icons.people_alt_rounded,
                           color: AppColors.accentPurple,
                         ),
                         _MetricCard(
-                          title: loc.translate(
+                          title: context.tr(
                             'admin.dashboard.metrics.announcements',
                           ),
                           value: kpis.summary.anunciosActivos.toString(),
@@ -195,7 +194,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
 
                   const SizedBox(height: 24),
                   Text(
-                    loc.translate('admin.dashboard.section.management'),
+                    context.tr('admin.dashboard.section.management'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
@@ -211,10 +210,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                       child: Column(
                         children: [
                           _AdminShortcut(
-                            title: loc.translate(
+                            title: context.tr(
                               'admin.dashboard.shortcut.users.title',
                             ),
-                            subtitle: loc.translate(
+                            subtitle: context.tr(
                               'admin.dashboard.shortcut.users.subtitle',
                             ),
                             icon: Icons.people_alt_rounded,
@@ -228,10 +227,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate(
+                            title: context.tr(
                               'admin.dashboard.shortcut.reservations.title',
                             ),
-                            subtitle: loc.translate(
+                            subtitle: context.tr(
                               'admin.dashboard.shortcut.reservations.subtitle',
                             ),
                             icon: Icons.approval_rounded,
@@ -245,10 +244,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate(
+                            title: context.tr(
                               'admin.dashboard.shortcut.spaces.title',
                             ),
-                            subtitle: loc.translate(
+                            subtitle: context.tr(
                               'admin.dashboard.shortcut.spaces.subtitle',
                             ),
                             icon: Icons.grid_view_rounded,
@@ -262,10 +261,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate(
+                            title: context.tr(
                               'admin.dashboard.shortcut.services.title',
                             ),
-                            subtitle: loc.translate(
+                            subtitle: context.tr(
                               'admin.dashboard.shortcut.services.subtitle',
                             ),
                             icon: Icons.build_circle_rounded,
@@ -279,10 +278,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate(
+                            title: context.tr(
                               'admin.dashboard.shortcut.announcements.title',
                             ),
-                            subtitle: loc.translate(
+                            subtitle: context.tr(
                               'admin.dashboard.shortcut.announcements.subtitle',
                             ),
                             icon: Icons.campaign_rounded,
@@ -296,8 +295,8 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate('admin.dashboard.shortcut.cafeteria.title'),
-                            subtitle: loc.translate('admin.dashboard.shortcut.cafeteria.subtitle'),
+                            title: context.tr('admin.dashboard.shortcut.cafeteria.title'),
+                            subtitle: context.tr('admin.dashboard.shortcut.cafeteria.subtitle'),
                             icon: Icons.local_cafe_rounded,
                             color: AppColors.warning,
                             onTap: () => context.pushNamed('admin_cafeteria'),
@@ -309,8 +308,8 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                             color: Theme.of(context).dividerColor,
                           ),
                           _AdminShortcut(
-                            title: loc.translate('incidents.admin.title'),
-                            subtitle: 'Reportes, averías y problemas técnicos',
+                            title: context.tr('incidents.admin.title'),
+                            subtitle: 'Reportes, averias y problemas tecnicos',
                             icon: Icons.report_problem_rounded,
                             color: AppColors.error,
                             onTap: () => context.pushNamed('admin_incidencias'),
@@ -452,4 +451,5 @@ class _AdminShortcut extends StatelessWidget {
     );
   }
 }
+
 

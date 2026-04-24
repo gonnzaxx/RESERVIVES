@@ -48,7 +48,7 @@ def monthly_tokens_for_role(rol: RolUsuario, alumno_tokens: int) -> int:
 
 
 def can_access_main_app(rol: RolUsuario) -> bool:
-    return rol != RolUsuario.CAFETERIA
+    return True
 
 
 def can_access_backoffice_section(rol: RolUsuario, section: BackofficeSection) -> bool:

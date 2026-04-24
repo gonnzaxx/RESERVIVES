@@ -22,7 +22,7 @@ from app.services.reserva_servicio_service import ReservaServicioService
 from app.services.websocket_manager import admin_ws_manager
 from app.utils.datetime_utils import format_for_humans
 from app.utils.exceptions import ReservivesException
-from app.utils.role_access import BackofficeSection
+from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/servicios", tags=["Reservas Servicios"])
 
@@ -146,6 +146,34 @@ async def mis_reservas_servicios(
     repo = ReservaServicioRepository(db)
     reservas = await repo.get_by_usuario(current_user.id)
     return [_to_reserva_servicio_response(r) for r in reservas]
+
+
+@router.get(
+    "/reservas/detalle/{reserva_id}",
+    response_model=ReservaServicioResponse,
+    summary="Obtener una reserva de servicio",
+)
+async def obtener_reserva_servicio(
+        reserva_id: uuid.UUID,
+        current_user: Usuario = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+):
+    repo = ReservaServicioRepository(db)
+    reserva = await repo.get_by_id(reserva_id)
+    if not reserva:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+
+    can_view_all = can_access_backoffice_section(
+        current_user.rol,
+        BackofficeSection.BOOKINGS,
+    )
+    if not can_view_all and reserva.usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No puedes ver esta reserva",
+        )
+
+    return _to_reserva_servicio_response(reserva)
 
 
 @router.get(

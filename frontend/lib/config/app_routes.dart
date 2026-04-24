@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/core/utils/role_access.dart';
+import 'package:reservives/models/reserva.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/screens/ai/ai_chat_screen.dart';
 import 'package:reservives/screens/admin/admin_announcements_screen.dart';
 import 'package:reservives/screens/admin/admin_bookings_screen.dart';
 import 'package:reservives/screens/admin/admin_cafeteria_screen.dart';
@@ -20,6 +22,7 @@ import 'package:reservives/screens/admin/admin_polls_screen.dart';
 import 'package:reservives/screens/profile/settings/reports_screen.dart';
 import 'package:reservives/screens/home/announcement_detail_screen.dart';
 import 'package:reservives/screens/bookings/space_booking_screen.dart';
+import 'package:reservives/screens/bookings/reserva_detalle_screen.dart';
 import 'package:reservives/screens/cafeteria/cafeteria_screen.dart';
 import 'package:reservives/screens/home/home_screen.dart';
 import 'package:reservives/screens/login_screen.dart';
@@ -155,6 +158,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
             const NoTransitionPage(child: ProfileScreen()),
           ),
+          GoRoute(
+            path: '/ai-chat',
+            name: 'ai_chat',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AiChatScreen()),
+          ),
         ],
       ),
       GoRoute(
@@ -165,6 +174,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             espacioId: state.pathParameters['espacioId']!,
           ),
         ),
+      ),
+      GoRoute(
+        path: '/reservas/:reservaId',
+        name: 'reserva_detalle',
+        pageBuilder: (context, state) {
+          final reserva = state.extra is Reserva ? state.extra as Reserva : null;
+          final tipoEspacio = state.uri.queryParameters['tipo'];
+          return NoTransitionPage(
+            child: ReservaDetalleScreen(
+              reservaId: state.pathParameters['reservaId']!,
+              reservaInicial: reserva,
+              tipoEspacio: tipoEspacio,
+            ),
+          );
+        },
       ),
 
 

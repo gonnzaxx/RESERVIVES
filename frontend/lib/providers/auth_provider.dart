@@ -29,10 +29,12 @@ class AuthState {
     String? token,
     bool? isLoading,
     String? error,
+    bool clearToken = false,
+    bool clearUser = false,
   }) {
     return AuthState(
-      user: user ?? this.user,
-      token: token ?? this.token,
+      user: clearUser ? null : (user ?? this.user),
+      token: clearToken ? null : (token ?? this.token),
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
     );
@@ -58,9 +60,19 @@ List<String> get _scopes => [
 ];
 
 class AuthProvider extends Notifier<AuthState> {
+  static const _tokenKey = 'auth_token';
+  static const _loginTimestampKey = 'auth_login_ts';
+  static const _sessionDurationMinutes = 60;
+  bool _sessionRestored = false;
+
   @override
   AuthState build() {
-    return AuthState();
+    if (!_sessionRestored) {
+      _sessionRestored = true;
+      Future.microtask(_restorePersistedSession);
+      return AuthState(isLoading: true);
+    }
+    return state;
   }
 
   String? get token => state.token;
@@ -92,7 +104,7 @@ class AuthProvider extends Notifier<AuthState> {
         return;
       }
 
-      state = state.copyWith(token: null);
+      state = state.copyWith(clearToken: true);
 
       final apiClient = ref.read(apiClientProvider);
       final loginResponse = await apiClient.post('/auth/login', body: {
@@ -107,6 +119,7 @@ class AuthProvider extends Notifier<AuthState> {
         user: userData,
         isLoading: false,
       );
+      await _persistSession(backendToken);
 
       if (kDebugMode) print('Login correctly synchronized with Backend');
     } catch (e) {
@@ -129,6 +142,7 @@ class AuthProvider extends Notifier<AuthState> {
 
   Future<void> loginWithMicrosoft(String token) async {
     state = state.copyWith(token: token);
+    await _persistSession(token);
     await refreshCurrentUser();
   }
 
@@ -152,6 +166,7 @@ class AuthProvider extends Notifier<AuthState> {
         user: userData,
         isLoading: false,
       );
+      await _persistSession(backendToken);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -171,11 +186,69 @@ class AuthProvider extends Notifier<AuthState> {
       if (hasSeenOnboarding != null) {
         await prefs.setBool('has_seen_onboarding', hasSeenOnboarding);
       }
+      await _clearPersistedSession();
     } catch (_) {}
 
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
     state = AuthState();
+  }
+
+  Future<void> _persistSession(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+    await prefs.setString(
+      _loginTimestampKey,
+      DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  Future<void> _clearPersistedSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_loginTimestampKey);
+  }
+
+  Future<void> _restorePersistedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
+      final loginTsRaw = prefs.getString(_loginTimestampKey);
+
+      if (token == null || loginTsRaw == null) {
+        state = AuthState();
+        return;
+      }
+
+      final loginTs = DateTime.tryParse(loginTsRaw)?.toUtc();
+      if (loginTs == null) {
+        await _clearPersistedSession();
+        state = AuthState();
+        return;
+      }
+
+      final expiresAt = loginTs.add(
+        const Duration(minutes: _sessionDurationMinutes),
+      );
+      if (DateTime.now().toUtc().isAfter(expiresAt)) {
+        await _clearPersistedSession();
+        state = AuthState();
+        return;
+      }
+
+      state = state.copyWith(token: token, isLoading: true, error: null);
+      await refreshCurrentUser();
+
+      if (state.user == null) {
+        await _clearPersistedSession();
+        state = AuthState();
+        return;
+      }
+
+      state = state.copyWith(isLoading: false);
+    } catch (_) {
+      state = AuthState();
+    }
   }
 }
 

@@ -275,7 +275,6 @@ class _ActivitySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // BANNER DE ENCUESTAS (Estilo Destacado)
         encuestasAsync.when(
           data: (encuestas) {
             final active = encuestas.where((e) => e.activa && e.fechaFin.isAfter(DateTime.now())).toList();
@@ -344,8 +343,6 @@ class _ActivitySection extends StatelessWidget {
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
-
-        // LISTA DE RESERVAS (Estilo Tarjeta de Actividad)
         Text(
           context.tr('home.weeklyBookings.title'),
           style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, color: theme.hintColor),
@@ -356,7 +353,7 @@ class _ActivitySection extends StatelessWidget {
             final now = DateTime.now();
             final weekEnd = DateTime(now.year, now.month, now.day, 23, 59).add(Duration(days: DateTime.sunday - now.weekday));
             final visible = reservas
-                .where((r) => !r.fechaFin.isBefore(now) && !r.fechaInicio.isAfter(weekEnd))
+                .where((r) => r.isActiva && !r.fechaInicio.isBefore(now) && !r.fechaInicio.isAfter(weekEnd))
                 .toList()
               ..sort((a, b) => a.fechaInicio.compareTo(b.fechaInicio));
 
@@ -380,7 +377,12 @@ class _ActivitySection extends StatelessWidget {
                     subtitle: '${dateFormat.format(reserva.fechaInicio)} • $timeInfo',
                     icon: Icons.calendar_today_rounded,
                     color: AppColors.primaryBlue,
-                    onTap: () => context.pushNamed('mis_reservas'),
+                    onTap: () => context.pushNamed(
+                      'reserva_detalle',
+                      pathParameters: {'reservaId': reserva.id},
+                      queryParameters: {'tipo': (reserva.tipoEspacio ?? '').toUpperCase()},
+                      extra: reserva,
+                    ),
                   ),
                 );
               }).toList(),

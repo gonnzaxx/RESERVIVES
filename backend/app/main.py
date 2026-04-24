@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.database import async_session
 from app.middleware.request_context_middleware import RequestContextMiddleware
 from app.routers import (
+    ai,
     admin,
     anuncios,
     auth,
@@ -206,6 +207,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 app.include_router(usuarios.router, prefix="/api")
 app.include_router(espacios.router, prefix="/api")
 app.include_router(reservas_espacios.router, prefix="/api")

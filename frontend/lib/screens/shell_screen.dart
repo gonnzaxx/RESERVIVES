@@ -72,15 +72,17 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     int selectedIndex() {
       if (location.startsWith('/home')) return 0;
       if (location.startsWith('/servicios')) return 1;
-      if (location.startsWith('/cafeteria')) return 2;
-      if (location.startsWith('/perfil')) return 3;
+      if (location.startsWith('/ai-chat')) return 2;
+      if (location.startsWith('/cafeteria')) return 3;
+      if (location.startsWith('/perfil')) return 4;
       return 0;
     }
 
     final items = [
-      (context.tr('shell.nav.home'), Icons.home_rounded, Icons.home_outlined),
-      (context.tr('shell.nav.bookings'), Icons.calendar_month_rounded, Icons.calendar_month_outlined),
-      (context.tr('shell.nav.cafeteria'), Icons.local_cafe_rounded, Icons.local_cafe_outlined),
+      (context.tr('shell.nav.home'), Icons.home_filled, Icons.home_outlined),
+      (context.tr('shell.nav.bookings'), Icons.edit_calendar, Icons.calendar_month_outlined),
+      ('Vivi', Icons.wechat_outlined, Icons.smart_toy_outlined),
+      (context.tr('shell.nav.cafeteria'), Icons.food_bank_rounded, Icons.local_cafe_outlined),
       (context.tr('shell.nav.profile'), Icons.person_rounded, Icons.person_outline_rounded),
     ];
 
@@ -91,8 +93,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
       switch (index) {
         case 0: context.goNamed('home'); break;
         case 1: context.goNamed('servicios'); break;
-        case 2: context.goNamed('cafeteria'); break;
-        case 3: context.goNamed('perfil'); break;
+        case 2: context.goNamed('ai_chat'); break;
+        case 3: context.goNamed('cafeteria'); break;
+        case 4: context.goNamed('perfil'); break;
       }
     }
 

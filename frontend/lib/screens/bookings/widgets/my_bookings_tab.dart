@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
@@ -57,9 +58,19 @@ class ReservasTab extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppRadii.m),
                   boxShadow: AppShadows.soft(context),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadii.m),
+                    onTap: () => context.pushNamed(
+                      'reserva_detalle',
+                      pathParameters: {'reservaId': reserva.id},
+                      queryParameters: {'tipo': (reserva.tipoEspacio ?? '').toUpperCase()},
+                      extra: reserva,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
@@ -125,6 +136,8 @@ class ReservasTab extends ConsumerWidget {
                         ),
                       ),
                     ],
+                      ),
+                    ),
                   ),
                 ),
               );
