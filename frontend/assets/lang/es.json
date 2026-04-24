@@ -251,7 +251,7 @@
     "home.weeklyBookings.empty": "No tienes reservas pendientes esta semana.",
     "home.weeklyBookings.defaultReservation": "Reserva",
     "home.weeklyBookings.error": "No se pudieron cargar las reservas de la semana.",
-    "home.polls.activeCount": "{n} encuestas activas",
+    "home.polls.activeCount": "Tienes una nueva encuesta",
     "help.items.booking.title": "Reservar una instalación",
     "services.services.free": "Gratis",
     "help.subtitle": "La app está pensada para que reserves sin tener que aprenderla.",

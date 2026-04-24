@@ -267,7 +267,7 @@
     "home.weeklyBookings.empty": "You have no upcoming bookings this week.",
     "home.weeklyBookings.defaultReservation": "Booking",
     "home.weeklyBookings.error": "Could not load this week's bookings.",
-    "home.polls.activeCount": "{n} active polls",
+    "home.polls.activeCount": "You have a new survey",
     "help.items.booking.title":  "Book a facility",
     "services.services.free":  "Free",
     "help.subtitle":  "The app is designed so you can book without needing a tutorial.",

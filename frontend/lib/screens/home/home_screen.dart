@@ -35,7 +35,7 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000), // Ancho máximo profesional
+            constraints: const BoxConstraints(maxWidth: 1000),
             child: RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(anunciosProvider);
@@ -50,19 +50,21 @@ class HomeScreen extends ConsumerWidget {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(20, 14, 20, isWeb ? 24 : 8),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           RvPageHeader(
                             eyebrow: _greeting(context),
                             title: user.nombre,
                             trailing: !isWeb ? _buildHeaderActions(context, unreadCountAsync, user) : null,
                           ).animate().fadeIn().slideY(begin: 0.1),
-                          const SizedBox(height: 16),
-                          _WeeklyBookingsSection(reservasAsync: reservasAsync),
-                          const SizedBox(height: 12),
-                          _ActivePollsSection(encuestasAsync: encuestasAsync),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
+                          _ActivitySection(
+                            encuestasAsync: encuestasAsync,
+                            reservasAsync: reservasAsync,
+                          ),
 
+                          const SizedBox(height: 32),
                           Row(
                             children: [
                               Expanded(
@@ -257,130 +259,198 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _WeeklyBookingsSection extends StatelessWidget {
+class _ActivitySection extends StatelessWidget {
+  final AsyncValue<List<Encuesta>> encuestasAsync;
   final AsyncValue<List<Reserva>> reservasAsync;
-  const _WeeklyBookingsSection({required this.reservasAsync});
+
+  const _ActivitySection({
+    required this.encuestasAsync,
+    required this.reservasAsync,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final startOfToday = DateTime(now.year, now.month, now.day);
-    final weekEnd = DateTime(
-      startOfToday.year,
-      startOfToday.month,
-      startOfToday.day,
-      23,
-      59,
-      59,
-    ).add(Duration(days: DateTime.sunday - startOfToday.weekday));
+    final theme = Theme.of(context);
 
-    return RvSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('home.weeklyBookings.title'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          reservasAsync.when(
-            data: (reservas) {
-              final visible = reservas
-                  .where((reserva) =>
-                      !reserva.fechaFin.isBefore(now) && !reserva.fechaInicio.isAfter(weekEnd))
-                  .toList()
-                ..sort((a, b) => a.fechaInicio.compareTo(b.fechaInicio));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // BANNER DE ENCUESTAS (Estilo Destacado)
+        encuestasAsync.when(
+          data: (encuestas) {
+            final active = encuestas.where((e) => e.activa && e.fechaFin.isAfter(DateTime.now())).toList();
+            if (active.isEmpty) return const SizedBox.shrink();
 
-              final top = visible.take(4).toList();
-              if (top.isEmpty) {
-                return Text(
-                  context.tr('home.weeklyBookings.empty'),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                );
-              }
-
-              final locale = Localizations.localeOf(context).languageCode;
-              final dateFormat = DateFormat('EEE d MMM', locale);
-              final hourFormat = DateFormat('HH:mm', locale);
-
-              return Column(
-                children: List.generate(top.length, (index) {
-                  final reserva = top[index];
-                  final tramoNombre = reserva.tramo?.nombre;
-                  final subtitle = (tramoNombre != null && tramoNombre.isNotEmpty)
-                      ? tramoNombre
-                      : '${hourFormat.format(reserva.fechaInicio)} - ${hourFormat.format(reserva.fechaFin)}';
-
-                  return Column(
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.event_note_rounded),
-                        title: Text(
-                          reserva.nombreEspacio ?? context.tr('home.weeklyBookings.defaultReservation'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '${dateFormat.format(reserva.fechaInicio)} - $subtitle',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.accentPurple, AppColors.accentPurple.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadii.m),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.accentPurple.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => context.pushNamed('votaciones'),
+                    borderRadius: BorderRadius.circular(AppRadii.m),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: Colors.white24,
+                            child: Icon(Icons.how_to_vote_rounded, color: Colors.white),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  context.tr('home.quick.vote.title'),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  context.tr('home.polls.activeCount').replaceAll('{n}', active.length.toString()),
+                                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.9)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                        ],
                       ),
-                      if (index < top.length - 1)
-                        Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-                    ],
-                  );
-                }),
-              );
-            },
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: RvSkeleton(width: double.infinity, height: 78, borderRadius: 16),
-            ),
-            error: (_, __) => Text(
-              context.tr('home.weeklyBookings.error'),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
+                    ),
+                  ),
+                ),
+              ).animate().shimmer(delay: 2.seconds, duration: 1.5.seconds),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+
+        // LISTA DE RESERVAS (Estilo Tarjeta de Actividad)
+        Text(
+          context.tr('home.weeklyBookings.title'),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, color: theme.hintColor),
+        ),
+        const SizedBox(height: 12),
+        reservasAsync.when(
+          data: (reservas) {
+            final now = DateTime.now();
+            final weekEnd = DateTime(now.year, now.month, now.day, 23, 59).add(Duration(days: DateTime.sunday - now.weekday));
+            final visible = reservas
+                .where((r) => !r.fechaFin.isBefore(now) && !r.fechaInicio.isAfter(weekEnd))
+                .toList()
+              ..sort((a, b) => a.fechaInicio.compareTo(b.fechaInicio));
+
+            if (visible.isEmpty) {
+              return Text(context.tr('home.weeklyBookings.empty'), style: theme.textTheme.bodyMedium);
+            }
+
+            final locale = Localizations.localeOf(context).languageCode;
+            final dateFormat = DateFormat('EEE d MMM', locale);
+            final hourFormat = DateFormat('HH:mm', locale);
+
+            return Column(
+              children: visible.take(3).map((reserva) {
+                final tramo = reserva.tramo?.nombre;
+                final timeInfo = (tramo != null && tramo.isNotEmpty) ? tramo : hourFormat.format(reserva.fechaInicio);
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ActivityCard(
+                    title: reserva.nombreEspacio ?? context.tr('home.weeklyBookings.defaultReservation'),
+                    subtitle: '${dateFormat.format(reserva.fechaInicio)} • $timeInfo',
+                    icon: Icons.calendar_today_rounded,
+                    color: AppColors.primaryBlue,
+                    onTap: () => context.pushNamed('mis_reservas'),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+          loading: () => const RvSkeleton(width: double.infinity, height: 60),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
 
-class _ActivePollsSection extends StatelessWidget {
-  final AsyncValue<List<Encuesta>> encuestasAsync;
-  const _ActivePollsSection({required this.encuestasAsync});
+class _ActivityCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActivityCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return encuestasAsync.when(
-      data: (encuestas) {
-        final now = DateTime.now();
-        final activeCount = encuestas.where((e) => e.activa && e.fechaFin.isAfter(now)).length;
-        if (activeCount <= 0) return const SizedBox.shrink();
-
-        final counterText = context
-            .tr('home.polls.activeCount')
-            .replaceAll('{n}', activeCount.toString());
-
-        return RvSurfaceCard(
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.how_to_vote_rounded),
-            title: Text(
-              context.tr('home.quick.vote.title'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(AppRadii.m),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.m),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: theme.hintColor, size: 18),
+              ],
             ),
-            subtitle: Text(counterText),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.pushNamed('votaciones'),
           ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+        ),
+      ),
     );
   }
 }
@@ -398,7 +468,6 @@ class _AnnouncementCard extends StatelessWidget {
     );
   }
 }
-
 
 class _AnnouncementListItem extends StatelessWidget {
   final Anuncio anuncio;
@@ -457,4 +526,3 @@ class _AnnouncementListItem extends StatelessWidget {
     );
   }
 }
-
