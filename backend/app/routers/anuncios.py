@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.anuncio import Anuncio
 from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
@@ -13,6 +13,7 @@ from app.repositories.analytics_repo import AnalyticsRepository
 from app.schemas.anuncio import AnuncioCreate, AnuncioResponse, AnuncioUpdate
 from app.services.notification_service import NotificationService
 from app.services.websocket_manager import admin_ws_manager
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/anuncios", tags=["Anuncios"])
 
@@ -40,7 +41,7 @@ async def listar_anuncios(
 async def listar_todos_anuncios(
     skip: int = 0,
     limit: int = 50,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista todos los anuncios (incluidos inactivos). Solo admin."""
@@ -72,7 +73,7 @@ async def obtener_anuncio(
 @router.post("/", response_model=AnuncioResponse, status_code=201, summary="Crear un anuncio")
 async def crear_anuncio(
     data: AnuncioCreate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Crea un nuevo anuncio. Solo admin."""
@@ -101,7 +102,7 @@ async def crear_anuncio(
 async def actualizar_anuncio(
     anuncio_id: uuid.UUID,
     data: AnuncioUpdate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Actualiza un anuncio existente. Solo admin."""
@@ -119,7 +120,7 @@ async def actualizar_anuncio(
 @router.delete("/{anuncio_id}", summary="Eliminar un anuncio")
 async def eliminar_anuncio(
     anuncio_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Elimina un anuncio. Solo admin."""

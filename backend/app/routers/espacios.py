@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.espacio import Espacio, TipoEspacio
 from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
@@ -12,6 +12,7 @@ from app.repositories.espacio_repo import EspacioRepository
 from app.schemas.espacio import EspacioCreate, EspacioResponse, EspacioUpdate
 from app.services.notification_service import NotificationService
 from app.services.websocket_manager import admin_ws_manager
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/espacios", tags=["Espacios"])
 
@@ -75,7 +76,7 @@ async def obtener_espacio(
 @router.post("/", response_model=EspacioResponse, status_code=201, summary="Crear un espacio")
 async def crear_espacio(
     data: EspacioCreate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
     """Crea un nuevo espacio. Solo admin."""
@@ -116,7 +117,7 @@ async def crear_espacio(
 async def actualizar_espacio(
     espacio_id: uuid.UUID,
     data: EspacioUpdate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
     """Actualiza un espacio existente. Solo admin."""
@@ -141,7 +142,7 @@ async def actualizar_espacio(
 @router.delete("/{espacio_id}", summary="Eliminar un espacio")
 async def eliminar_espacio(
     espacio_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
     """Elimina un espacio. Solo admin."""

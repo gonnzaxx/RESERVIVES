@@ -3,6 +3,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reservives/core/utils/role_access.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/screens/admin/admin_announcements_screen.dart';
 import 'package:reservives/screens/admin/admin_bookings_screen.dart';
@@ -69,6 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final location = state.matchedLocation;
+      final user = authState.user;
 
       if (authState.isLoading) return null;
 
@@ -79,7 +81,31 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/onboarding';
 
       if (!isAuthenticated && !isAuthRoute) return '/login';
-      if (isAuthenticated && isAuthRoute) return '/home';
+      if (isAuthenticated && isAuthRoute) {
+        if (user == null) return '/home';
+        return defaultAuthenticatedRoute(user);
+      }
+
+      if (!isAuthenticated) return null;
+
+      if (user != null && location.startsWith('/admin')) {
+        if (!canAccessAdminLocation(user, location)) {
+          final fallback = firstAllowedAdminRoute(user) ??
+              (canAccessMainApp(user.rol) ? '/home' : '/login');
+          return fallback;
+        }
+
+        if (location == '/admin') {
+          final preferred = firstAllowedAdminRoute(user);
+          if (preferred != null && preferred != '/admin') {
+            return preferred;
+          }
+        }
+      }
+
+      if (user != null && !location.startsWith('/admin') && !canAccessMainApp(user.rol)) {
+        return firstAllowedAdminRoute(user) ?? '/login';
+      }
 
       return null;
     },

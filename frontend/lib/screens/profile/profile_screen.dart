@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/core/utils/role_access.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/theme_provider.dart';
@@ -140,7 +141,7 @@ class ProfileScreen extends ConsumerWidget {
                                 ? context.tr('profile.theme.subtitleDark')
                                 : context.tr('profile.theme.subtitleLight'),
                           ),
-                          if (user.isAdmin) ...[
+                          if (hasAnyBackofficeAccess(user.rol)) ...[
                             _divider(context),
                             _ProfileItem(
                               icon: Icons.admin_panel_settings_rounded,
@@ -252,7 +253,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ),
-        if (user.isAlumno) ...[
+        if (user.usesTokens) ...[
           const SizedBox(width: 12),
           const Icon(Icons.stars_rounded, size: 18, color: AppColors.primaryBlue),
           const SizedBox(width: 4),

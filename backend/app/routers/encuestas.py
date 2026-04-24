@@ -7,12 +7,18 @@ from app.database import get_db
 from app.schemas.encuesta import Encuesta, EncuestaCreate, EncuestaUpdate, EncuestaResultados, VotoEncuestaCreate
 from app.repositories.encuesta_repo import EncuestaRepository
 from app.middleware.auth_middleware import get_current_user
-from app.models.usuario import Usuario, RolUsuario
+from app.models.usuario import Usuario
 from app.services.notification_service import NotificationService
 from app.models.notificacion import TipoNotificacion
 from app.models.encuesta import Encuesta as EncuestaModel, EncuestaOpcion
+from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/encuestas", tags=["Encuestas"])
+
+
+def _require_polls_access(current_user: Usuario) -> None:
+    if not can_access_backoffice_section(current_user.rol, BackofficeSection.POLLS):
+        raise HTTPException(status_code=403, detail="No tienes permisos")
 
 
 @router.get("/", response_model=List[Encuesta])
@@ -39,8 +45,7 @@ async def create_poll(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    if current_user.rol != RolUsuario.ADMIN:
-        raise HTTPException(status_code=403, detail="Solo admins pueden crear encuestas")
+    _require_polls_access(current_user)
 
     new_poll = EncuestaModel(
         titulo=poll_in.titulo,
@@ -139,8 +144,7 @@ async def list_all_polls_admin(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    if current_user.rol != RolUsuario.ADMIN:
-        raise HTTPException(status_code=403, detail="No tienes permisos")
+    _require_polls_access(current_user)
     
     repo = EncuestaRepository(db)
     from sqlalchemy import select
@@ -191,8 +195,7 @@ async def update_poll(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    if current_user.rol != RolUsuario.ADMIN:
-        raise HTTPException(status_code=403, detail="No tienes permisos")
+    _require_polls_access(current_user)
     
     repo = EncuestaRepository(db)
     poll = await repo.get_with_options(poll_id)
@@ -214,8 +217,7 @@ async def delete_poll(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    if current_user.rol != RolUsuario.ADMIN:
-        raise HTTPException(status_code=403, detail="No tienes permisos")
+    _require_polls_access(current_user)
     
     repo = EncuestaRepository(db)
     poll = await repo.get_by_id(poll_id)

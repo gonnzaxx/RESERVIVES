@@ -4,13 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import require_admin, get_current_user
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.notificacion import TipoNotificacion
 from app.models.servicio import Servicio
 from app.models.usuario import Usuario
 from app.repositories.servicio_repo import ServicioRepository
 from app.schemas.servicio import ServicioCreate, ServicioResponse, ServicioUpdate
 from app.services.notification_service import NotificationService
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/servicios", tags=["Servicios"])
 
@@ -29,7 +30,7 @@ async def listar_servicios(
 
 @router.get("/todos", response_model=list[ServicioResponse], summary="Listar todos los servicios")
 async def listar_todos_servicios(
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
         db: AsyncSession = Depends(get_db),
 ):
     """Lista todos los servicios (incluidos inactivos). Solo admin."""
@@ -41,7 +42,7 @@ async def listar_todos_servicios(
 @router.post("/", response_model=ServicioResponse, status_code=201, summary="Crear servicio")
 async def crear_servicio(
         data: ServicioCreate,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
         db: AsyncSession = Depends(get_db),
 ):
     """Crea un nuevo servicio. Solo admin."""
@@ -63,7 +64,7 @@ async def crear_servicio(
 async def actualizar_servicio(
         servicio_id: uuid.UUID,
         data: ServicioUpdate,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
         db: AsyncSession = Depends(get_db),
 ):
     """Actualiza un servicio. Solo admin."""
@@ -80,7 +81,7 @@ async def actualizar_servicio(
 @router.delete("/{servicio_id}", summary="Eliminar servicio")
 async def eliminar_servicio(
         servicio_id: uuid.UUID,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
         db: AsyncSession = Depends(get_db),
 ):
     """Elimina un servicio. Solo admin."""

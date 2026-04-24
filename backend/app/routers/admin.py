@@ -3,13 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.database import get_db, async_session
-from app.models.usuario import Usuario, RolUsuario
+from app.models.usuario import Usuario
 from app.models.reserva_espacio import ReservaEspacio
 from app.models.espacio import Espacio
 from app.models.anuncio import Anuncio
-from app.middleware.auth_middleware import require_admin
+from app.middleware.auth_middleware import require_backoffice_section
 from app.services.auth_service import verificar_token_jwt
 from app.services.websocket_manager import admin_ws_manager
+from app.utils.role_access import BackofficeSection, has_any_backoffice_access
 from pydantic import BaseModel
 import uuid
 
@@ -23,7 +24,7 @@ class AdminSummary(BaseModel):
 
 @router.get("/summary", response_model=AdminSummary, summary="Obtener KPIs de Admin")
 async def get_admin_summary(
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SUMMARY)),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -69,7 +70,7 @@ async def websocket_admin_endpoint(websocket: WebSocket, token: str = None):
         async with async_session() as session:
             result = await session.execute(select(Usuario).where(Usuario.id == uuid.UUID(user_id)))
             usuario = result.scalar_one_or_none()
-            if not usuario or usuario.rol != RolUsuario.ADMIN or not usuario.activo:
+            if not usuario or not has_any_backoffice_access(usuario.rol) or not usuario.activo:
                 await websocket.close(code=1008)
                 return
     except Exception:

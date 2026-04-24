@@ -12,10 +12,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.usuario import Usuario
 from app.schemas.tramo import TramoHorarioResponse, TramoDisponibilidadResponse
 from app.services.tramo_service import TramoService
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/tramos", tags=["Tramos Horarios"])
 
@@ -77,7 +78,7 @@ async def disponibilidad_servicio(
 )
 async def get_tramos_espacio(
     espacio_id: UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -95,7 +96,7 @@ async def get_tramos_espacio(
 )
 async def get_tramos_servicio(
     servicio_id: UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -115,7 +116,7 @@ async def get_tramos_servicio(
 async def configurar_tramos_espacio(
     espacio_id: UUID,
     tramo_ids: list[UUID],
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -135,7 +136,7 @@ async def configurar_tramos_espacio(
 async def configurar_tramos_servicio(
     servicio_id: UUID,
     tramo_ids: list[UUID],
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SERVICES)),
     db: AsyncSession = Depends(get_db),
 ):
     """

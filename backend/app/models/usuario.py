@@ -21,6 +21,10 @@ class RolUsuario(str, enum.Enum):
     ALUMNO = "ALUMNO"
     PROFESOR = "PROFESOR"
     ADMIN = "ADMIN"
+    CAFETERIA = "CAFETERIA"
+    JEFE_ESTUDIOS = "JEFE_ESTUDIOS"
+    SECRETARIA = "SECRETARIA"
+    PROFESOR_SERVICIO = "PROFESOR_SERVICIO"
 
 
 class Usuario(Base):

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/core/utils/role_access.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/usuario.dart';
@@ -16,6 +17,27 @@ final adminUsersProvider = FutureProvider.autoDispose<List<Usuario>>((ref) async
       .map((json) => Usuario.fromJson(json as Map<String, dynamic>))
       .toList();
 });
+
+String _roleLabelFromValue(BuildContext context, String role) {
+  switch (role) {
+    case 'ALUMNO':
+      return context.tr('admin.users.role.student');
+    case 'PROFESOR':
+      return context.tr('admin.users.role.teacher');
+    case 'ADMIN':
+      return context.tr('admin.users.role.admin');
+    case 'CAFETERIA':
+      return context.tr('admin.users.role.cafeteria');
+    case 'JEFE_ESTUDIOS':
+      return context.tr('admin.users.role.jefeEstudios');
+    case 'SECRETARIA':
+      return context.tr('admin.users.role.secretaria');
+    case 'PROFESOR_SERVICIO':
+      return context.tr('admin.users.role.profesorServicio');
+    default:
+      return role;
+  }
+}
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
   const AdminUsersScreen({super.key});
@@ -126,6 +148,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           DropdownMenuItem(value: 'ALUMNO', child: Text(context.tr('admin.users.role.student'))),
           DropdownMenuItem(value: 'PROFESOR', child: Text(context.tr('admin.users.role.teacher'))),
           DropdownMenuItem(value: 'ADMIN', child: Text(context.tr('admin.users.role.admin'))),
+          DropdownMenuItem(value: 'CAFETERIA', child: Text(context.tr('admin.users.role.cafeteria'))),
+          DropdownMenuItem(value: 'JEFE_ESTUDIOS', child: Text(context.tr('admin.users.role.jefeEstudios'))),
+          DropdownMenuItem(value: 'SECRETARIA', child: Text(context.tr('admin.users.role.secretaria'))),
+          DropdownMenuItem(value: 'PROFESOR_SERVICIO', child: Text(context.tr('admin.users.role.profesorServicio'))),
         ],
         onChanged: (value) {
           if (value != null) setState(() => _selectedRole = value);
@@ -172,10 +198,14 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       fillColor: theme.dividerColor.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'ALUMNO', child: Text('Alumno')),
-                      DropdownMenuItem(value: 'PROFESOR', child: Text('Profesor')),
-                      DropdownMenuItem(value: 'ADMIN', child: Text('Administrador')),
+                    items: [
+                      DropdownMenuItem(value: 'ALUMNO', child: Text(_roleLabelFromValue(context, 'ALUMNO'))),
+                      DropdownMenuItem(value: 'PROFESOR', child: Text(_roleLabelFromValue(context, 'PROFESOR'))),
+                      DropdownMenuItem(value: 'ADMIN', child: Text(_roleLabelFromValue(context, 'ADMIN'))),
+                      DropdownMenuItem(value: 'CAFETERIA', child: Text(_roleLabelFromValue(context, 'CAFETERIA'))),
+                      DropdownMenuItem(value: 'JEFE_ESTUDIOS', child: Text(_roleLabelFromValue(context, 'JEFE_ESTUDIOS'))),
+                      DropdownMenuItem(value: 'SECRETARIA', child: Text(_roleLabelFromValue(context, 'SECRETARIA'))),
+                      DropdownMenuItem(value: 'PROFESOR_SERVICIO', child: Text(_roleLabelFromValue(context, 'PROFESOR_SERVICIO'))),
                     ],
                     onChanged: (value) {
                       if (value != null) setStateModal(() => currentRole = value);
@@ -231,6 +261,16 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       // Actualizar tokens si hay una cantidad
       final tokensToAdd = result['tokens'] as int?;
       if (tokensToAdd != null && tokensToAdd != 0) {
+        final nextTokens = user.tokens + tokensToAdd;
+        if (nextTokens < 0 || nextTokens > maxUserTokens) {
+          if (context.mounted) {
+            RvAlerts.error(
+              context,
+              context.tr('admin.users.tokensRangeError').replaceAll('{max}', maxUserTokens.toString()),
+            );
+          }
+          return;
+        }
         await apiClient.post('/usuarios/${user.id}/tokens?cantidad=$tokensToAdd');
         changed = true;
       }
@@ -304,7 +344,10 @@ class _UserAdminCard extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 4,
                         children: [
-                          RvBadge(label: user.rol.value, color: user.isAdmin ? AppColors.accentPurple : AppColors.primaryBlue),
+                          RvBadge(
+                            label: _roleLabelFromValue(context, user.rol.value),
+                            color: user.isAdmin ? AppColors.accentPurple : AppColors.primaryBlue,
+                          ),
                           RvBadge(
                             label: '${user.tokens} ${context.tr('admin.users.tokens')}',
                             color: isDark ? Colors.amber.withValues(alpha: 0.2) : Colors.amber.shade700,

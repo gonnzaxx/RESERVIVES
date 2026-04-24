@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.incidencia import Incidencia, EstadoIncidencia
 from app.models.usuario import Usuario
 from app.repositories.incidencia_repo import IncidenciaRepository
@@ -11,15 +11,15 @@ from app.schemas.incidencia import IncidenciaCreate, IncidenciaResponse, Inciden
 from app.services.notification_service import NotificationService
 from app.services.email_service import EmailService
 from app.models.notificacion import TipoNotificacion
-from app.models.usuario import RolUsuario
 from sqlalchemy import select
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/incidencias", tags=["Incidencias"])
 
 @router.get("/admin", response_model=List[IncidenciaResponse])
 async def list_all_incidencias(
     db: AsyncSession = Depends(get_db),
-    admin: Usuario = Depends(require_admin)
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.INCIDENTS))
 ):
     """Admin: Lista todas las incidencias del sistema."""
     repo = IncidenciaRepository(db)
@@ -77,7 +77,7 @@ async def update_incidencia_status_admin(
     incidencia_id: uuid.UUID,
     update_in: IncidenciaUpdate,
     db: AsyncSession = Depends(get_db),
-    admin: Usuario = Depends(require_admin)
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.INCIDENTS))
 ):
     repo = IncidenciaRepository(db)
     incidencia = await repo.get_by_id(incidencia_id)

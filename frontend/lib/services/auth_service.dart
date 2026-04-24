@@ -11,6 +11,15 @@ import 'package:oauth2_client/oauth2_helper.dart';
 
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/models/usuario.dart';
+import 'package:reservives/providers/anuncios_provider.dart';
+import 'package:reservives/providers/cafeteria_provider.dart';
+import 'package:reservives/providers/encuestas_provider.dart';
+import 'package:reservives/providers/espacios_provider.dart';
+import 'package:reservives/providers/favoritos_provider.dart';
+import 'package:reservives/providers/notifications_provider.dart';
+import 'package:reservives/providers/reservas_provider.dart';
+import 'package:reservives/providers/servicio_provider.dart';
+import 'package:reservives/providers/tramos_provider.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/api_client.dart';
 
@@ -35,6 +44,18 @@ class AuthService {
 
   Future<void> logoutMicrosoft() async {
     await _ref.read(authProvider.notifier).logout();
+    _ref.invalidate(anunciosProvider);
+    _ref.invalidate(unreadNotificationsCountProvider);
+    _ref.invalidate(menuCafeteriaProvider);
+    _ref.invalidate(productosDestacadosProvider);
+    _ref.invalidate(todasEncuestasProvider);
+    _ref.invalidate(adminEncuestasProvider);
+    _ref.invalidate(espaciosProvider);
+    _ref.invalidate(serviciosInstitutoProvider);
+    _ref.invalidate(favoritosProvider);
+    _ref.invalidate(misReservasProvider);
+    _ref.invalidate(misReservasServiciosProvider);
+    _ref.invalidate(tramosProvider);
   }
 
   Future<bool> uploadAvatar(Uint8List bytes, String fileName) async {

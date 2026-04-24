@@ -16,6 +16,11 @@ from app.models.usuario import RolUsuario, Usuario
 from app.models.configuracion import Configuracion
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services.auth_service import verificar_token_jwt
+from app.utils.role_access import (
+    BackofficeSection,
+    can_access_backoffice_section,
+    has_any_backoffice_access,
+)
 
 # Esquema de seguridad Bearer para Swagger UI
 security = HTTPBearer(auto_error=False)
@@ -75,6 +80,29 @@ async def require_admin(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requiere rol de administrador",
+        )
+    return usuario
+
+
+def require_backoffice_section(section: BackofficeSection):
+    async def _dependency(usuario: Usuario = Depends(get_current_user)) -> Usuario:
+        if not can_access_backoffice_section(usuario.rol, section):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para acceder a esta seccion",
+            )
+        return usuario
+
+    return _dependency
+
+
+async def require_any_backoffice_access(
+    usuario: Usuario = Depends(get_current_user),
+) -> Usuario:
+    if not has_any_backoffice_access(usuario.rol):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos de BackOffice",
         )
     return usuario
 

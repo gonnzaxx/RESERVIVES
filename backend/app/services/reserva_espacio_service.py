@@ -31,6 +31,12 @@ from app.utils.exceptions import (
     ValidationException,
 )
 from app.utils.datetime_utils import ensure_utc_aware
+from app.utils.role_access import (
+    BackofficeSection,
+    MAX_USER_TOKENS,
+    can_access_backoffice_section,
+    uses_tokens,
+)
 
 
 class ReservaEspacioService:
@@ -114,7 +120,7 @@ class ReservaEspacioService:
 
         # 6. Gestión de tokens (solo alumnos)
         tokens_necesarios = 0
-        if usuario.rol == RolUsuario.ALUMNO:
+        if uses_tokens(usuario.rol):
             tokens_necesarios = espacio.precio_tokens
             if usuario.tokens < tokens_necesarios:
                 raise InsufficientTokensException(usuario.tokens, tokens_necesarios)
@@ -177,7 +183,7 @@ class ReservaEspacioService:
         # Devolver tokens si se consumieron
         if reserva.tokens_consumidos > 0:
             propietario = reserva.usuario if reserva.usuario else usuario
-            propietario.tokens += reserva.tokens_consumidos
+            propietario.tokens = min(MAX_USER_TOKENS, propietario.tokens + reserva.tokens_consumidos)
             # Registrar devolución
             historial = HistorialTokens(
                 usuario_id=reserva.usuario_id,
@@ -195,8 +201,8 @@ class ReservaEspacioService:
         self, reserva_id: uuid.UUID, admin: Usuario
     ) -> ReservaEspacio:
         """Aprueba una reserva pendiente. Solo admin."""
-        if admin.rol != RolUsuario.ADMIN:
-            raise ForbiddenException("Solo el administrador puede aprobar reservas")
+        if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
+            raise ForbiddenException("No tienes permisos para aprobar reservas")
 
         reserva = await self.reserva_espacio_repo.get_by_id(reserva_id)
         if not reserva:
@@ -212,8 +218,8 @@ class ReservaEspacioService:
         self, reserva_id: uuid.UUID, admin: Usuario
     ) -> ReservaEspacio:
         """Rechaza una reserva pendiente y devuelve tokens. Solo admin."""
-        if admin.rol != RolUsuario.ADMIN:
-            raise ForbiddenException("Solo el administrador puede rechazar reservas")
+        if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
+            raise ForbiddenException("No tienes permisos para rechazar reservas")
 
         reserva = await self.reserva_espacio_repo.get_by_id(reserva_id)
         if not reserva:
@@ -230,7 +236,7 @@ class ReservaEspacioService:
             usuario_repo = UsuarioRepository(self.session)
             propietario = await usuario_repo.get_by_id(reserva.usuario_id)
             if propietario:
-                propietario.tokens += reserva.tokens_consumidos
+                propietario.tokens = min(MAX_USER_TOKENS, propietario.tokens + reserva.tokens_consumidos)
                 historial = HistorialTokens(
                     usuario_id=reserva.usuario_id,
                     cantidad=reserva.tokens_consumidos,

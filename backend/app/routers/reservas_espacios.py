@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin, check_reservas_habilitadas
+from app.middleware.auth_middleware import (
+    check_reservas_habilitadas,
+    get_current_user,
+    require_backoffice_section,
+)
 from app.models.reserva_espacio import EstadoReserva
 from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
@@ -17,6 +21,7 @@ from app.services.reserva_espacio_service import ReservaEspacioService
 from app.services.websocket_manager import admin_ws_manager
 from app.utils.datetime_utils import format_for_humans
 from app.utils.exceptions import ReservivesException
+from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/reservas-espacios", tags=["Reservas Espacios"])
 
@@ -47,7 +52,7 @@ async def listar_reservas(
     """
     repo = ReservaEspacioRepository(db)
 
-    if current_user.rol.value == "ADMIN":
+    if can_access_backoffice_section(current_user.rol, BackofficeSection.BOOKINGS):
         if estado:
             reservas = await repo.get_by_estado(estado, skip, limit)
         else:
@@ -71,7 +76,8 @@ async def obtener_reserva(
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
 
     # Los no-admin solo ven sus propias reservas
-    if current_user.rol.value != "ADMIN" and reserva.usuario_id != current_user.id:
+    can_view_all = can_access_backoffice_section(current_user.rol, BackofficeSection.BOOKINGS)
+    if not can_view_all and reserva.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="No puedes ver esta reserva")
 
     return _to_response(reserva)
@@ -176,7 +182,7 @@ async def cancelar_reserva(
 @router.post("/{reserva_id}/aprobar", response_model=ReservaResponse, summary="Aprobar reserva")
 async def aprobar_reserva(
     reserva_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Aprueba una reserva pendiente. Solo admin."""
@@ -217,7 +223,7 @@ async def aprobar_reserva(
 async def rechazar_reserva(
     reserva_id: uuid.UUID,
     body: ReservaRechazarBody = None,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Rechaza una reserva pendiente y devuelve tokens. Solo admin."""

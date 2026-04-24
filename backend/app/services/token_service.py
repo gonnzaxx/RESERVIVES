@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.models.historial_tokens import HistorialTokens, TipoMovimientoToken
-from app.models.usuario import RolUsuario
 from app.repositories.usuario_repo import UsuarioRepository
 from sqlalchemy import select
 from app.models.configuracion import Configuracion
 from app.models.notificacion import TipoNotificacion
 from app.services.notification_service import NotificationService
+from app.utils.role_access import MAX_USER_TOKENS, monthly_tokens_for_role
 
 settings = get_settings()
 
@@ -37,7 +37,7 @@ class TokenService:
         Returns:
             Número de alumnos recargados.
         """
-        alumnos = await self.usuario_repo.get_active_students()
+        usuarios = await self.usuario_repo.get_active_users_for_monthly_tokens()
         
         # Obtener cantidad desde BD
         result = await self.session.execute(
@@ -48,14 +48,14 @@ class TokenService:
         
         recargados = 0
 
-        for alumno in alumnos:
-            # Resetear tokens al valor mensual (no acumulativo)
-            alumno.tokens = cantidad_tokens
+        for usuario in usuarios:
+            # Resetear tokens al valor mensual segun rol (no acumulativo)
+            usuario.tokens = monthly_tokens_for_role(usuario.rol, cantidad_tokens)
 
             # Registrar en historial
             historial = HistorialTokens(
-                usuario_id=alumno.id,
-                cantidad=cantidad_tokens,
+                usuario_id=usuario.id,
+                cantidad=usuario.tokens,
                 tipo=TipoMovimientoToken.RECARGA_MENSUAL,
                 motivo="Recarga mensual automática de tokens",
             )
@@ -63,15 +63,15 @@ class TokenService:
 
             # Notificar al usuario (Push + In-app + Email)
             await self.notification_service.create_for_user(
-                usuario_id=alumno.id,
+                usuario_id=usuario.id,
                 tipo=TipoNotificacion.RECARGA_TOKENS,
                 titulo="Tokens recargados",
-                mensaje=f"Tus tokens se han recargado. Tienes {cantidad_tokens} tokens disponibles para este mes.",
+                mensaje=f"Tus tokens se han recargado. Tienes {usuario.tokens} tokens disponibles para este mes.",
                 email_data={
                     "template_key": "recarga_tokens",
                     "context": {
-                        "nombre": alumno.nombre,
-                        "cantidad": cantidad_tokens
+                        "nombre": usuario.nombre,
+                        "cantidad": usuario.tokens
                     }
                 }
             )
@@ -95,7 +95,7 @@ class TokenService:
         if not usuario:
             raise ValueError(f"Usuario {usuario_id} no encontrado")
 
-        usuario.tokens = max(0, usuario.tokens + cantidad)
+        usuario.tokens = min(MAX_USER_TOKENS, max(0, usuario.tokens + cantidad))
 
         historial = HistorialTokens(
             usuario_id=usuario.id,

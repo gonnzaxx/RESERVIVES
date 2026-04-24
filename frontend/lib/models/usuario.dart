@@ -7,14 +7,19 @@ import 'package:reservives/config/constants.dart';
 enum RolUsuario {
   alumno('ALUMNO'),
   profesor('PROFESOR'),
-  admin('ADMIN');
+  admin('ADMIN'),
+  cafeteria('CAFETERIA'),
+  jefeEstudios('JEFE_ESTUDIOS'),
+  secretaria('SECRETARIA'),
+  profesorServicio('PROFESOR_SERVICIO');
 
   final String value;
   const RolUsuario(this.value);
 
   factory RolUsuario.fromString(String value) {
+    final normalized = value.trim().toUpperCase().replaceAll(' ', '_');
     return RolUsuario.values.firstWhere(
-          (e) => e.value == value,
+          (e) => e.value == normalized,
       orElse: () => RolUsuario.alumno,
     );
   }
@@ -79,6 +84,18 @@ class Usuario {
   bool get isAlumno => rol == RolUsuario.alumno;
   bool get isProfesor => rol == RolUsuario.profesor;
   bool get isAdmin => rol == RolUsuario.admin;
+  bool get isCafeteria => rol == RolUsuario.cafeteria;
+  bool get isJefeEstudios => rol == RolUsuario.jefeEstudios;
+  bool get isSecretaria => rol == RolUsuario.secretaria;
+  bool get isProfesorServicio => rol == RolUsuario.profesorServicio;
+
+  bool get hasStudentBookingPermissions =>
+      rol == RolUsuario.alumno ||
+      rol == RolUsuario.profesor ||
+      rol == RolUsuario.secretaria ||
+      rol == RolUsuario.profesorServicio;
+
+  bool get usesTokens => hasStudentBookingPermissions;
 
   String? get fullAvatarUrl {
     if (avatarUrl == null || avatarUrl!.isEmpty) return null;

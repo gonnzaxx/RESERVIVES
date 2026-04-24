@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.models.configuracion import Configuracion
 from app.models.usuario import RolUsuario, Usuario
 from app.repositories.usuario_repo import UsuarioRepository
+from app.utils.role_access import initial_tokens_for_role
 from app.utils.exceptions import ForbiddenException, ReservivesException
 
 settings = get_settings()
@@ -137,7 +138,7 @@ async def login_con_microsoft(
         # Crear nuevo usuario
         rol = determinar_rol_por_email(email)
         tokens_por_defecto = await _get_tokens_iniciales(repo)
-        tokens_iniciales = tokens_por_defecto if rol == RolUsuario.ALUMNO else 0
+        tokens_iniciales = initial_tokens_for_role(rol, tokens_por_defecto)
 
         usuario = Usuario(
             nombre=ms_data.get("givenName", ""),
@@ -194,7 +195,7 @@ async def login_desarrollo(
         nombre, apellidos = _split_nombre_apellidos(login_email)
         rol = determinar_rol_por_email(login_email)
         tokens_por_defecto = await _get_tokens_iniciales(repo)
-        tokens_iniciales = tokens_por_defecto if rol == RolUsuario.ALUMNO else 0
+        tokens_iniciales = initial_tokens_for_role(rol, tokens_por_defecto)
 
         usuario = Usuario(
             nombre=nombre,

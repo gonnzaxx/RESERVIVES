@@ -64,7 +64,7 @@ class _ServiciosTabState extends ConsumerState<ServiciosTab> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final servicio = servicios[index];
-                    final tokenText = user?.isAlumno == true
+                    final tokenText = user?.usesTokens == true
                         ? '${servicio.precioTokens} tokens'
                         : context.tr('services.no.cost');
 

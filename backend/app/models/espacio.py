@@ -76,7 +76,17 @@ class EspacioRolPermitido(Base):
         UUID(as_uuid=True), ForeignKey("espacios.id", ondelete="CASCADE"), nullable=False
     )
     rol: Mapped[str] = mapped_column(
-        Enum("ALUMNO", "PROFESOR", "ADMIN", name="rol_usuario", create_type=False),
+        Enum(
+            "ALUMNO",
+            "PROFESOR",
+            "ADMIN",
+            "CAFETERIA",
+            "JEFE_ESTUDIOS",
+            "SECRETARIA",
+            "PROFESOR_SERVICIO",
+            name="rol_usuario",
+            create_type=False,
+        ),
         nullable=False
     )
 

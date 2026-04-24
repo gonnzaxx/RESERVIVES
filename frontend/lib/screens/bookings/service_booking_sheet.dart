@@ -64,7 +64,7 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
     final maxDate = DateTime.now().add(Duration(days: widget.servicio.antelacionDias));
     final exceedsMaxWindow = _selectedDate.isAfter(maxDate);
 
-    final label = user?.isAlumno == true
+    final label = user?.usesTokens == true
         ? 'Confirmar · ${widget.servicio.precioTokens} tokens'
         : context.tr('booking.confirm');
 

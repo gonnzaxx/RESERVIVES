@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin, check_reservas_habilitadas
+from app.middleware.auth_middleware import (
+    check_reservas_habilitadas,
+    get_current_user,
+    require_backoffice_section,
+)
 from app.models.notificacion import TipoNotificacion
 from app.models.reserva_espacio import EstadoReserva
 from app.models.reserva_servicio import ReservaServicio
@@ -18,6 +22,7 @@ from app.services.reserva_servicio_service import ReservaServicioService
 from app.services.websocket_manager import admin_ws_manager
 from app.utils.datetime_utils import format_for_humans
 from app.utils.exceptions import ReservivesException
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/servicios", tags=["Reservas Servicios"])
 
@@ -150,7 +155,7 @@ async def mis_reservas_servicios(
 )
 async def todas_reservas_servicios(
         estado: EstadoReserva | None = None,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
         db: AsyncSession = Depends(get_db),
 ):
     """Lista todas las reservas de servicios. Solo admin. Filtra por estado si se indica."""
@@ -169,7 +174,7 @@ async def todas_reservas_servicios(
 )
 async def aprobar_reserva_servicio(
         reserva_id: uuid.UUID,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
         db: AsyncSession = Depends(get_db),
 ):
     """Aprueba una reserva de servicio pendiente. Solo admin."""
@@ -218,7 +223,7 @@ async def aprobar_reserva_servicio(
 async def rechazar_reserva_servicio(
         reserva_id: uuid.UUID,
         body: ReservaRechazarBody = None,
-        admin: Usuario = Depends(require_admin),
+        admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
         db: AsyncSession = Depends(get_db),
 ):
     """Rechaza una reserva de servicio pendiente y devuelve tokens. Solo admin."""

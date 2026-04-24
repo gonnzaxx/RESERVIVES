@@ -51,6 +51,24 @@ class UsuarioRepository(BaseRepository[Usuario]):
         )
         return list(result.scalars().all())
 
+    async def get_active_users_for_monthly_tokens(self) -> list[Usuario]:
+        """Obtiene usuarios activos con roles que usan tokens."""
+        result = await self.session.execute(
+            select(Usuario)
+            .where(
+                Usuario.rol.in_(
+                    [
+                        RolUsuario.ALUMNO,
+                        RolUsuario.PROFESOR,
+                        RolUsuario.SECRETARIA,
+                        RolUsuario.PROFESOR_SERVICIO,
+                    ]
+                )
+            )
+            .where(Usuario.activo == True)
+        )
+        return list(result.scalars().all())
+
     async def update_tokens(self, usuario_id, nuevos_tokens: int) -> Usuario | None:
         """Actualiza los tokens de un usuario."""
         usuario = await self.get_by_id(usuario_id)

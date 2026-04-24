@@ -7,12 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.usuario import Usuario
 from app.repositories.usuario_repo import UsuarioRepository
 from app.schemas.usuario import UsuarioResponse, UsuarioUpdate
 from app.services.token_service import TokenService
 from app.services.websocket_manager import admin_ws_manager
+from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 async def listar_usuarios(
     skip: int = 0,
     limit: int = 100,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.USERS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista todos los usuarios registrados. Solo admin."""
@@ -45,7 +46,8 @@ async def obtener_usuario(
     El admin puede ver cualquier usuario.
     """
     # Los no-admin solo pueden verse a sÃ­ mismos
-    if current_user.rol.value != "ADMIN" and current_user.id != usuario_id:
+    can_view_users = can_access_backoffice_section(current_user.rol, BackofficeSection.USERS)
+    if not can_view_users and current_user.id != usuario_id:
         raise HTTPException(status_code=403, detail="Solo puedes ver tu propio perfil")
 
     repo = UsuarioRepository(db)
@@ -94,7 +96,7 @@ async def subir_avatar(
 async def actualizar_usuario(
     usuario_id: uuid.UUID,
     data: UsuarioUpdate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.USERS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Actualiza los datos de un usuario. Solo admin."""
@@ -112,7 +114,7 @@ async def actualizar_usuario(
 @router.delete("/{usuario_id}", summary="Eliminar un usuario")
 async def eliminar_usuario(
     usuario_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.USERS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Elimina un usuario del sistema. Solo admin."""
@@ -130,7 +132,7 @@ async def ajustar_tokens(
     usuario_id: uuid.UUID,
     cantidad: int,
     motivo: str = "Ajuste manual",
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.USERS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Ajuste manual de tokens. Solo admin. Cantidad puede ser positiva o negativa."""
@@ -142,7 +144,7 @@ async def ajustar_tokens(
 
 @router.post("/tokens/recarga-mensual", summary="Ejecutar recarga mensual de tokens")
 async def recarga_mensual(
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.USERS)),
     db: AsyncSession = Depends(get_db),
 ):
     """Recarga manual de tokens mensuales para todos los alumnos. Solo admin."""

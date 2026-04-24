@@ -162,10 +162,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 constraints: const BoxConstraints(maxWidth: 800),
                 child: espacioAsync.when(
                   data: (espacio) {
-                    final isAlumno = user?.isAlumno ?? true;
+                    final usesTokens = user?.usesTokens ?? true;
                     final costo = espacio.precioTokens;
-                    final costoEfectivo = isAlumno ? costo : 0;
-                    final tieneTokens = isAlumno ? (user?.tokens ?? 0) >= costoEfectivo : true;
+                    final costoEfectivo = usesTokens ? costo : 0;
+                    final tieneTokens = usesTokens ? (user?.tokens ?? 0) >= costoEfectivo : true;
                     final maxAdvance = _maxBookingDate();
                     final effectiveLastDate = DateTime.now().add(Duration(days: espacio.antelacionDias)).isBefore(maxAdvance)
                         ? DateTime.now().add(Duration(days: espacio.antelacionDias))
@@ -185,7 +185,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                             ],
                           ),
                           const SizedBox(height: 18),
-                          _buildInfoCard(espacio, isAlumno, costo),
+                          _buildInfoCard(espacio, usesTokens, costo),
                           const SizedBox(height: 24),
 
                           Text(context.tr('booking.date'), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -303,7 +303,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     ).animate(target: _shakeTrigger.toDouble()).shake(duration: 400.ms, hz: 6);
   }
 
-  Widget _buildInfoCard(dynamic espacio, bool isAlumno, int costo) {
+  Widget _buildInfoCard(dynamic espacio, bool usesTokens, int costo) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -319,7 +319,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               RvBadge(label: espacio.tipo.value, icon: Icons.place_rounded, color: AppColors.accentPurple),
               const Spacer(),
               Text(
-                isAlumno ? '$costo ${context.tr('booking.tokens')}' : context.tr('booking.freeForTeachers'),
+                usesTokens ? '$costo ${context.tr('booking.tokens')}' : context.tr('booking.freeForTeachers'),
                 style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
               ),
             ],

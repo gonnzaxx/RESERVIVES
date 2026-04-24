@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.auth_middleware import get_current_user, require_backoffice_section
 from app.models.cafeteria import CategoriaCafeteria, ProductoCafeteria
 from app.models.usuario import Usuario
 from app.repositories.cafeteria_repo import CategoriaRepository, ProductoRepository
@@ -12,6 +12,7 @@ from app.schemas.cafeteria import (
     CategoriaCreate, CategoriaResponse, CategoriaUpdate,
     ProductoCreate, ProductoResponse, ProductoUpdate,
 )
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/cafeteria", tags=["Cafetería"])
 
@@ -32,7 +33,7 @@ async def listar_categorias(
 @router.post("/categorias", response_model=CategoriaResponse, status_code=201, summary="Crear categorÃ­a")
 async def crear_categoria(
     data: CategoriaCreate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Crea una nueva categoría de cafetería. Solo admin."""
@@ -46,7 +47,7 @@ async def crear_categoria(
 async def actualizar_categoria(
     categoria_id: uuid.UUID,
     data: CategoriaUpdate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Actualiza una categoría. Solo admin."""
@@ -62,7 +63,7 @@ async def actualizar_categoria(
 @router.delete("/categorias/{categoria_id}", summary="Eliminar categoría")
 async def eliminar_categoria(
     categoria_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Elimina una categoría y sus productos. Solo admin."""
@@ -101,7 +102,7 @@ async def listar_destacados(
 @router.post("/productos", response_model=ProductoResponse, status_code=201, summary="Crear producto")
 async def crear_producto(
     data: ProductoCreate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Crea un nuevo producto de cafeterÃ­a. Solo admin."""
@@ -115,7 +116,7 @@ async def crear_producto(
 async def actualizar_producto(
     producto_id: uuid.UUID,
     data: ProductoUpdate,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Actualiza un producto. Solo admin."""
@@ -131,7 +132,7 @@ async def actualizar_producto(
 @router.delete("/productos/{producto_id}", summary="Eliminar producto")
 async def eliminar_producto(
     producto_id: uuid.UUID,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CAFETERIA)),
     db: AsyncSession = Depends(get_db),
 ):
     """Elimina un producto. Solo admin."""

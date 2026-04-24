@@ -6,9 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/anuncio.dart';
+import 'package:reservives/models/encuesta.dart';
+import 'package:reservives/models/reserva.dart';
 import 'package:reservives/providers/anuncios_provider.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/encuestas_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
+import 'package:reservives/providers/reservas_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
 
@@ -19,6 +23,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
     final anunciosAsync = ref.watch(anunciosProvider);
+    final reservasAsync = ref.watch(misReservasProvider);
+    final encuestasAsync = ref.watch(todasEncuestasProvider);
     final unreadCountAsync = ref.watch(unreadNotificationsCountProvider);
     final width = MediaQuery.of(context).size.width;
     final isWeb = width > 700;
@@ -33,6 +39,8 @@ class HomeScreen extends ConsumerWidget {
             child: RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(anunciosProvider);
+                ref.invalidate(misReservasProvider);
+                ref.invalidate(todasEncuestasProvider);
                 ref.invalidate(unreadNotificationsCountProvider);
               },
               child: CustomScrollView(
@@ -46,17 +54,15 @@ class HomeScreen extends ConsumerWidget {
                           RvPageHeader(
                             eyebrow: _greeting(context),
                             title: user.nombre,
-                            subtitle: context.tr('home.subtitle'),
                             trailing: !isWeb ? _buildHeaderActions(context, unreadCountAsync, user) : null,
                           ).animate().fadeIn().slideY(begin: 0.1),
-                          const SizedBox(height: 14),
-                          _HeroSummary(user: user).animate().fadeIn(delay: 80.ms),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
+                          _WeeklyBookingsSection(reservasAsync: reservasAsync),
+                          const SizedBox(height: 12),
+                          _ActivePollsSection(encuestasAsync: encuestasAsync),
+                          const SizedBox(height: 24),
 
-                          // Grid de Acciones Rápidas (Adaptable)
-                          _QuickActionsGrid(user: user, isWeb: isWeb),
 
-                          const SizedBox(height: 32),
                           Row(
                             children: [
                               Expanded(
@@ -251,153 +257,130 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _QuickActionsGrid extends StatelessWidget {
-  final dynamic user;
-  final bool isWeb;
-  const _QuickActionsGrid({required this.user, required this.isWeb});
+class _WeeklyBookingsSection extends StatelessWidget {
+  final AsyncValue<List<Reserva>> reservasAsync;
+  const _WeeklyBookingsSection({required this.reservasAsync});
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> actions = [
-      _QuickAction(
-        title: context.tr('home.quick.reserve.title'),
-        subtitle: context.tr('home.quick.reserve.subtitle'),
-        icon: Icons.calendar_month_rounded,
-        color: AppColors.accentPurple,
-        onTap: () => context.goNamed('servicios'),
-      ),
-      _QuickAction(
-        title: context.tr('home.quick.menu.title'),
-        subtitle: context.tr('home.quick.menu.subtitle'),
-        icon: Icons.local_cafe_rounded,
-        color: AppColors.primaryBlue,
-        onTap: () => context.goNamed('cafeteria'),
-      ),
-      if (!user.isAdmin)
-        _QuickAction(
-          title: context.tr('home.quick.vote.title'),
-          subtitle: context.tr('home.quick.vote.subtitle'),
-          icon: Icons.how_to_vote_rounded,
-          color: Colors.orange.shade600,
-          onTap: () => context.pushNamed('votaciones'),
-        ),
-      if (user.isAdmin)
-        _QuickAction(
-          title: context.tr('home.quick.backoffice.title'),
-          subtitle: context.tr('home.quick.backoffice.subtitle'),
-          icon: Icons.admin_panel_settings_rounded,
-          color: AppColors.success,
-          onTap: () => context.pushNamed('admin'),
-        ),
-    ];
-
-    if (isWeb) {
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.8,
-        children: actions,
-      );
-    }
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: actions[0]),
-            const SizedBox(width: 12),
-            Expanded(child: actions[1]),
-          ],
-        ),
-        const SizedBox(height: 12),
-        actions[2],
-      ],
-    );
-  }
-}
-
-class _HeroSummary extends StatelessWidget {
-  final dynamic user;
-  const _HeroSummary({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final weekEnd = DateTime(
+      startOfToday.year,
+      startOfToday.month,
+      startOfToday.day,
+      23,
+      59,
+      59,
+    ).add(Duration(days: DateTime.sunday - startOfToday.weekday));
 
     return RvSurfaceCard(
-      padding: EdgeInsets.zero,
-      gradient: isDark
-          ? AppColors.darkHeroGradient
-          : AppColors.lightHeroGradient,
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Elemento decorativo sutil
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.accentPurple.withValues(alpha: isDark ? 0.15 : 0.08),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
+          Text(
+            context.tr('home.weeklyBookings.title'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    RvBadge(
-                      label: user.isAlumno ? context.tr('home.role.student') : user.rol.value,
-                      icon: Icons.verified_rounded,
-                      color: AppColors.accentPurple,
-                    ),
-                    const Spacer(),
-                    if (user.isAlumno)
-                      Text(
-                        '${user.tokens} ${context.tr('home.tokens')}',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
+          const SizedBox(height: 12),
+          reservasAsync.when(
+            data: (reservas) {
+              final visible = reservas
+                  .where((reserva) =>
+                      !reserva.fechaFin.isBefore(now) && !reserva.fechaInicio.isAfter(weekEnd))
+                  .toList()
+                ..sort((a, b) => a.fechaInicio.compareTo(b.fechaInicio));
+
+              final top = visible.take(4).toList();
+              if (top.isEmpty) {
+                return Text(
+                  context.tr('home.weeklyBookings.empty'),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                );
+              }
+
+              final locale = Localizations.localeOf(context).languageCode;
+              final dateFormat = DateFormat('EEE d MMM', locale);
+              final hourFormat = DateFormat('HH:mm', locale);
+
+              return Column(
+                children: List.generate(top.length, (index) {
+                  final reserva = top[index];
+                  final tramoNombre = reserva.tramo?.nombre;
+                  final subtitle = (tramoNombre != null && tramoNombre.isNotEmpty)
+                      ? tramoNombre
+                      : '${hourFormat.format(reserva.fechaInicio)} - ${hourFormat.format(reserva.fechaFin)}';
+
+                  return Column(
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.event_note_rounded),
+                        title: Text(
+                          reserva.nombreEspacio ?? context.tr('home.weeklyBookings.defaultReservation'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${dateFormat.format(reserva.fechaInicio)} - $subtitle',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  user.isAlumno ? context.tr('home.hero.studentTitle') : context.tr('home.hero.staffTitle'),
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.8,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  user.isAlumno ? context.tr('home.hero.studentSubtitle') : context.tr('home.hero.staffSubtitle'),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                    height: 1.5,
-                  ),
-                ),
-              ],
+                      if (index < top.length - 1)
+                        Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                    ],
+                  );
+                }),
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: RvSkeleton(width: double.infinity, height: 78, borderRadius: 16),
+            ),
+            error: (_, __) => Text(
+              context.tr('home.weeklyBookings.error'),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ActivePollsSection extends StatelessWidget {
+  final AsyncValue<List<Encuesta>> encuestasAsync;
+  const _ActivePollsSection({required this.encuestasAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return encuestasAsync.when(
+      data: (encuestas) {
+        final now = DateTime.now();
+        final activeCount = encuestas.where((e) => e.activa && e.fechaFin.isAfter(now)).length;
+        if (activeCount <= 0) return const SizedBox.shrink();
+
+        final counterText = context
+            .tr('home.polls.activeCount')
+            .replaceAll('{n}', activeCount.toString());
+
+        return RvSurfaceCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.how_to_vote_rounded),
+            title: Text(
+              context.tr('home.quick.vote.title'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            subtitle: Text(counterText),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.pushNamed('votaciones'),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
@@ -416,48 +399,6 @@ class _AnnouncementCard extends StatelessWidget {
   }
 }
 
-class _QuickAction extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAction({required this.title, required this.subtitle, required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: RvSurfaceCard(
-        onTap: onTap,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _AnnouncementListItem extends StatelessWidget {
   final Anuncio anuncio;
@@ -516,3 +457,4 @@ class _AnnouncementListItem extends StatelessWidget {
     );
   }
 }
+

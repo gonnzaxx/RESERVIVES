@@ -7,7 +7,8 @@ from typing import Dict, List
 from app.database import get_db
 from app.models.usuario import Usuario
 from app.models.configuracion import Configuracion
-from app.middleware.auth_middleware import require_admin
+from app.middleware.auth_middleware import require_backoffice_section
+from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/admin/configuracion", tags=["Configuracion"])
 
@@ -20,7 +21,7 @@ class ConfigUpdateRequest(BaseModel):
 
 @router.get("", summary="Obtener todas las configuraciones")
 async def get_configuracion(
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CONFIGURATION)),
     db: AsyncSession = Depends(get_db)
 ) -> Dict[str, str]:
     """Obtiene el listado clave-valor de configuración actual."""
@@ -31,7 +32,7 @@ async def get_configuracion(
 @router.put("", summary="Actualizar configuraciones en lote")
 async def update_configuracion(
     request: ConfigUpdateRequest,
-    admin: Usuario = Depends(require_admin),
+    admin: Usuario = Depends(require_backoffice_section(BackofficeSection.CONFIGURATION)),
     db: AsyncSession = Depends(get_db)
 ):
     """Actualiza múltiples configuraciones a la vez o las crea si no existen."""

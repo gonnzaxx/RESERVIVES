@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:reservives/config/constants.dart';
+import 'package:reservives/core/utils/role_access.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
 import 'dart:developer' as developer;
@@ -25,6 +26,9 @@ class AdminWebSocketService {
 
   void connect() {
     if (_isConnecting || _channel != null) return;
+
+    final user = _ref.read(authProvider).user;
+    if (user == null || !hasAnyBackofficeAccess(user.rol)) return;
 
     final token = _ref.read(authProvider.notifier).token;
     if (token == null) return;
@@ -64,7 +68,8 @@ class AdminWebSocketService {
   void _reconnect() {
     dispose();
     Future.delayed(const Duration(seconds: 5), () {
-      if (_ref.read(authProvider).user?.rol.value == 'ADMIN') {
+      final user = _ref.read(authProvider).user;
+      if (user != null && hasAnyBackofficeAccess(user.rol)) {
         connect();
       }
     });

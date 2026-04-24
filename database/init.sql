@@ -15,7 +15,15 @@ CREATE EXTENSION IF NOT EXISTS "btree_gist";  -- Para exclusion constraints con 
 -- ============================================================
 
 -- Roles de usuario en la aplicaciÃ³n
-CREATE TYPE rol_usuario AS ENUM ('ALUMNO', 'PROFESOR', 'ADMIN');
+CREATE TYPE rol_usuario AS ENUM (
+    'ALUMNO',
+    'PROFESOR',
+    'ADMIN',
+    'CAFETERIA',
+    'JEFE_ESTUDIOS',
+    'SECRETARIA',
+    'PROFESOR_SERVICIO'
+);
 
 -- Tipos de espacio reservable
 CREATE TYPE tipo_espacio AS ENUM ('PISTA', 'AULA');
@@ -59,7 +67,7 @@ CREATE TABLE usuarios (
     microsoft_id VARCHAR(255) UNIQUE,          -- ID de Microsoft EntraID
     avatar_url VARCHAR(500),                    -- URL de la imagen de perfil
     rol rol_usuario NOT NULL DEFAULT 'ALUMNO',
-    tokens INTEGER NOT NULL DEFAULT 0,          -- Tokens disponibles (solo alumnos)
+    tokens INTEGER NOT NULL DEFAULT 0,          -- Tokens disponibles (maximo acumulable 100)
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -69,7 +77,8 @@ CREATE TABLE usuarios (
         email LIKE '%@alumno.iesluisvives.org' OR
         email LIKE '%@profesor.iesluisvives.org' OR
         email LIKE '%@iesluisvives.org'
-    )
+    ),
+    CONSTRAINT chk_tokens_range CHECK (tokens >= 0 AND tokens <= 100)
 );
 
 -- Ãndices para bÃºsquedas frecuentes
@@ -608,4 +617,3 @@ ALTER TABLE reservas_servicios
 
 CREATE INDEX idx_reservas_tramo ON reservas_espacios(tramo_id);
 CREATE INDEX idx_reservas_servicios_tramo ON reservas_servicios(tramo_id);
-

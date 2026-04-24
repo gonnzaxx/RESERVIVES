@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/painting.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oauth2_client/oauth2_client.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/services/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Estado de la autenticación
 class AuthState {
@@ -156,6 +158,23 @@ class AuthProvider extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedLanguageCode = prefs.getString('language_code');
+      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding');
+
+      await prefs.clear();
+
+      if (savedLanguageCode != null) {
+        await prefs.setString('language_code', savedLanguageCode);
+      }
+      if (hasSeenOnboarding != null) {
+        await prefs.setBool('has_seen_onboarding', hasSeenOnboarding);
+      }
+    } catch (_) {}
+
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
     state = AuthState();
   }
 }

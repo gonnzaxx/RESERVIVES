@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/models/espacio.dart';
+import 'package:reservives/models/usuario.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/favoritos_provider.dart';
 import 'package:reservives/providers/espacios_provider.dart';
@@ -153,13 +154,15 @@ class _EspacioCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
-    final isAlumno = user?.isAlumno ?? false;
-    final effectiveTokens = isAlumno ? espacio.precioTokens : 0;
+    final isAulaDisabledForAlumno =
+        user?.rol == RolUsuario.alumno && espacio.tipo == TipoEspacio.aula;
+    final canBookSpace = espacio.reservable && !isAulaDisabledForAlumno;
+    final effectiveTokens = user?.usesTokens == true ? espacio.precioTokens : 0;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: espacio.reservable
+        onTap: canBookSpace
             ? () => context.pushNamed(
           'booking',
           pathParameters: {'espacioId': espacio.id},
@@ -167,7 +170,9 @@ class _EspacioCard extends ConsumerWidget {
             : null,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Opacity(
+            opacity: isAulaDisabledForAlumno ? 0.55 : 1,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RvImage(
@@ -196,10 +201,10 @@ class _EspacioCard extends ConsumerWidget {
                               color: AppColors.accentPurple,
                             ),
                             RvBadge(
-                              label: espacio.reservable
+                              label: canBookSpace
                                   ? context.tr('spaces.availability')
                                   : context.tr('spaces.noAvailability'),
-                              color: espacio.reservable ? AppColors.success : AppColors.error,
+                              color: canBookSpace ? AppColors.success : AppColors.error,
                             ),
                           ],
                         ),
@@ -223,7 +228,7 @@ class _EspacioCard extends ConsumerWidget {
                               visualDensity: VisualDensity.compact,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              onPressed: () async {
+                              onPressed: isAulaDisabledForAlumno ? null : () async {
                                 final added = await ref
                                     .read(favoritosProvider.notifier)
                                     .toggleEspacioFavorito(espacio.id);
@@ -263,7 +268,7 @@ class _EspacioCard extends ConsumerWidget {
                         ),
                         InfoPill(
                           icon: Icons.stars_rounded,
-                          text: user?.isAlumno == true
+                          text: user?.usesTokens == true
                               ? '$effectiveTokens tokens'
                               : context.tr('spaces.no.cost'),
                           color: AppColors.primaryBlue,
@@ -274,6 +279,7 @@ class _EspacioCard extends ConsumerWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
