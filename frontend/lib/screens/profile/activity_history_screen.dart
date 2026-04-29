@@ -5,8 +5,8 @@ import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/core/utils/datetime_utils.dart';
 import 'package:reservives/i10n/app_localizations.dart';
-import 'package:reservives/providers/reservas_provider.dart';
-import 'package:reservives/providers/servicio_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/core/utils/calendar_utils.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -15,6 +15,7 @@ class ActivityHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final historyAsync = ref.watch(activityHistoryProvider);
     final width = MediaQuery.of(context).size.width;
     final isWeb = width > 700;
@@ -38,7 +39,7 @@ class ActivityHistoryScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           context.tr('activity.title'),
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -93,37 +94,19 @@ class ActivityHistoryScreen extends ConsumerWidget {
                                             color: isServicio ? AppColors.accentPurple : AppColors.primaryBlue,
                                           ),
                                           const Spacer(),
-                                          RvBadge(
-                                            label: displayStatus,
-                                            color: statusColor,
-                                          ),
+                                          RvBadge(label: displayStatus, color: statusColor),
                                         ],
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
                                         item.nombreEspacio ?? context.tr('activity.defaultReservation'),
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
                                         formatRelativeDate(item.fechaInicio, context),
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: theme.textTheme.bodySmall,
                                       ),
-                                      if (item.tokensConsumidos > 0) ...[
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '-${item.tokensConsumidos} ${context.tr('home.tokens')}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                            color: AppColors.warning,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ),
@@ -131,26 +114,33 @@ class ActivityHistoryScreen extends ConsumerWidget {
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        if (isWeb) const Spacer(),
-
-                                        Expanded(
-                                          flex: isWeb ? 0 : 1,
-                                          child: SizedBox(
-                                            width: isWeb ? 180 : null,
-                                            child: RvPrimaryButton(
-                                              label: context.tr('activity.cancelBooking'),
-                                              backgroundColor: AppColors.error,
-                                              onTap: () => _handleCancel(context, ref, item, isServicio),
+                                        // Usamos Flexible para que el texto de cancelar pueda encogerse o truncarse
+                                        // si el espacio es muy reducido, evitando el overflow.
+                                        Flexible(
+                                          child: InkWell(
+                                            onTap: () => _handleCancel(context, ref, item, isServicio),
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              child: Text(
+                                                context.tr('activity.cancelBooking'),
+                                                style: theme.textTheme.labelLarge?.copyWith(
+                                                  color: AppColors.error,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis, // Evita que el texto rompa el layout
+                                              ),
                                             ),
                                           ),
                                         ),
 
                                         if (item.isAprobada) ...[
-                                          const SizedBox(width: 12),
-                                          RvGhostIconButton(
-                                            icon: Icons.calendar_today_rounded,
+                                          const SizedBox(width: 8), // Espacio mínimo entre botones
+                                          _CompactCalendarButton(
                                             onTap: () => CalendarUtils.addToCalendar(
                                               title: item.nombreEspacio ?? 'Reserva',
                                               startTime: item.fechaInicio,
@@ -158,6 +148,7 @@ class ActivityHistoryScreen extends ConsumerWidget {
                                               location: 'IES Luis Vives',
                                               details: 'Reserva gestionada por RESERVIVES. ${item.observaciones ?? ""}',
                                             ),
+                                            label: context.tr('activity.addToCalendar'),
                                           ),
                                         ],
                                       ],
@@ -171,9 +162,7 @@ class ActivityHistoryScreen extends ConsumerWidget {
                     },
                     loading: () => _buildSkeleton(context, isWeb),
                     error: (error, _) => Center(
-                      child: RvApiErrorState(
-                        onRetry: () => ref.invalidate(activityHistoryProvider),
-                      ),
+                      child: RvApiErrorState(onRetry: () => ref.invalidate(activityHistoryProvider)),
                     ),
                   ),
                 ),
@@ -194,7 +183,6 @@ class ActivityHistoryScreen extends ConsumerWidget {
       cancelLabel: context.tr('activity.cancelDialog.keep'),
       isDestructive: true,
     );
-
     if (confirm != true || !context.mounted) return;
 
     final success = isServicio
@@ -202,22 +190,11 @@ class ActivityHistoryScreen extends ConsumerWidget {
         : await ref.read(crearReservaProvider.notifier).cancelarReserva(item.id);
 
     if (!context.mounted) return;
-
     if (success) {
-      await RvAlerts.dialog(
-        context,
-        title: 'Reserva cancelada',
-        content: context.tr('activity.cancelDialog.successMessage'),
-      );
+      await RvAlerts.dialog(context, title: 'Reserva cancelada', content: context.tr('activity.cancelDialog.successMessage'));
     } else {
-      final error = isServicio
-          ? ref.read(reservarServicioProvider).error
-          : ref.read(crearReservaProvider).error;
-
-      RvAlerts.error(
-        context,
-        toFriendlyErrorMessage(error, fallback: context.tr('booking.error')),
-      );
+      final error = isServicio ? ref.read(reservarServicioProvider).error : ref.read(crearReservaProvider).error;
+      RvAlerts.error(context, toFriendlyErrorMessage(error, fallback: context.tr('booking.error')));
     }
   }
 
@@ -237,6 +214,50 @@ class ActivityHistoryScreen extends ConsumerWidget {
       itemBuilder: (context, index) => const Padding(
         padding: EdgeInsets.only(bottom: 16),
         child: RvSkeleton(height: 160, borderRadius: AppRadii.m),
+      ),
+    );
+  }
+}
+
+class _CompactCalendarButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final String label;
+
+  const _CompactCalendarButton({required this.onTap, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return Material(
+      color: primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.edit_calendar_rounded, size: 16, color: primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

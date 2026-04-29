@@ -23,14 +23,36 @@ from app.utils.exceptions import ForbiddenException, ReservivesException
 settings = get_settings()
 
 
-async def _get_tokens_iniciales(repo: UsuarioRepository) -> int:
+async def _get_config_int(repo: UsuarioRepository, clave: str, default: int) -> int:
     result = await repo.session.execute(
-        select(Configuracion).where(Configuracion.clave == 'tokens_iniciales_nuevo_usuario')
+        select(Configuracion.valor).where(Configuracion.clave == clave)
     )
-    conf = result.scalar_one_or_none()
-    if conf and conf.valor.strip().isdigit():
-        return int(conf.valor)
-    return settings.DEFAULT_MONTHLY_TOKENS
+    raw = result.scalar_one_or_none()
+    if raw is None:
+        return default
+    parsed = str(raw).strip()
+    if parsed.isdigit():
+        return int(parsed)
+    return default
+
+
+async def _get_tokens_iniciales_por_rol(repo: UsuarioRepository, rol: RolUsuario) -> int:
+    alumno_default = await _get_config_int(
+        repo,
+        "tokens_iniciales_nuevo_usuario",
+        settings.DEFAULT_MONTHLY_TOKENS,
+    )
+    alumno_tokens = await _get_config_int(
+        repo,
+        "tokens_iniciales_alumno",
+        alumno_default,
+    )
+    profesor_tokens = await _get_config_int(
+        repo,
+        "tokens_iniciales_profesor",
+        60,
+    )
+    return initial_tokens_for_role(rol, alumno_tokens, profesor_tokens)
 
 
 async def _get_config_bool(repo: UsuarioRepository, clave: str, default: bool = False) -> bool:
@@ -137,8 +159,7 @@ async def login_con_microsoft(
     if not usuario:
         # Crear nuevo usuario
         rol = determinar_rol_por_email(email)
-        tokens_por_defecto = await _get_tokens_iniciales(repo)
-        tokens_iniciales = initial_tokens_for_role(rol, tokens_por_defecto)
+        tokens_iniciales = await _get_tokens_iniciales_por_rol(repo, rol)
 
         usuario = Usuario(
             nombre=ms_data.get("givenName", ""),
@@ -194,8 +215,7 @@ async def login_desarrollo(
     if not usuario:
         nombre, apellidos = _split_nombre_apellidos(login_email)
         rol = determinar_rol_por_email(login_email)
-        tokens_por_defecto = await _get_tokens_iniciales(repo)
-        tokens_iniciales = initial_tokens_for_role(rol, tokens_por_defecto)
+        tokens_iniciales = await _get_tokens_iniciales_por_rol(repo, rol)
 
         usuario = Usuario(
             nombre=nombre,

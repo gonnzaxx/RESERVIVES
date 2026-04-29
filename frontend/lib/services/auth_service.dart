@@ -11,16 +11,16 @@ import 'package:oauth2_client/oauth2_helper.dart';
 
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/models/usuario.dart';
-import 'package:reservives/providers/anuncios_provider.dart';
-import 'package:reservives/providers/ai_chat_provider.dart';
+import 'package:reservives/providers/announcements_provider.dart';
+import 'package:reservives/providers/chat_provider.dart';
 import 'package:reservives/providers/cafeteria_provider.dart';
-import 'package:reservives/providers/encuestas_provider.dart';
-import 'package:reservives/providers/espacios_provider.dart';
-import 'package:reservives/providers/favoritos_provider.dart';
+import 'package:reservives/providers/polls_provider.dart';
+import 'package:reservives/providers/spaces_provider.dart';
+import 'package:reservives/providers/favourites_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
-import 'package:reservives/providers/reservas_provider.dart';
-import 'package:reservives/providers/servicio_provider.dart';
-import 'package:reservives/providers/tramos_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
+import 'package:reservives/providers/time_slots_provider.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/api_client.dart';
 

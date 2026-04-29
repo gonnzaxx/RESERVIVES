@@ -10,10 +10,10 @@ import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
-import 'package:reservives/providers/espacios_provider.dart';
+import 'package:reservives/providers/spaces_provider.dart';
 import 'package:reservives/providers/navigation_provider.dart';
-import 'package:reservives/providers/reservas_provider.dart';
-import 'package:reservives/providers/tramos_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/time_slots_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -64,6 +64,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (!mounted) return;
 
     if (success) {
+      ref.invalidate(misReservasProvider);
+      ref.invalidate(activityHistoryProvider);
       _confettiController.play();
       final reserva = ref.read(crearReservaProvider).value;
       if (reserva == null) {
@@ -326,8 +328,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ),
           const SizedBox(height: 16),
           Text(espacio.nombre, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          Text(context.tr('booking.flowSubtitle'), style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -432,15 +432,12 @@ class _TramoSelector extends ConsumerWidget {
 
     return disponibilidadAsync.when(
       data: (tramos) {
-        // 1. Filtramos los permitidos
         final tramosVisibles = tramos.where((t) => t.permitido).toList();
 
         if (tramosVisibles.isEmpty) return const _TramoEmptyState(mensaje: 'No hay tramos disponibles.');
 
-        // 2. ORDENAMOS cronológicamente por hora de inicio
         tramosVisibles.sort((a, b) => a.tramo.horaInicio.compareTo(b.tramo.horaInicio));
 
-        // 3. Agrupamos por turno una vez ya están ordenados
         final manana = tramosVisibles.where((t) => t.tramo.turno == 'MAÑANA').toList();
         final tarde = tramosVisibles.where((t) => t.tramo.turno == 'TARDE').toList();
 
@@ -469,7 +466,6 @@ class _TramoSelector extends ConsumerWidget {
     );
   }
 
-  // Los métodos _buildHeader y _buildGrid se mantienen igual...
   Widget _buildHeader(String title, IconData icon, BuildContext context) {
     return Row(children: [
       Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),

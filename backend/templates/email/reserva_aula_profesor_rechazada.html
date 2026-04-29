@@ -1,19 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
-<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;background:#f4f7fb;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:24px;border:1px solid #e5e7eb;">
-        <tr><td style="padding:28px;background:linear-gradient(135deg,#fff1f2,#f8fbff);"><h1 style="margin:0;color:#111827;">Reserva de aula rechazada</h1></td></tr>
-        <tr><td style="padding:24px 28px;color:#374151;">
-          <p>Hola {nombre}, no se ha podido aprobar tu reserva de aula.</p>
-          <p><strong>Aula:</strong> {recurso}</p>
-          <p><strong>Inicio:</strong> {inicio}</p>
-          <p><strong>Fin:</strong> {fin}</p>
-          <p><strong>Motivo:</strong> {motivo}</p>
-        </td></tr>
-      </table>
-    </td></tr>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="margin:0;padding:0;background-color:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+    style="background-color:#f4f7fb; padding: 20px 10px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+          style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+
+          <tr>
+            <td style="padding: 30px 40px; background: #ffffff; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="https://www.iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png"
+                alt="Logo IES Luis Vives" width="80" style="display: block; margin: 0 auto 15px auto;">
+              <h2 style="margin:0; color: #1e3a8a; font-size: 20px; letter-spacing: 0.5px;">IES LUIS VIVES</h2>
+              <span style="color: #6b7280; font-size: 12px; text-transform: uppercase;">Gestión de Reservas</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 15px 40px 0 40px;">
+              <div
+                style="background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 8px; padding: 10px; text-align: center;">
+                <p style="margin:0; color: #9a3412; font-size: 12px; font-weight: bold;">Por favor, no responda a
+                  este correo. Es un mensaje automático.</p>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 30px 40px; color:#374151;">
+              <h1 style="margin:0 0 20px 0; color:#d97706; font-size: 24px;">Reserva de Aula No Aprobada</h1>
+              <p style="font-size: 16px; line-height: 1.5;">Hola <strong>{nombre}</strong>,</p>
+              <p style="font-size: 15px; color: #4b5563;">Te informamos que tu solicitud para el uso de aula no ha
+                podido ser aprobada por la jefatura o administración. Detalles de la solicitud:</p>
+
+              <table role="presentation" width="100%" style="margin-top: 25px; border-collapse: collapse;">
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #fffbeb; border-radius: 8px 0 0 8px; font-weight: bold; color: #92400e; width: 30%;">
+                    Aula:</td>
+                  <td style="padding: 12px; background-color: #fffbeb; border-radius: 0 8px 8px 0; color: #334155;">
+                    {recurso}</td>
+                </tr>
+                <tr>
+                  <td style="height: 8px;"></td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #fffbeb; border-radius: 8px 0 0 8px; font-weight: bold; color: #92400e;">
+                    Horario:</td>
+                  <td style="padding: 12px; background-color: #fffbeb; border-radius: 0 8px 8px 0; color: #334155;">
+                    {inicio} - {fin}</td>
+                </tr>
+                <tr>
+                  <td style="height: 8px;"></td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #fff4ed; border-radius: 8px 0 0 8px; font-weight: bold; color: #c2410c;">
+                    Motivo:</td>
+                  <td
+                    style="padding: 12px; background-color: #fff4ed; border-radius: 0 8px 8px 0; color: #334155; font-style: italic;">
+                    {motivo}</td>
+                </tr>
+              </table>
+              <p style="margin-top: 25px; font-size: 14px; color: #6b7280;">Si necesitas más información o quieres
+                consultar la disponibilidad de otras aulas, por favor contacta con secretaría.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 30px 40px; background-color: #1e293b; color: #f8fafc;">
+              <table role="presentation" width="100%">
+                <tr>
+                  <td style="padding-bottom: 20px; border-bottom: 1px solid #334155;">
+                    <p
+                      style="margin:0 0 10px 0; font-weight: bold; font-size: 14px; color: #94a3b8; text-transform: uppercase;">
+                      Contacto</p>
+                    <p style="margin: 4px 0; font-size: 13px;">📞 Teléfono: <strong>916 80 77 12</strong></p>
+                    <p style="margin: 4px 0; font-size: 13px;">📧 Email: <a href="mailto:secretaria@iesluisvives.org"
+                        style="color: #38bdf8; text-decoration: none;">secretaria@iesluisvives.org</a></p>
+                    <p style="margin: 4px 0; font-size: 13px;">🌐 Web: <a href="https://www.iesluisvives.es"
+                        style="color: #38bdf8; text-decoration: none;">www.iesluisvives.es</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 20px;">
+                    <p
+                      style="margin:0 0 5px 0; font-weight: bold; font-size: 14px; color: #94a3b8; text-transform: uppercase;">
+                      Ubicación</p>
+                    <p style="margin:0; font-size: 13px; line-height: 1.4;">
+                      Paseo de la Ermita 15<br>
+                      28918, Leganés, Madrid
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table role="presentation" width="100%" style="max-width:600px;">
+          <tr>
+            <td style="padding: 20px; text-align: center;">
+              <p style="margin:0; font-size: 11px; color: #94a3b8;">
+                © 2026 IES Luis Vives. Todos los derechos reservados.<br>
+                Este es un mensaje informativo enviado por el sistema de reservas.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
   </table>
 </body>
+
 </html>

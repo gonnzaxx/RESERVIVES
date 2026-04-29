@@ -1,19 +1,116 @@
 <!DOCTYPE html>
 <html lang="es">
-<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;background:#f4f7fb;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:24px;border:1px solid #e5e7eb;">
-        <tr><td style="padding:28px;background:linear-gradient(135deg,#eef2ff,#f8fbff);"><h1 style="margin:0;color:#111827;">Nueva solicitud pendiente</h1></td></tr>
-        <tr><td style="padding:24px 28px;color:#374151;">
-          <p>Se ha registrado una nueva solicitud de reserva que requiere revisión.</p>
-          <p><strong>Usuario:</strong> {usuario}</p>
-          <p><strong>Recurso:</strong> {recurso}</p>
-          <p><strong>Inicio:</strong> {inicio}</p>
-          <p><strong>Fin:</strong> {fin}</p>
-        </td></tr>
-      </table>
-    </td></tr>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="margin:0;padding:0;background-color:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+    style="background-color:#f4f7fb; padding: 20px 10px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+          style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+
+          <tr>
+            <td style="padding: 30px 40px; background: #ffffff; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="https://www.iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png"
+                alt="Logo IES Luis Vives" width="80" style="display: block; margin: 0 auto 15px auto;">
+              <h2 style="margin:0; color: #1e3a8a; font-size: 20px; letter-spacing: 0.5px;">IES LUIS VIVES</h2>
+              <span style="color: #6b7280; font-size: 12px; text-transform: uppercase;">Gestión de Reservas</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 15px 40px 0 40px;">
+              <div
+                style="background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 10px; text-align: center;">
+                <p style="margin:0; color: #1e40af; font-size: 12px; font-weight: bold;">📋 Nueva tarea de revisión
+                  pendiente en el panel de control.</p>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 30px 40px; color:#374151;">
+              <h1 style="margin:0 0 20px 0; color:#1e3a8a; font-size: 24px;">Nueva Solicitud Pendiente</h1>
+              <p style="font-size: 16px; line-height: 1.5;">Se ha registrado una nueva solicitud de reserva que requiere
+                validación por parte del equipo administrativo:</p>
+
+              <table role="presentation" width="100%" style="margin-top: 25px; border-collapse: collapse;">
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #f8fafc; border-radius: 8px 0 0 8px; font-weight: bold; color: #475569; width: 30%;">
+                    Usuario:</td>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 0 8px 8px 0; color: #1e293b;">
+                    {usuario}</td>
+                </tr>
+                <tr>
+                  <td style="height: 8px;"></td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #f8fafc; border-radius: 8px 0 0 8px; font-weight: bold; color: #475569;">
+                    Recurso:</td>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 0 8px 8px 0; color: #1e293b;">
+                    {recurso}</td>
+                </tr>
+                <tr>
+                  <td style="height: 8px;"></td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #f8fafc; border-radius: 8px 0 0 8px; font-weight: bold; color: #475569;">
+                    Inicio:</td>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 0 8px 8px 0; color: #1e293b;">
+                    {inicio}</td>
+                </tr>
+                <tr>
+                  <td style="height: 8px;"></td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 12px; background-color: #f8fafc; border-radius: 8px 0 0 8px; font-weight: bold; color: #475569;">
+                    Fin:</td>
+                  <td style="padding: 12px; background-color: #f8fafc; border-radius: 0 8px 8px 0; color: #1e293b;">
+                    {fin}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 30px 40px; background-color: #1e293b; color: #f8fafc;">
+              <table role="presentation" width="100%">
+                <tr>
+                  <td style="padding-bottom: 20px; border-bottom: 1px solid #334155;">
+                    <p
+                      style="margin:0 0 10px 0; font-weight: bold; font-size: 14px; color: #94a3b8; text-transform: uppercase;">
+                      Información de Sistema</p>
+                    <p style="margin: 4px 0; font-size: 13px;">IES Luis Vives - Leganés</p>
+                    <p style="margin: 4px 0; font-size: 13px;">Plataforma: <strong>RESERVIVES</strong></p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table role="presentation" width="100%" style="max-width:600px;">
+          <tr>
+            <td style="padding: 20px; text-align: center;">
+              <p style="margin:0; font-size: 11px; color: #94a3b8;">
+                © 2026 IES Luis Vives. Notificación interna para administradores.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
   </table>
 </body>
+
 </html>

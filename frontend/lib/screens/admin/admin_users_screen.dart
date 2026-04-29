@@ -66,11 +66,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     }
 
     return Scaffold(
-      // Quitamos el AppBar para tener control total del diseño superior
       body: SafeArea(
         child: Column(
           children: [
-            // --- NUEVA CABECERA MODERNA ---
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
@@ -78,7 +76,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 eyebrow: 'Gestión',
                 trailing: Row(
                   children: [
-                    // Icono de recarga con estilo "Ghost"
                     RvGhostIconButton(
                       icon: Icons.refresh_rounded,
                       onTap: () => ref.invalidate(adminUsersProvider),
@@ -252,13 +249,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       final apiClient = ref.read(apiClientProvider);
       bool changed = false;
 
-      // Actualizar el rol si cambió
       if (result['rol'] != user.rol.value) {
         await apiClient.put('/usuarios/${user.id}', body: {'rol': result['rol']});
         changed = true;
       }
 
-      // Actualizar tokens si hay una cantidad
       final tokensToAdd = result['tokens'] as int?;
       if (tokensToAdd != null && tokensToAdd != 0) {
         final nextTokens = user.tokens + tokensToAdd;

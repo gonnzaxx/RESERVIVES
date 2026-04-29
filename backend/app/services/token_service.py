@@ -28,6 +28,18 @@ class TokenService:
         self.usuario_repo = UsuarioRepository(session)
         self.notification_service = NotificationService(session)
 
+    async def _get_config_int(self, clave: str, default: int) -> int:
+        result = await self.session.execute(
+            select(Configuracion.valor).where(Configuracion.clave == clave)
+        )
+        raw = result.scalar_one_or_none()
+        if raw is None:
+            return default
+        parsed = str(raw).strip()
+        if parsed.isdigit():
+            return int(parsed)
+        return default
+
     async def recarga_mensual(self) -> int:
         """
         Recarga mensual de tokens para todos los alumnos activos.
@@ -39,18 +51,28 @@ class TokenService:
         """
         usuarios = await self.usuario_repo.get_active_users_for_monthly_tokens()
         
-        # Obtener cantidad desde BD
-        result = await self.session.execute(
-            select(Configuracion).where(Configuracion.clave == 'tokens_por_recarga_alumno')
+        cantidad_tokens_alumno_legacy = await self._get_config_int(
+            "tokens_por_recarga_alumno",
+            settings.DEFAULT_MONTHLY_TOKENS,
         )
-        conf = result.scalar_one_or_none()
-        cantidad_tokens = int(conf.valor) if conf and conf.valor.strip().isdigit() else settings.DEFAULT_MONTHLY_TOKENS
+        cantidad_tokens_alumno = await self._get_config_int(
+            "tokens_recarga_mensual_alumno",
+            cantidad_tokens_alumno_legacy,
+        )
+        cantidad_tokens_profesor = await self._get_config_int(
+            "tokens_recarga_mensual_profesor",
+            60,
+        )
         
         recargados = 0
 
         for usuario in usuarios:
             # Resetear tokens al valor mensual segun rol (no acumulativo)
-            usuario.tokens = monthly_tokens_for_role(usuario.rol, cantidad_tokens)
+            usuario.tokens = monthly_tokens_for_role(
+                usuario.rol,
+                cantidad_tokens_alumno,
+                cantidad_tokens_profesor,
+            )
 
             # Registrar en historial
             historial = HistorialTokens(

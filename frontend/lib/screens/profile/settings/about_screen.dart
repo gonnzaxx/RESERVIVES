@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/widgets/design_system.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final width = MediaQuery.of(context).size.width;
     final isWeb = width > 700;
 
@@ -31,7 +33,7 @@ class AboutScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           context.tr('about.title'),
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: theme.textTheme.titleLarge,
                         ),
                       ),
                     ],
@@ -52,7 +54,7 @@ class AboutScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(
                               'RESERVIVES',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.5,
                               ),
@@ -60,17 +62,71 @@ class AboutScreen extends StatelessWidget {
                             const SizedBox(height: 6),
                             Text(
                               context.tr('about.versionLabel'),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).textTheme.bodySmall?.color,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               context.tr('about.description'),
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                height: 1.5,
+                              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                            ),
+
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Divider(height: 1),
+                            ),
+
+                            Text(
+                              context.tr('about.developers.title').toUpperCase(),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                                letterSpacing: 1.2,
                               ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Lista vertical de desarrolladores para mejor UX en móvil
+                            _LinkedInButton(
+                              name: context.tr('about.developers.dev1'),
+                              url: 'https://www.linkedin.com/in/gonzalo-santiago-ariza/',
+                            ),
+                            const SizedBox(height: 8),
+                            _LinkedInButton(
+                              name: context.tr('about.developers.dev2'),
+                              url: 'https://www.linkedin.com/in/jorge-sepulveda-martin/',
+                            ),
+                            const SizedBox(height: 8),
+                            _LinkedInButton(
+                              name: context.tr('about.developers.dev3'),
+                              url: 'https://www.linkedin.com/in/alvaro-lorenzo301/',
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            _InfoSection(
+                              title: context.tr('about.tfg.label'),
+                              content: context.tr('about.tfg.description'),
+                              icon: Icons.auto_stories_outlined,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _InfoSection(
+                              title: context.tr('about.thanks.title'),
+                              content: context.tr('about.thanks.description'),
+                              icon: Icons.favorite_border_rounded,
+                              iconColor: Colors.redAccent,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _InfoSection(
+                              title: context.tr('about.legacy.title'),
+                              content: context.tr('about.legacy.description'),
+                              icon: Icons.history_edu_rounded,
                             ),
                           ],
                         ),
@@ -127,7 +183,6 @@ class AboutScreen extends StatelessWidget {
 
   void _showPolicy(BuildContext context, String title, String body, bool isWeb) {
     if (isWeb) {
-      // En Web se ve mucho mejor como un Diálogo centrado que un BottomSheet gigante
       showDialog(
         context: context,
         builder: (context) => Dialog(
@@ -161,7 +216,6 @@ class AboutScreen extends StatelessWidget {
         ),
       );
     } else {
-      // En móvil mantenemos el comportamiento nativo de BottomSheet
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -208,6 +262,92 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
+class _LinkedInButton extends StatelessWidget {
+  final String name;
+  final String url;
+
+  const _LinkedInButton({required this.name, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.primary.withValues(alpha: 0.04),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => launchUrl(Uri.parse(url)),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Image.asset('assets/icons/linkedin_icon.png', width: 20, height: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  name,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.open_in_new_rounded,
+                size: 14,
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoSection extends StatelessWidget {
+  final String title;
+  final String content;
+  final IconData icon;
+  final Color? iconColor;
+
+  const _InfoSection({
+    required this.title,
+    required this.content,
+    required this.icon,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: iconColor ?? theme.colorScheme.primary.withValues(alpha: 0.6)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                content,
+                style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _AboutItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -244,7 +384,7 @@ class _AboutItem extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: color, size: 22),

@@ -153,7 +153,6 @@ class SheetSelector extends StatelessWidget {
                   ],
                 ),
               ),
-              // Indicador visual de acción
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -174,7 +173,6 @@ class SheetSelector extends StatelessWidget {
   }
 }
 
-/// Shimmer skeleton list shown while data loads.
 class LoadingSkeletonList extends StatelessWidget {
   const LoadingSkeletonList({super.key});
 

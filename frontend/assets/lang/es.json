@@ -123,7 +123,7 @@
     "admin.users.addTokensTo": "Añadir tokens a",
     "admin.users.amount": "Cantidad",
     "admin.users.amountHint": "Puede ser negativa",
-    "admin.users.save": "Añadir",
+    "admin.users.save": "Actualizar",
     "admin.users.invalidAmount": "Introduce una cantidad válida.",
     "admin.users.tokensAdjusted": "Tokens ajustados",
     "admin.users.filterByRole": "Filtrar por rol",
@@ -247,7 +247,7 @@
     "cafeteria.eyebrow": "Menú de hoy",
     "activity.cancelBooking": "Cancelar reserva",
     "home.board.errorTitle": "No se pudieron cargar los anuncios",
-    "home.weeklyBookings.title": "Reservas de esta semana",
+    "home.weeklyBookings.title": "Tus reservas",
     "home.weeklyBookings.empty": "No tienes reservas pendientes esta semana.",
     "home.weeklyBookings.defaultReservation": "Reserva",
     "home.weeklyBookings.error": "No se pudieron cargar las reservas de la semana.",
@@ -397,7 +397,7 @@
     "admin.polls.options": "Opciones",
     "admin.polls.expiry": "Fecha límite",
     "admin.polls.empty": "No hay encuestas activas.",
-    "polls.user.title": "Encuestas IES",
+    "polls.user.title": "Encuestas",
     "polls.user.voted": "VOTADO",
     "polls.user.totalVotes": "{n} votos totales",
     "polls.user.success": "Voto registrado correctamente",
@@ -479,9 +479,10 @@
     "help.items.reports.subtitle": "En Ajustes podrás reportar cualquier problema que tengas en RESERVIVES o en el centro.",
     "settings.faq.title": "Preguntas Frecuentes",
     "settings.faq.subtitle": "Respuesta a tus preguntas frecuentes",
+
     "faq.title": "Preguntas Frecuentes",
     "faq.q1.question": "¿Qué son los tokens y para qué sirven?",
-    "faq.q1.answer": "Los tokens son la moneda virtual de la aplicación que permite a los alumnos realizar reservas. Cada espacio o servicio tiene un coste en tokens.",
+    "faq.q1.answer": "Los tokens son la moneda virtual de la aplicación que permite a los alumnos realizar reservas. Cada espacio o servicio tiene un coste en tokens. Cada mes, se te renovarán automáticamente hasta acumular un máximo de 100 tokens.",
     "faq.q2.question": "¿Cómo puedo hacer una reserva?",
     "faq.q2.answer": "Para hacer una reserva, ve a la sección de 'Reservas', selecciona el espacio o servicio deseado, escoge el día y la hora, y pulsa en configurar. Necesitarás tener tokens suficientes.",
     "faq.q3.question": "¿Qué pasa si cancelo mi reserva?",
@@ -489,13 +490,14 @@
     "faq.q4.question": "¿Por qué no me llegan las notificaciones?",
     "faq.q4.answer": "Comprueba que tienes las notificaciones activadas tanto en los ajustes de tu dispositivo como dentro de la app (Ajustes > Preferencias de notificación).",
     "faq.q5.question": "¿Qué diferencia hay entre Espacios y Servicios?",
-    "faq.q5.answer": "Los 'Espacios' son ubicaciones físicas del centro, como pistas o aulas. Los 'Servicios' son las prestaciones o recursos disponibles en el mismo uso de las citas o equipamientos.",
+    "faq.q5.answer": "Los 'Espacios' son ubicaciones físicas del centro, como pistas o aulas. Los 'Servicios' son las prestaciones o recursos disponibles que ofrece el centro para sus alumnos y profesores.",
     "faq.q6.question": "¿Cómo funcionan los anuncios del tablón?",
-    "faq.q6.answer": "El tablón alberga publicaciones importantes que efectúa el instituto. Puedes optar por recibir estas alertas en tu email desde el gestor de preferencias.",
+    "faq.q6.answer": "En el tablón de anuncios podrás ver todo lo que publica el instituto.",
     "faq.q7.question": "¿Puedo hacer pedidos a la cafetería desde la app?",
-    "faq.q7.answer": "Actualmente, la cafetería en la app sirve como tablón para el menú y precios del día. No es posible tramitar o pagar por la app. Podrás realizar transacciones en persona.",
+    "faq.q7.answer": "Actualmente, el apartado de la cafetería sirve para echarle un vistazo a los productos que ofrece. Aún no es posible tramitar o pagar por la app. Podrás realizar transacciones en persona.",
     "faq.q8.question": "Me he quedado sin tokens. ¿Qué hago?",
-    "faq.q8.answer": "El saldo total se repone mes a mes automáticamente. En caso de estricta necesidad por causas docentes, podrás solicitar una adjudicación extraordinaria a un gestor de tu centro de estudios.",
+    "faq.q8.answer": "El saldo total se repone mes a mes automáticamente. En caso de estricta necesidad por causas docentes, podrás solicitar una recarga extraordinaria al administrador del IES Luis Vives.",
+
     "shell.footer.description": "Plataforma de gestión y reservas para el IES Luis Vives. Optimiza los recursos del centro de forma digital y eficiente, facilitando el acceso a espacios y servicios.",
     "shell.footer.nav.title": "NAVEGACIÓN",
     "shell.footer.nav.home": "Inicio",
@@ -516,6 +518,48 @@
     "onboarding.slide4.title": "Mantente Informado",
     "onboarding.slide4.subtitle": "Recibe notificaciones importantes sobre tus reservas, avisos del instituto y más.",
 
-    "announcement.authorLabel": "Publicado por"
+    "announcement.authorLabel": "Publicado por",
+
+    "ai.header.eyebrow": "Asistente",
+    "ai.header.title": "Vivi",
+    "ai.actions.newChat": "Nuevo chat",
+    "ai.empty.title": "Hola {name}, soy Vivi",
+    "ai.empty.subtitle": "¿En qué puedo ayudarte hoy?\nRecuerda que soy una IA y puedo cometer errores.",
+    "ai.input.placeholder": "Escribe un mensaje...",
+    "common.user": "usuario",
+
+    "generic.error": "Error",
+    "booking.detail.eyebrow": "Detalles de la reserva",
+    "booking.detail.defaultTitle": "Detalle",
+    "booking.detail.resourceType": "Tipo de recurso",
+    "booking.detail.startTime": "Fecha y hora de inicio",
+    "booking.detail.endTime": "Fecha y hora de fin",
+    "booking.detail.status": "Estado actual",
+    "booking.detail.reservedBy": "Reservado por",
+    "booking.detail.cost": "Costo de la reserva",
+
+    "booking.morning": "Turno Mañana",
+    "booking.afternoon": "Turno Tarde",
+    "booking.pastSlot": "Pasado",
+    "booking.selectedSlot": "Seleccionado",
+    "booking.maxDaysError": "Máximo {n} días de antelación.",
+
+    "detail.booking.state.pending": "Pendiente",
+
+    "about.extraInfo": "Aplicación diseñada publicada por Álvaro Lorenzo Carrillo, Jorge Sepúlveda Martín y Gonzalo Santiago Ariza. ",
+
+    "about.developers.title": "Desarrollado por",
+    "about.developers.dev1": "Gonzalo Santiago Ariza",
+    "about.developers.dev2": "Jorge Sepúlveda Martín",
+    "about.developers.dev3": "Álvaro Lorenzo Carrillo",
+    "about.tfg.label": "Proyecto Fin de Grado",
+    "about.tfg.description": "Esta aplicación ha sido desarrollada como Trabajo de Fin de Grado de Desarrollo de Aplicaciones Multiplataforma.",
+    "about.thanks.title": "Agradecimientos",
+    "about.thanks.description": "Agradecimiento especial a Javier Palacios González por su guía y apoyo durante todo el proceso de desarrollo.",
+    "about.legacy.title": "Créditos",
+    "about.legacy.description": "Créditos a Mireya Sánchez Pinzón, Alejandro Sánchez Monzón and Rubén García-Redondo Marín, los alumnos de años anteriores que iniciaron las bases de este proyecto.",
+
+
+    "home.weeklyBookings.goToBookings":"Ir a reservas"
 }
 

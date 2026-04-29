@@ -49,7 +49,6 @@ class ProfileScreen extends ConsumerWidget {
                   RvPageHeader(
                     eyebrow: context.tr('profile.accountEyebrow'),
                     title: context.tr('profile.title'),
-                    subtitle: context.tr('profile.subtitle'),
                   ),
                   const SizedBox(height: 24),
 

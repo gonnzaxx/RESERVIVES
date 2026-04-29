@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/incidencia.dart';
-import 'package:reservives/providers/incidencias_provider.dart';
+import 'package:reservives/providers/reports_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
 import 'package:reservives/config/constants.dart';
@@ -40,7 +40,6 @@ class _AdminIncidentsScreenState extends ConsumerState<AdminIncidentsScreen> wit
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna Premium
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: Row(
@@ -59,7 +58,6 @@ class _AdminIncidentsScreenState extends ConsumerState<AdminIncidentsScreen> wit
               ),
             ),
 
-            // TabBar Estilizado
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Container(

@@ -62,6 +62,7 @@ frontend/.dart_tool/
 # Backend specific
 backend/uploads/*
 !backend/uploads/.gitkeep
+backend/.env
 
 # Subdirectories with their own gitignores are still respected
 # but keeping critical secrets here as a second layer of defense.

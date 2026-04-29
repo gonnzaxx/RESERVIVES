@@ -28,12 +28,11 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     final anunciosAsync = ref.watch(adminAnnouncementsProvider);
     final width = MediaQuery.of(context).size.width;
 
-    // Configuración responsiva
     int crossAxisCount = 1;
     double extent = 160;
     if (width > 1200) {
       crossAxisCount = 3;
-      extent = 340; // Un poco más de altura para el diseño web
+      extent = 340;
     } else if (width > 800) {
       crossAxisCount = 2;
       extent = 340;
@@ -43,7 +42,6 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna con RvPageHeader
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
@@ -111,8 +109,6 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
       ),
     );
   }
-
-  // --- Lógica y Formulario (Se mantiene igual para funcionalidad) ---
 
   Future<void> _createAnuncio(BuildContext context, WidgetRef ref) async {
     final titleCtrl = TextEditingController();
@@ -287,8 +283,6 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     );
   }
 }
-
-// --- Cards Visuales Renovadas ---
 
 class _AdminAnnouncementMobileCard extends StatelessWidget {
   final Anuncio anuncio;

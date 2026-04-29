@@ -7,8 +7,8 @@ import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/reserva.dart';
 import 'package:reservives/providers/navigation_provider.dart';
-import 'package:reservives/providers/reservas_provider.dart';
-import 'package:reservives/providers/servicio_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -106,7 +106,7 @@ class ReservasTab extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Text(
                               reserva.tipoEspacio == 'SERVICIO'
-                                  ? 'Servicio del instituto'
+                                  ? 'SERVICIO'
                                   : (reserva.tipoEspacio ?? 'Espacio'),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
@@ -125,7 +125,6 @@ class ReservasTab extends ConsumerWidget {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: OutlinedButton.icon(
-                                  icon: const Icon(Icons.cancel_rounded),
                                   label: const Text('Cancelar reserva'),
                                   onPressed: () =>
                                       _confirmCancel(context, ref, reserva),

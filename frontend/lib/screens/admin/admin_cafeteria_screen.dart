@@ -32,7 +32,6 @@ class AdminCafeteriaScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
@@ -88,8 +87,6 @@ class AdminCafeteriaScreen extends ConsumerWidget {
     );
   }
 
-  // --- Lógica de Acciones ---
-
   void _showSelectionSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -134,8 +131,6 @@ class AdminCafeteriaScreen extends ConsumerWidget {
       ),
     );
   }
-
-  // Métodos de API (manteniendo tu lógica original)
 
   Future<void> _deleteCategoria(BuildContext context, WidgetRef ref, CategoriaCafeteria cat) async {
     final confirmed = await RvAlerts.confirm(context, title: context.tr('cafeteria.admin.deleteCatTitle'), content: context.tr('cafeteria.admin.deleteCatContent').replaceAll('{name}', cat.nombre), isDestructive: true);

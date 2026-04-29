@@ -31,17 +31,17 @@ def uses_tokens(rol: RolUsuario) -> bool:
     return rol in TOKEN_ROLES
 
 
-def initial_tokens_for_role(rol: RolUsuario, alumno_tokens: int) -> int:
+def initial_tokens_for_role(rol: RolUsuario, alumno_tokens: int, profesor_tokens: int) -> int:
     if rol in {RolUsuario.PROFESOR, RolUsuario.SECRETARIA, RolUsuario.PROFESOR_SERVICIO}:
-        return min(60, MAX_USER_TOKENS)
+        return min(max(profesor_tokens, 0), MAX_USER_TOKENS)
     if rol == RolUsuario.ALUMNO:
         return min(max(alumno_tokens, 0), MAX_USER_TOKENS)
     return 0
 
 
-def monthly_tokens_for_role(rol: RolUsuario, alumno_tokens: int) -> int:
+def monthly_tokens_for_role(rol: RolUsuario, alumno_tokens: int, profesor_tokens: int) -> int:
     if rol in {RolUsuario.PROFESOR, RolUsuario.SECRETARIA, RolUsuario.PROFESOR_SERVICIO}:
-        return min(60, MAX_USER_TOKENS)
+        return min(max(profesor_tokens, 0), MAX_USER_TOKENS)
     if rol == RolUsuario.ALUMNO:
         return min(max(alumno_tokens, 0), MAX_USER_TOKENS)
     return 0

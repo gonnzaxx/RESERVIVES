@@ -87,7 +87,7 @@ class AdminShellScreen extends ConsumerWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          if (isDrawer) Navigator.pop(context); // Cierra el drawer al navegar
+                          if (isDrawer) Navigator.pop(context);
                           Future.microtask(() => context.go(item.$2));
                         },
                         child: Padding(

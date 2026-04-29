@@ -51,7 +51,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen>
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100), // Ancho máximo para Web
+            constraints: const BoxConstraints(maxWidth: 1100),
             child: Column(
               children: [
                 Padding(
@@ -62,10 +62,8 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen>
                       RvPageHeader(
                         eyebrow: context.tr('services.eyebrow'),
                         title: context.tr('services.title'),
-                        subtitle: context.tr('services.subtitle'),
                       ),
                       const SizedBox(height: 18),
-                      // En Web, el TabBar puede ser un poco más ancho o estar alineado
                       Center(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: isWeb ? 600 : double.infinity),
@@ -104,7 +102,7 @@ class _PillsTabBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 48, // Un poco más de altura para Web/Móvil moderno
+      height: 48,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark

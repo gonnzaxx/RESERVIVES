@@ -7,8 +7,9 @@ import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/servicio.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
-import 'package:reservives/providers/servicio_provider.dart';
-import 'package:reservives/providers/tramos_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
+import 'package:reservives/providers/time_slots_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -60,12 +61,14 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
     final user = ref.watch(authProvider).user;
     final maxDate = DateTime.now().add(Duration(days: widget.servicio.antelacionDias));
     final exceedsMaxWindow = _selectedDate.isAfter(maxDate);
 
+    // Etiqueta dinámica para el botón
     final label = user?.usesTokens == true
-        ? 'Confirmar · ${widget.servicio.precioTokens} tokens'
+        ? '${context.tr('booking.confirm')} · ${widget.servicio.precioTokens} ${context.tr('home.tokens')}'
         : context.tr('booking.confirm');
 
     return DraggableScrollableSheet(
@@ -100,17 +103,12 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
                   const SizedBox(height: 24),
                   Text(widget.servicio.nombre,
                       style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Selecciona el día y tramo horario para tu reserva.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
-                  ),
                   const SizedBox(height: 24),
 
                   SheetSelector(
                     icon: Icons.calendar_today_rounded,
                     label: context.tr('services.date'),
-                    value: DateFormat('EEEE d MMM', 'es').format(_selectedDate),
+                    value: DateFormat('EEEE d MMM', locale).format(_selectedDate),
                     onTap: () async {
                       final now = DateTime.now();
                       final date = await showDatePicker(
@@ -130,7 +128,7 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
                   ),
 
                   const SizedBox(height: 32),
-                  Text('Tramos disponibles',
+                  Text(context.tr('booking.availableSlots'),
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
 
@@ -143,13 +141,17 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
 
                   const SizedBox(height: 24),
                   if (_isWeekend(_selectedDate)) ...[
-                    const InfoBanner(icon: Icons.event_busy_rounded, text: 'Fines de semana no permitidos.', color: AppColors.error),
+                    InfoBanner(
+                      icon: Icons.event_busy_rounded,
+                      text: context.tr('booking.weekendNotAllowed'),
+                      color: AppColors.error,
+                    ),
                     const SizedBox(height: 12),
                   ],
                   if (exceedsMaxWindow) ...[
                     InfoBanner(
                       icon: Icons.calendar_month_rounded,
-                      text: 'Máximo ${widget.servicio.antelacionDias} días de antelación.',
+                      text: context.tr('booking.maxWeekError').replaceAll('{n}', widget.servicio.antelacionDias.toString()),
                       color: AppColors.warning,
                     ),
                     const SizedBox(height: 12),
@@ -158,9 +160,9 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
                   TextField(
                     controller: _obsCtrl,
                     maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Observaciones',
-                      hintText: 'Añade detalles si lo necesitas',
+                    decoration: InputDecoration(
+                      labelText: context.tr('booking.notes'),
+                      hintText: context.tr('booking.notesHint'),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -179,6 +181,8 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
 
                       if (!mounted) return;
                       if (success) {
+                        ref.invalidate(misReservasServiciosProvider);
+                        ref.invalidate(activityHistoryProvider);
                         Navigator.of(context).pop();
                         RvAlerts.success(context, context.tr('services.application.success'));
                       } else {
@@ -190,7 +194,7 @@ class _ServiceBookingSheetState extends ConsumerState<ServiceBookingSheet> {
                     isLoading: _isSubmitting,
                     label: label,
                   ),
-                  const SizedBox(height: 40), // Espacio extra para el teclado/scroll
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -222,23 +226,20 @@ class _TramoServiceSelector extends ConsumerWidget {
 
     return disponibilidadAsync.when(
       data: (tramos) {
-        // 1. Filtramos los tramos permitidos
         final tramosVisibles = tramos.where((t) => t.permitido).toList();
 
         if (tramosVisibles.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
-              child: Text('No hay tramos disponibles para este día.',
+              child: Text(context.tr('booking.noSlots'),
                   style: TextStyle(color: Theme.of(context).disabledColor)),
             ),
           );
         }
 
-        // 2. ORDENAMOS cronológicamente por la hora de inicio del tramo
         tramosVisibles.sort((a, b) => a.tramo.horaInicio.compareTo(b.tramo.horaInicio));
 
-        // 3. SEPARACIÓN POR TURNOS (Lógica de mañana y tarde)
         final manana = tramosVisibles.where((t) => t.tramo.turno == 'MAÑANA').toList();
         final tarde = tramosVisibles.where((t) => t.tramo.turno == 'TARDE').toList();
 
@@ -246,13 +247,13 @@ class _TramoServiceSelector extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (manana.isNotEmpty) ...[
-              _buildTurnoHeader(context, 'Turno Mañana', Icons.wb_sunny_outlined),
+              _buildTurnoHeader(context, context.tr('booking.morning'), Icons.wb_sunny_outlined),
               const SizedBox(height: 12),
               _buildGrid(manana),
             ],
             if (tarde.isNotEmpty) ...[
               if (manana.isNotEmpty) const SizedBox(height: 24),
-              _buildTurnoHeader(context, 'Turno Tarde', Icons.nights_stay_outlined),
+              _buildTurnoHeader(context, context.tr('booking.afternoon'), Icons.nights_stay_outlined),
               const SizedBox(height: 12),
               _buildGrid(tarde),
             ],
@@ -267,13 +268,12 @@ class _TramoServiceSelector extends ConsumerWidget {
         child: TextButton.icon(
           onPressed: () => ref.invalidate(disponibilidadServicioProvider),
           icon: const Icon(Icons.refresh),
-          label: const Text('Error al cargar tramos'),
+          label: Text(context.tr('booking.slotsError')),
         ),
       ),
     );
   }
 
-  // Métodos auxiliares _buildTurnoHeader y _buildGrid (se mantienen igual)...
   Widget _buildTurnoHeader(BuildContext context, String title, IconData icon) {
     return Row(
       children: [
@@ -372,18 +372,18 @@ class _TramoMiniChip extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            _buildStatusText(theme, textColor),
+            _buildStatusText(context, theme, textColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusText(ThemeData theme, Color color) {
+  Widget _buildStatusText(BuildContext context, ThemeData theme, Color color) {
     final style = TextStyle(fontSize: 10, color: color.withOpacity(0.7), fontWeight: FontWeight.w500);
-    if (disponibilidad.reservado) return Text('Ocupado', style: style);
-    if (disponibilidad.estado == EstadoTramo.horarioPasado) return Text('Pasado', style: style);
-    if (isSelected) return const Text('Seleccionado', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold));
+    if (disponibilidad.reservado) return Text(context.tr('booking.occupiedSlot'), style: style);
+    if (disponibilidad.estado == EstadoTramo.horarioPasado) return Text(context.tr('booking.pastSlot'), style: style);
+    if (isSelected) return Text(context.tr('booking.selectedSlot'), style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold));
     return Text(disponibilidad.tramo.nombre, style: style);
   }
 }

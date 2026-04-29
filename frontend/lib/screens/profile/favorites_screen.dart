@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
-import 'package:reservives/providers/favoritos_provider.dart';
+import 'package:reservives/providers/favourites_provider.dart';
 import 'package:reservives/screens/bookings/service_booking_sheet.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';

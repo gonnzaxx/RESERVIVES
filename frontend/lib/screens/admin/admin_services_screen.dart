@@ -10,7 +10,7 @@ import 'package:reservives/models/servicio.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
-import 'package:reservives/widgets/tramo_permitido_selector.dart';
+import 'package:reservives/widgets/allowed_time_slots_selector.dart';
 
 final adminServicesProvider = FutureProvider.autoDispose<List<ServicioInstituto>>((ref) async {
   final apiClient = ref.read(apiClientProvider);

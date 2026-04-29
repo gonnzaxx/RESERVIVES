@@ -81,7 +81,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     final items = [
       (context.tr('shell.nav.home'), Icons.home_filled, Icons.home_outlined),
       (context.tr('shell.nav.bookings'), Icons.edit_calendar, Icons.calendar_month_outlined),
-      ('Vivi', Icons.wechat_outlined, Icons.smart_toy_outlined),
+      ('Vivi', Icons.wechat_outlined, Icons.wechat_outlined),
       (context.tr('shell.nav.cafeteria'), Icons.food_bank_rounded, Icons.local_cafe_outlined),
       (context.tr('shell.nav.profile'), Icons.person_rounded, Icons.person_outline_rounded),
     ];
@@ -172,7 +172,7 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                     onTap: () => context.goNamed('home'),
-                    child: Image.asset('assets/images/logo_luis_vives.png', height: 50),
+                    child: Image.asset('assets/images/logo_luis_vives.png', height: 60),
                   ),
                 ),
                 const SizedBox(width: 40),
@@ -285,8 +285,8 @@ class _WebFooter extends StatelessWidget {
                           children: [
                             Image.asset(
                               'assets/images/logo_luis_vives.png',
-                              width: 44,
-                              height: 44,
+                              width: 54,
+                              height: 54,
                             ),
                             const SizedBox(width: 16),
                             Text(

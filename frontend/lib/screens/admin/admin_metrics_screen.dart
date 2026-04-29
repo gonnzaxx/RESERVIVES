@@ -24,7 +24,6 @@ class AdminMetricsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna con RvPageHeader
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: Row(

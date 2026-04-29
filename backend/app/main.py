@@ -106,6 +106,10 @@ async def _init_db_defaults(session):
     defaults = {
         'tokens_por_recarga_alumno': '20',
         'tokens_iniciales_nuevo_usuario': '20',
+        'tokens_iniciales_alumno': '20',
+        'tokens_iniciales_profesor': '60',
+        'tokens_recarga_mensual_alumno': '20',
+        'tokens_recarga_mensual_profesor': '60',
         'auth_dev_bypass_enabled': 'false',
         'smtp_enabled': str(settings.SMTP_ENABLED).lower(),
         'smtp_from_email': settings.SMTP_FROM_EMAIL,

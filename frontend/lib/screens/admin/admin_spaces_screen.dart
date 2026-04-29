@@ -10,7 +10,7 @@ import 'package:reservives/providers/admin_live_updates_provider.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
-import 'package:reservives/widgets/tramo_permitido_selector.dart';
+import 'package:reservives/widgets/allowed_time_slots_selector.dart';
 
 final adminSpacesProvider = FutureProvider.autoDispose<List<Espacio>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
@@ -42,7 +42,6 @@ class AdminSpacesScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna Premium
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: Row(
@@ -119,8 +118,6 @@ class AdminSpacesScreen extends ConsumerWidget {
       ),
     );
   }
-
-  // --- Métodos de lógica (Editor, Delete, Tramos) ---
 
   Future<void> _openEditor(BuildContext context, WidgetRef ref, {Espacio? espacio}) async {
     final nombreCtrl = TextEditingController(text: espacio?.nombre ?? '');

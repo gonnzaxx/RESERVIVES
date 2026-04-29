@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/encuesta.dart';
-import 'package:reservives/providers/encuestas_provider.dart';
+import 'package:reservives/providers/polls_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 
 class AdminPollsScreen extends ConsumerWidget {
@@ -15,7 +15,6 @@ class AdminPollsScreen extends ConsumerWidget {
     final pollsAsync = ref.watch(adminEncuestasProvider);
     final width = MediaQuery.of(context).size.width;
 
-    // Configuración de cuadrícula responsiva
     int crossAxisCount = 1;
     if (width > 1200) {
       crossAxisCount = 3;
@@ -27,7 +26,6 @@ class AdminPollsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabecera Moderna Premium
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: Row(

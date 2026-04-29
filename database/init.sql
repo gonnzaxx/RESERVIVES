@@ -1,20 +1,20 @@
 -- ============================================================
--- RESERVIVES - Script de inicializaciÃ³n de Base de Datos
+-- RESERVIVES - Script de inicialización de Base de Datos
 -- IES Luis Vives - TFG DAM
 -- ============================================================
--- Este script crea todas las tablas, tipos enumerados, Ã­ndices
--- y constraints necesarios para la aplicaciÃ³n RESERVIVES.
+-- Este script crea todas las tablas, tipos enumerados, índices
+-- y constraints necesarios para la aplicación RESERVIVES.
 -- ============================================================
 
 -- Extensiones necesarias
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";   -- GeneraciÃ³n de UUIDs
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";   -- Generación de UUIDs
 CREATE EXTENSION IF NOT EXISTS "btree_gist";  -- Para exclusion constraints con tsrange
 
 -- ============================================================
 -- TIPOS ENUMERADOS
 -- ============================================================
 
--- Roles de usuario en la aplicaciÃ³n
+-- Roles de usuario en la aplicación
 CREATE TYPE rol_usuario AS ENUM (
     'ALUMNO',
     'PROFESOR',
@@ -57,8 +57,8 @@ CREATE TYPE estado_entrega_notificacion AS ENUM ('ENVIADA', 'FALLIDA', 'LEIDA');
 -- TABLA: USUARIOS
 -- ============================================================
 -- Almacena los datos de todos los usuarios registrados.
--- La autenticaciÃ³n se realiza mediante Microsoft EntraID.
--- El rol se determina automÃ¡ticamente por el dominio del email.
+-- La autenticación se realiza mediante Microsoft EntraID.
+-- El rol se determina automáticamente por el dominio del email.
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE espacios (
     precio_tokens INTEGER NOT NULL DEFAULT 0,   -- Coste en tokens para alumnos
     reservable BOOLEAN NOT NULL DEFAULT TRUE,
     requiere_autorizacion BOOLEAN NOT NULL DEFAULT FALSE,
-    antelacion_dias INTEGER NOT NULL DEFAULT 7,  -- DÃ­as de antelaciÃ³n para reservar
+    antelacion_dias INTEGER NOT NULL DEFAULT 7,  -- Días de antelación para reservar
     ubicacion VARCHAR(200),
     capacidad INTEGER,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -186,7 +186,7 @@ CREATE INDEX idx_anuncios_fecha_pub ON anuncios(fecha_publicacion);
 -- ============================================================
 -- TABLA: CATEGORIAS_CAFETERIA
 -- ============================================================
--- CategorÃ­as para organizar productos de la cafeterÃ­a.
+-- Categorías para organizar productos de la cafetería.
 CREATE TABLE categorias_cafeteria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE categorias_cafeteria (
 -- ============================================================
 -- TABLA: PRODUCTOS_CAFETERIA
 -- ============================================================
--- Productos que ofrece la cafeterÃ­a del instituto (informativo).
+-- Productos que ofrece la cafetería del instituto (informativo).
 CREATE TABLE productos_cafeteria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     categoria_id UUID NOT NULL REFERENCES categorias_cafeteria(id) ON DELETE CASCADE,
@@ -422,17 +422,17 @@ CREATE TABLE configuracion (
 -- DATOS INICIALES DE CONFIGURACIÃ“N
 -- ============================================================
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('tokens_mensuales_alumno', '20', 'Cantidad de tokens que recibe cada alumno el dÃ­a 1 de cada mes'),
-    ('hora_inicio_reservas', '08:00', 'Hora mÃ¡s temprana a la que se puede hacer una reserva'),
-    ('hora_fin_reservas', '21:00', 'Hora mÃ¡s tardÃ­a a la que puede terminar una reserva'),
-    ('duracion_minima_reserva_minutos', '30', 'DuraciÃ³n mÃ­nima de una reserva en minutos'),
-    ('duracion_maxima_reserva_minutos', '120', 'DuraciÃ³n mÃ¡xima de una reserva en minutos'),
-    ('max_reservas_activas_alumno', '3', 'MÃ¡ximo de reservas activas simultÃ¡neas para alumnos'),
+    ('tokens_mensuales_alumno', '20', 'Cantidad de tokens que recibe cada alumno el día 1 de cada mes'),
+    ('hora_inicio_reservas', '08:00', 'Hora más temprana a la que se puede hacer una reserva'),
+    ('hora_fin_reservas', '21:00', 'Hora más tardía a la que puede terminar una reserva'),
+    ('duracion_minima_reserva_minutos', '30', 'Duración mínima de una reserva en minutos'),
+    ('duracion_maxima_reserva_minutos', '120', 'Duración máxima de una reserva en minutos'),
+    ('max_reservas_activas_alumno', '3', 'Máximo de reservas activas simultáneas para alumnos'),
     ('max_reservas_activas_profesor', '5', 'Maximo de reservas activas simultaneas para profesores'),
     ('auth_dev_bypass_enabled', 'true', 'Permite login temporal sin OAuth en desarrollo');
 
 -- ============================================================
--- FUNCIÃ“N: Actualizar updated_at automÃ¡ticamente
+-- FUNCIÓN: Actualizar updated_at automáticamente
 -- ============================================================
 CREATE OR REPLACE FUNCTION actualizar_updated_at()
 RETURNS TRIGGER AS $$
@@ -550,16 +550,16 @@ CREATE INDEX idx_anuncio_vis_anuncio ON anuncio_visualizaciones(anuncio_id);
 -- ACTUALIZACIÃ“N DE CONFIGURACIÃ“N GLOBAL
 -- ============================================================
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('dias_caducidad_anuncio_defecto', '10', 'DÃ­as tras los cuales un anuncio expira si no tiene fecha fija'),
-    ('se_permiten_reservas', 'true', 'Si es false, deshabilita la creaciÃ³n de nuevas reservas');
+    ('dias_caducidad_anuncio_defecto', '10', 'Días tras los cuales un anuncio expira si no tiene fecha fija'),
+    ('se_permiten_reservas', 'true', 'Si es false, deshabilita la creación de nuevas reservas');
 
 
 -- ============================================================
 -- TABLA: TRAMOS_HORARIOS
 -- ============================================================
--- CatÃ¡logo de tramos horarios fijos del instituto.
+-- Catálogo de tramos horarios fijos del instituto.
 -- Inmutable una vez insertado; los admins solo configuran
--- quÃ© tramos permite cada espacio/servicio.
+-- qué tramos permite cada espacio/servicio.
 CREATE TABLE tramos_horarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(50) NOT NULL,
@@ -579,9 +579,9 @@ CREATE INDEX idx_tramos_activo ON tramos_horarios(activo);
 -- ============================================================
 -- TABLA: ESPACIO_TRAMOS_PERMITIDOS
 -- ============================================================
--- Configura quÃ© tramos puede usar cada espacio.
--- Sin registros â†’ todos los tramos estÃ¡n permitidos.
--- Con registros â†’ solo esos tramos disponibles.
+-- Configura qué tramos puede usar cada espacio.
+-- Sin registros → todos los tramos están permitidos.
+-- Con registros → solo esos tramos disponibles.
 CREATE TABLE espacio_tramos_permitidos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,

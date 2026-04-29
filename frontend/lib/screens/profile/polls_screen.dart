@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/encuesta.dart';
-import 'package:reservives/providers/encuestas_provider.dart';
+import 'package:reservives/providers/polls_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/app_theme.dart';
 
@@ -170,10 +170,7 @@ class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                context.tr('polls.user.totalVotes').replaceAll('{n}', widget.encuesta.totalVotos.toString()),
-                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
+
               if (!widget.encuesta.activa)
                 RvBadge(
                   label: "FINALIZADA",

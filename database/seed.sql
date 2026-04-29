@@ -188,21 +188,21 @@ INSERT INTO favoritos_servicios (usuario_id, servicio_id) VALUES
 INSERT INTO tramos_horarios (nombre, turno, numero, hora_inicio, hora_fin, es_recreo) VALUES
     -- TURNO MAÑANA
     ('Clase 1',  'MAÑANA', 1, '08:25', '09:20', FALSE),
-    ('Clase 2',  'MAÑANA', 2, '09:20', '10:15', FALSE),
-    ('Clase 3',  'MAÑANA', 3, '10:15', '11:10', FALSE),
-    ('Clase 4',  'MAÑANA', 4, '11:10', '12:05', FALSE),
+    ('2a hora',  'MAÑANA', 2, '09:20', '10:15', FALSE),
+    ('3a hora',  'MAÑANA', 3, '10:15', '11:10', FALSE),
+    ('4a hora',  'MAÑANA', 4, '11:10', '12:05', FALSE),
     ('Recreo',   'MAÑANA', 0, '12:05', '12:30', TRUE),
-    ('Clase 5',  'MAÑANA', 5, '12:30', '13:25', FALSE),
-    ('Clase 6',  'MAÑANA', 6, '13:25', '14:20', FALSE),
-    ('Clase 7',  'MAÑANA', 7, '14:20', '15:15', FALSE),
+    ('5a hora',  'MAÑANA', 5, '12:30', '13:25', FALSE),
+    ('6a hora',  'MAÑANA', 6, '13:25', '14:20', FALSE),
+    ('7a hora',  'MAÑANA', 7, '14:20', '15:15', FALSE),
     -- TURNO TARDE
-    ('Clase 1',  'TARDE',  1, '15:15', '16:10', FALSE),
-    ('Clase 2',  'TARDE',  2, '16:10', '17:05', FALSE),
-    ('Clase 3',  'TARDE',  3, '17:05', '18:00', FALSE),
-    ('Clase 4',  'TARDE',  4, '18:00', '18:55', FALSE),
+    ('1a hora',  'TARDE',  1, '15:15', '16:10', FALSE),
+    ('2a hora',  'TARDE',  2, '16:10', '17:05', FALSE),
+    ('3a hora',  'TARDE',  3, '17:05', '18:00', FALSE),
+    ('4a hora',  'TARDE',  4, '18:00', '18:55', FALSE),
     ('Recreo',   'TARDE',  0, '18:55', '19:20', TRUE),
-    ('Clase 5',  'TARDE',  5, '19:20', '20:15', FALSE),
-    ('Clase 6',  'TARDE',  6, '20:15', '21:10', FALSE)
+    ('5a hora',  'TARDE',  5, '19:20', '20:15', FALSE),
+    ('6a hora',  'TARDE',  6, '20:15', '21:10', FALSE)
 ON CONFLICT (turno, numero) DO NOTHING;
 
 -- ============================================================
