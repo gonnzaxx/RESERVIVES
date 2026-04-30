@@ -1,16 +1,9 @@
--- ============================================================
 -- RESERVIVES - Datos de prueba (Seed Data)
--- IES Luis Vives - TFG DAM
--- ============================================================
--- Datos de ejemplo para desarrollo y pruebas.
--- Incluye usuarios de cada rol, espacios, servicios, cafetería y anuncios.
--- ============================================================
 
 -- ============================================================
 -- USUARIOS DE PRUEBA
 -- ============================================================
--- Nota: En producción los usuarios se crean mediante EntraID.
--- Las contraseñas aquí son placeholders (la auth real es via Microsoft).
+
 INSERT INTO usuarios (id, nombre, apellidos, email, microsoft_id, rol, tokens, activo) VALUES
     -- Administrador
     ('a0000000-0000-0000-0000-000000000001', 'Admin', 'RESERVIVES', 'admin@iesluisvives.org', 'ms-admin-001', 'ADMIN', 0, TRUE),
