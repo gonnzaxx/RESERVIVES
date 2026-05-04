@@ -13,35 +13,36 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Configuración global de la aplicación cargada desde variables de entorno."""
 
-    # --- Base de datos ---
+    # Base de datos
     DATABASE_URL: str = "postgresql+asyncpg://reservives:reservives_password@localhost:5432/reservives_db"
 
-    # --- Servidor ---
+    # Servidor
     APP_HOST: str = "0.0.0.0"
-    APP_PORT: int = 8000
+    APP_PORT: int = 1212
     APP_DEBUG: bool = True
 
-    # --- Microsoft EntraID (OAuth2) ---
+    # Microsoft EntraID (OAuth2)
     AZURE_CLIENT_ID: str = "placeholder-client-id"
     AZURE_TENANT_ID: str = "placeholder-tenant-id"
     AZURE_CLIENT_SECRET: str = "placeholder-client-secret"
     AZURE_AUTHORITY: str = "https://login.microsoftonline.com/placeholder-tenant-id"
 
-    # --- JWT para sesiones internas ---
+    # JWT para sesiones internas
     JWT_SECRET_KEY: str = "tu-clave-secreta"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # --- Dominios de email permitidos ---
-    ALLOWED_DOMAINS: str = "alumno.iesluisvives.org,profesor.iesluisvives.org,iesluisvives.org"
+    # Mapeo Azure AD/Entra ID -> rol interno
+    # Formato: "<group_id>:<ROL>,<group_id>:<ROL>"
+    AZURE_GROUP_ROLE_MAP: str = ""
 
-    # --- CORS ---
+    # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost:5000"
 
-    # --- Tokens ---
+    # Tokens
     DEFAULT_MONTHLY_TOKENS: int = 20
 
-    # --- SMTP (emails notificaciones) ---
+    # SMTP (emails notificaciones)
     SMTP_ENABLED: bool = False
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -49,12 +50,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "tu-email@gmail.com"
 
-    # --- Firebase Cloud Messaging ---
+    # Firebase Cloud Messaging
     FIREBASE_ENABLED: bool = False
     FIREBASE_CREDENTIALS_PATH: str = "firebase-credentials.example.json"
     FIREBASE_WEB_APP_URL: str = "http://localhost:3000"
 
-    # --- IA (Gemini) ---
+    # IA (Gemini)
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.0-flash"
 
@@ -64,9 +65,19 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
     @property
-    def allowed_domains_list(self) -> list[str]:
-        """Devuelve la lista de dominios de email permitidos."""
-        return [domain.strip() for domain in self.ALLOWED_DOMAINS.split(",")]
+    def azure_group_role_map(self) -> dict[str, str]:
+        """Devuelve el mapeo normalizado de group_id -> rol."""
+        mapping: dict[str, str] = {}
+        for chunk in self.AZURE_GROUP_ROLE_MAP.split(","):
+            parsed = chunk.strip()
+            if not parsed or ":" not in parsed:
+                continue
+            group_id, role = parsed.split(":", 1)
+            group_id = group_id.strip().lower()
+            role = role.strip().upper()
+            if group_id and role:
+                mapping[group_id] = role
+        return mapping
 
     @property
     def firebase_credentials_abspath(self) -> Path:

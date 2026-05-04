@@ -26,6 +26,8 @@ from app.routers import (
     favoritos,
     notificaciones,
     reservas_espacios,
+    reservas_recurrentes,
+    lista_espera,
     servicios,
     reservas_servicios,
     tramos,
@@ -35,7 +37,9 @@ from app.routers import (
     incidencias,
     encuestas,
     dashboard,
+    ws,
 )
+from app.routers.configuracion import tramos_router
 from app.services.push_notification_service import get_push_notification_service
 from app.services.token_service import TokenService
 from app.utils.exceptions import ReservivesException
@@ -62,6 +66,23 @@ async def recarga_mensual_tokens():
         except Exception:
             await session.rollback()
             logger.exception("monthly_token_reload_failed")
+
+
+async def generar_instancias_recurrentes():
+    """Tarea programada: genera instancias de reservas recurrentes aprobadas."""
+    async with async_session() as session:
+        try:
+            from app.services.reserva_recurrente_service import ReservaRecurrenteService
+            service = ReservaRecurrenteService(session)
+            creadas = await service.generar_instancias_pendientes()
+            await session.commit()
+            logger.info(
+                "recurring_instances_generated",
+                extra={"extra_data": {"instances_created": creadas}},
+            )
+        except Exception:
+            await session.rollback()
+            logger.exception("recurring_instances_generation_failed")
 
 
 async def limpiar_anuncios_expirados():
@@ -147,6 +168,13 @@ async def lifespan(app: FastAPI):
         name="Limpieza de anuncios expirados",
         replace_existing=True,
     )
+    scheduler.add_job(
+        generar_instancias_recurrentes,
+        trigger=CronTrigger(hour=2, minute=0),
+        id="generar_instancias_recurrentes",
+        name="Generación de instancias de reservas recurrentes",
+        replace_existing=True,
+    )
     scheduler.start()
     get_push_notification_service().initialize()
     logger.info("backend_started")
@@ -215,6 +243,8 @@ app.include_router(ai.router, prefix="/api")
 app.include_router(usuarios.router, prefix="/api")
 app.include_router(espacios.router, prefix="/api")
 app.include_router(reservas_espacios.router, prefix="/api")
+app.include_router(reservas_recurrentes.router, prefix="/api")
+app.include_router(lista_espera.router, prefix="/api")
 app.include_router(anuncios.router, prefix="/api")
 app.include_router(cafeteria.router, prefix="/api")
 app.include_router(servicios.router, prefix="/api")
@@ -228,6 +258,8 @@ app.include_router(configuracion.router, prefix="/api")
 app.include_router(incidencias.router, prefix="/api")
 app.include_router(encuestas.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(ws.router, prefix="/api")
+app.include_router(tramos_router, prefix="/api")
 
 app.mount("/api/uploads", StaticFiles(directory="uploads"), name="uploads")
 
