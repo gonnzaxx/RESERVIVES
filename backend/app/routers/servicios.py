@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_backoffice_section
+from app.middleware.auth_middleware import require_backoffice_section
 from app.models.notificacion import TipoNotificacion
 from app.models.servicio import Servicio
 from app.models.usuario import Usuario
@@ -19,7 +19,6 @@ router = APIRouter(prefix="/servicios", tags=["Servicios"])
 # --- SERVICIOS ---
 @router.get("/", response_model=list[ServicioResponse], summary="Listar servicios")
 async def listar_servicios(
-        current_user: Usuario = Depends(get_current_user),
         db: AsyncSession = Depends(get_db),
 ):
     """Lista todos los servicios activos del instituto."""

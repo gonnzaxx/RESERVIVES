@@ -1,9 +1,6 @@
-import os
 import uuid
-import shutil
-from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -57,41 +54,6 @@ async def obtener_usuario(
     return UsuarioResponse.model_validate(usuario)
 
 
-@router.post("/me/avatar", response_model=UsuarioResponse, summary="Subir avatar de usuario")
-async def subir_avatar(
-    file: UploadFile = File(...),
-    current_user: Usuario = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Sube un avatar para el usuario logueado."""
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen")
-
-    # Crear el directorio si no existe
-    upload_dir = Path("uploads/avatars")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generar un nombre seguro
-    extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{extension}"
-    file_path = upload_dir / filename
-
-    # Guardar archivo
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Actualizar DB
-    from app.config import get_settings
-    settings = get_settings()
-    repo = UsuarioRepository(db)
-    avatar_url = f"{settings.APP_HOST}:{settings.APP_PORT}/api/uploads/avatars/{filename}" if settings.APP_DEBUG else f"/api/uploads/avatars/{filename}"
-    # Formato path relativo, Flutter puede reconstruirlo usando base_url pero mejor mandar la url completa o el path local. 
-    # Almacenaremos el path relativo /api/uploads/avatars/...
-    update_data = {"avatar_url": f"/api/uploads/avatars/{filename}"}
-    usuario = await repo.update(current_user, update_data)
-    
-    return UsuarioResponse.model_validate(usuario)
-
 @router.put("/{usuario_id}", response_model=UsuarioResponse, summary="Actualizar un usuario")
 async def actualizar_usuario(
     usuario_id: uuid.UUID,
@@ -106,6 +68,10 @@ async def actualizar_usuario(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     update_data = data.model_dump(exclude_unset=True)
+    # Si el admin está cambiando el rol manualmente, marcarlo para que no
+    # se sobreescriba en futuros logins con Microsoft Entra ID
+    if "rol" in update_data:
+        update_data["rol_override"] = True
     usuario = await repo.update(usuario, update_data)
     await admin_ws_manager.broadcast_admin({"event": "usuario_updated"})
     return UsuarioResponse.model_validate(usuario)

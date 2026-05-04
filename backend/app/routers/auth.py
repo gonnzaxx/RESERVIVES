@@ -7,35 +7,36 @@ from app.models.usuario import Usuario
 from app.repositories.usuario_repo import UsuarioRepository
 from app.schemas.usuario import (
     DevLoginRequest,
+    GuestTokenResponse,
     LoginRequest,
     TokenResponse,
     UsuarioResponse,
 )
-from app.services.auth_service import login_con_microsoft, login_desarrollo
+from app.services.auth_service import login_con_microsoft, login_desarrollo, login_guest
 from app.services.websocket_manager import admin_ws_manager
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-@router.post(
-    "/login",
-    response_model=TokenResponse,
-    summary="Login con Microsoft EntraID"
-)
+@router.post("/login", response_model=TokenResponse, summary="Login con Microsoft EntraID")
 async def login_microsoft(
     data: LoginRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     Autenticación mediante token de Microsoft EntraID.
     El usuario se crea automáticamente en la BD si es su primer login.
-    El rol se determina por el dominio del email.
+    El rol se determina por grupos de Microsoft Entra ID.
     """
     repo = UsuarioRepository(db)
-    token, usuario, is_new_user = await login_con_microsoft(data.microsoft_token, repo)
+    token, usuario, is_new_user, detected_roles = await login_con_microsoft(
+        data.microsoft_token, repo
+    )
     if is_new_user:
         await admin_ws_manager.broadcast_admin({"event": "usuario_created"})
+    user_payload = UsuarioResponse.model_validate(usuario)
+    user_payload.roles_detectados = detected_roles
     return TokenResponse(
         access_token=token,
-        user=UsuarioResponse.model_validate(usuario),
+        user=user_payload,
     )
 
 
@@ -48,13 +49,23 @@ async def login_dev(
     data: DevLoginRequest, db: AsyncSession = Depends(get_db)
 ):
     repo = UsuarioRepository(db)
-    token, usuario, is_new_user = await login_desarrollo(repo, data.email)
+    token, usuario, is_new_user = await login_desarrollo(repo, data.email, data.rol)
     if is_new_user:
         await admin_ws_manager.broadcast_admin({"event": "usuario_created"})
     return TokenResponse(
         access_token=token,
         user=UsuarioResponse.model_validate(usuario),
     )
+
+
+@router.post(
+    "/guest",
+    response_model=GuestTokenResponse,
+    summary="Acceso invitado sin autenticacion",
+)
+async def guest_access():
+    token = await login_guest()
+    return GuestTokenResponse(access_token=token)
 
 
 @router.get("/me", response_model=UsuarioResponse, summary="Obtener usuario actual")

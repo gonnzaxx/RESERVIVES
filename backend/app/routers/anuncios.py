@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_backoffice_section
+from app.middleware.auth_middleware import (
+    get_current_user,
+    get_optional_current_user,
+    require_backoffice_section,
+)
 from app.models.anuncio import Anuncio
 from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
@@ -22,7 +26,6 @@ router = APIRouter(prefix="/anuncios", tags=["Anuncios"])
 async def listar_anuncios(
     skip: int = 0,
     limit: int = 50,
-    current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista los anuncios activos y no expirados. Destacados primero."""
@@ -59,7 +62,6 @@ async def listar_todos_anuncios(
 @router.get("/{anuncio_id}", response_model=AnuncioResponse, summary="Obtener un anuncio")
 async def obtener_anuncio(
     anuncio_id: uuid.UUID,
-    current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Obtiene un anuncio especÃ­fico."""
@@ -137,9 +139,11 @@ async def eliminar_anuncio(
 async def registrar_vista(
     anuncio_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario | None = Depends(get_optional_current_user),
 ):
     """Registra que un usuario ha visto un anuncio."""
+    if not current_user:
+        return
     repo = AnalyticsRepository(db)
     await repo.register_view(anuncio_id, current_user.id)
     await db.commit()

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth_middleware import get_current_user, require_backoffice_section
+from app.middleware.auth_middleware import require_backoffice_section
 from app.models.cafeteria import CategoriaCafeteria, ProductoCafeteria
 from app.models.usuario import Usuario
 from app.repositories.cafeteria_repo import CategoriaRepository, ProductoRepository
@@ -21,7 +21,6 @@ router = APIRouter(prefix="/cafeteria", tags=["Cafetería"])
 
 @router.get("/categorias", response_model=list[CategoriaResponse], summary="Listar menú")
 async def listar_categorias(
-    current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista todas las categorías activas con sus productos."""
@@ -79,7 +78,6 @@ async def eliminar_categoria(
 
 @router.get("/productos", response_model=list[ProductoResponse], summary="Listar productos")
 async def listar_productos(
-    current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista todos los productos disponibles."""
@@ -90,7 +88,6 @@ async def listar_productos(
 
 @router.get("/productos/destacados", response_model=list[ProductoResponse], summary="Productos destacados")
 async def listar_destacados(
-    current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Lista los productos marcados como destacados."""
