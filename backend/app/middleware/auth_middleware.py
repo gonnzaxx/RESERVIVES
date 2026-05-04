@@ -45,6 +45,12 @@ async def get_current_user(
 
     # Verificar el JWT
     payload = verificar_token_jwt(credentials.credentials)
+    if payload.get("is_guest"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Funcionalidad no disponible sin autenticar",
+        )
+
     user_id = payload.get("sub")
 
     if not user_id:
@@ -82,6 +88,19 @@ async def require_admin(
             detail="Se requiere rol de administrador",
         )
     return usuario
+
+
+async def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> Usuario | None:
+    """Devuelve usuario autenticado si el token es valido; si no, None."""
+    if not credentials:
+        return None
+    try:
+        return await get_current_user(credentials, db)
+    except HTTPException:
+        return None
 
 
 def require_backoffice_section(section: BackofficeSection):
