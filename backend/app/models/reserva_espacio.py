@@ -52,6 +52,12 @@ class ReservaEspacio(Base):
         ForeignKey("tramos_horarios.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Referencia al patrón recurrente que generó esta instancia (nullable)
+    reserva_recurrente_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("reservas_recurrentes.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -63,6 +69,11 @@ class ReservaEspacio(Base):
     usuario = relationship("Usuario", back_populates="reservas")
     espacio = relationship("Espacio", back_populates="reservas")
     tramo = relationship("TramoHorario", foreign_keys=[tramo_id])
+    reserva_recurrente = relationship(
+        "ReservaRecurrente",
+        back_populates="instancias",
+        foreign_keys=[reserva_recurrente_id],
+    )
 
     def __repr__(self) -> str:
         return f"<ReservaEspacio {self.id} - {self.estado.value}>"

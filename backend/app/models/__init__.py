@@ -25,6 +25,12 @@ from app.models.notificacion import (
     CanalNotificacion,
     EstadoEntregaNotificacion,
 )
+from app.models.reserva_recurrente import (
+    ReservaRecurrente,
+    TipoRecurrencia,
+    EstadoReservaRecurrente,
+)
+from app.models.lista_espera import ListaEspera, EstadoListaEspera
 
 __all__ = [
     "Usuario", "RolUsuario",
@@ -42,4 +48,6 @@ __all__ = [
     "Notificacion", "DispositivoPush", "TipoNotificacion",
     "PreferenciasNotificacion", "NotificacionEntrega",
     "CanalNotificacion", "EstadoEntregaNotificacion",
+    "ReservaRecurrente", "TipoRecurrencia", "EstadoReservaRecurrente",
+    "ListaEspera", "EstadoListaEspera",
 ]
