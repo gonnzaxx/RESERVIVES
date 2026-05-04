@@ -1,7 +1,7 @@
 """
 RESERVIVES - Excepciones personalizadas.
 
-Define excepciones que se traducen a respuestas HTTP.
+Define excepciones de negocio que se traducen a respuestas HTTP.
 """
 
 

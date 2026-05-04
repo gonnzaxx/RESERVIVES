@@ -1,5 +1,5 @@
 """
-Logging estructurado
+Logging estructurado para RESERVIVES.
 """
 
 from __future__ import annotations
