@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -94,7 +94,7 @@ class ReservaEspacioRepository(BaseRepository[ReservaEspacio]):
                 and_(
                     ReservaEspacio.usuario_id == usuario_id,
                     ReservaEspacio.estado.in_([EstadoReserva.PENDIENTE, EstadoReserva.APROBADA]),
-                    ReservaEspacio.fecha_fin > datetime.now(),
+                    ReservaEspacio.fecha_fin > datetime.now(timezone.utc),
                 )
             )
         )
