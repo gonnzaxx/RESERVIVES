@@ -1,48 +1,55 @@
-import uuid
-from datetime import datetime
+"""
+RESERVIVES - Schemas de Tramo Horario.
 
-from pydantic import BaseModel, Field
+Modelos Pydantic para la serialización de tramos y disponibilidad.
+"""
+
+from datetime import time
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
-class ServicioResponse(BaseModel):
-    """Schema de respuesta para un servicio del instituto."""
-    id: uuid.UUID
+class TramoHorarioResponse(BaseModel):
+    """Schema de respuesta de un tramo horario."""
+    id: UUID
     nombre: str
-    descripcion: str | None = None
-    imagen_url: str | None = None
-    ubicacion: str | None = None
-    horario: str | None = None
-    precio_tokens: int
-    antelacion_dias: int
+    turno: str
+    numero: int
+    hora_inicio: time
+    hora_fin: time
+    es_recreo: bool
     activo: bool
-    orden: int
-    created_at: datetime
-    updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
-class ServicioCreate(BaseModel):
-    """Schema para crear un servicio."""
-    nombre: str = Field(..., min_length=1, max_length=150)
-    descripcion: str | None = None
-    imagen_url: str | None = None
-    ubicacion: str | None = None
-    horario: str | None = None
-    precio_tokens: int = Field(ge=0, default=0)
-    antelacion_dias: int = Field(ge=1, default=7)
-    orden: int = 0
+class TramoDisponibilidadResponse(BaseModel):
+    """
+    Respuesta del endpoint de disponibilidad diaria.
+    Combina los datos del tramo con su estado actual para un recurso y fecha.
+    """
+    tramo: TramoHorarioResponse
+    disponible: bool    # True = se puede reservar (permitido AND NOT reservado)
+    permitido: bool     # True = el admin lo tiene habilitado para este recurso
+    reservado: bool     # True = ya hay una reserva activa en ese tramo+fecha
+    mensaje: str | None = None
 
+class TramoHorarioCreate(BaseModel):
+    """Schema para crear un tramo horario."""
+    nombre: str
+    turno: str  # "MAÑANA" | "TARDE"
+    numero: int
+    hora_inicio: time
+    hora_fin: time
+    es_recreo: bool = False
 
-class ServicioUpdate(BaseModel):
-    """Schema para actualizar un servicio."""
-    nombre: str | None = Field(None, min_length=1, max_length=150)
-    descripcion: str | None = None
-    imagen_url: str | None = None
-    ubicacion: str | None = None
-    horario: str | None = None
-    precio_tokens: int | None = Field(None, ge=0)
-    antelacion_dias: int | None = Field(None, ge=1)
+class TramoHorarioUpdate(BaseModel):
+    """Schema para editar un tramo horario (todos los campos opcionales)."""
+    nombre: str | None = None
+    turno: str | None = None
+    numero: int | None = None
+    hora_inicio: time | None = None
+    hora_fin: time | None = None
+    es_recreo: bool | None = None
     activo: bool | None = None
-    orden: int | None = None

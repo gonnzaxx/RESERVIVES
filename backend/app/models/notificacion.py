@@ -92,8 +92,12 @@ class PreferenciasNotificacion(Base):
     nuevo_espacio: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     nuevo_servicio: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     nuevo_anuncio: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    nueva_encuesta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    lista_espera: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     email_reservas: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     email_anuncios: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_incidencias: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_tokens: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

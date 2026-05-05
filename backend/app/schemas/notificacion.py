@@ -28,8 +28,12 @@ class PreferenciasNotificacionResponse(BaseModel):
     nuevo_espacio: bool
     nuevo_servicio: bool
     nuevo_anuncio: bool
+    nueva_encuesta: bool
+    lista_espera: bool
     email_reservas: bool
     email_anuncios: bool
+    email_incidencias: bool
+    email_tokens: bool
 
     class Config:
         from_attributes = True
@@ -41,8 +45,12 @@ class PreferenciasNotificacionUpdate(BaseModel):
     nuevo_espacio: bool = True
     nuevo_servicio: bool = True
     nuevo_anuncio: bool = True
+    nueva_encuesta: bool = True
+    lista_espera: bool = True
     email_reservas: bool = True
     email_anuncios: bool = True
+    email_incidencias: bool = True
+    email_tokens: bool = True
 
 
 class NotificacionEntregaResponse(BaseModel):

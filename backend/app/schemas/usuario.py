@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 from app.models.usuario import RolUsuario
 
 
-# --- Schemas de respuesta (output) ---
+# Schemas de respuesta
 
 class UsuarioResponse(BaseModel):
     """Schema de respuesta para un usuario."""
@@ -18,6 +18,8 @@ class UsuarioResponse(BaseModel):
     rol: RolUsuario
     tokens: int
     activo: bool
+    is_guest: bool = False
+    roles_detectados: list[RolUsuario] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -38,7 +40,7 @@ class UsuarioResumen(BaseModel):
         from_attributes = True
 
 
-# --- Schemas de entrada (input) ---
+# Schemas de entrada
 
 class UsuarioCreate(BaseModel):
     """Schema para crear un usuario (usado internamente tras login con EntraID)."""
@@ -60,7 +62,7 @@ class UsuarioUpdate(BaseModel):
     activo: bool | None = None
 
 
-# --- Schemas de autenticación ---
+# Schemas de autenticación
 
 class TokenResponse(BaseModel):
     """Respuesta con el token JWT tras autenticación."""
@@ -76,3 +78,11 @@ class LoginRequest(BaseModel):
 class DevLoginRequest(BaseModel):
     """Peticion de login de desarrollo sin OAuth (controlado por configuracion)."""
     email: EmailStr | None = None
+    rol: RolUsuario = RolUsuario.ALUMNO
+
+
+class GuestTokenResponse(BaseModel):
+    """Respuesta para acceso invitado sin autenticacion externa."""
+    access_token: str
+    token_type: str = "bearer"
+    is_guest: bool = True

@@ -67,6 +67,7 @@ CREATE TABLE usuarios (
     microsoft_id VARCHAR(255) UNIQUE,          -- ID de Microsoft EntraID
     avatar_url VARCHAR(500),                    -- URL de la imagen de perfil
     rol rol_usuario NOT NULL DEFAULT 'ALUMNO',
+    rol_override BOOLEAN NOT NULL DEFAULT FALSE,
     tokens INTEGER NOT NULL DEFAULT 0,          -- Tokens disponibles (maximo acumulable 100)
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -270,7 +271,7 @@ CREATE INDEX idx_reservas_servicios_estado ON reservas_servicios(estado);
 -- TABLA: HISTORIAL_TOKENS
 -- ============================================================
 -- Registro de todos los movimientos de tokens de los usuarios.
--- Permite auditorÃ­a completa de recargas y consumos.
+-- Permite auditorí­a completa de recargas y consumos.
 CREATE TABLE historial_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -316,8 +317,12 @@ CREATE TABLE preferencias_notificacion (
     nuevo_espacio BOOLEAN NOT NULL DEFAULT TRUE,
     nuevo_servicio BOOLEAN NOT NULL DEFAULT TRUE,
     nuevo_anuncio BOOLEAN NOT NULL DEFAULT TRUE,
+    nueva_encuesta BOOLEAN NOT NULL DEFAULT TRUE,
+    lista_espera BOOLEAN NOT NULL DEFAULT TRUE,
     email_reservas BOOLEAN NOT NULL DEFAULT TRUE,
     email_anuncios BOOLEAN NOT NULL DEFAULT TRUE,
+    email_incidencias BOOLEAN NOT NULL DEFAULT TRUE,
+    email_tokens BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -419,7 +424,7 @@ CREATE TABLE configuracion (
 );
 
 -- ============================================================
--- DATOS INICIALES DE CONFIGURACIÃ“N
+-- DATOS INICIALES DE CONFIGURACIÓN
 -- ============================================================
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('tokens_mensuales_alumno', '20', 'Cantidad de tokens que recibe cada alumno el día 1 de cada mes'),
@@ -617,3 +622,83 @@ ALTER TABLE reservas_servicios
 
 CREATE INDEX idx_reservas_tramo ON reservas_espacios(tramo_id);
 CREATE INDEX idx_reservas_servicios_tramo ON reservas_servicios(tramo_id);
+
+-- ============================================================
+-- TIPOS ENUMERADOS NUEVOS (Feature: recurrentes + lista espera)
+-- ============================================================
+
+ALTER TYPE tipo_notificacion ADD VALUE IF NOT EXISTS 'RESERVA_RECURRENTE_APROBADA';
+ALTER TYPE tipo_notificacion ADD VALUE IF NOT EXISTS 'RESERVA_RECURRENTE_RECHAZADA';
+ALTER TYPE tipo_notificacion ADD VALUE IF NOT EXISTS 'NUEVA_RESERVA_RECURRENTE_PENDIENTE';
+ALTER TYPE tipo_notificacion ADD VALUE IF NOT EXISTS 'LISTA_ESPERA_DISPONIBLE';
+
+CREATE TYPE tipo_recurrencia AS ENUM ('SEMANAL', 'QUINCENAL', 'MENSUAL');
+
+CREATE TYPE estado_reserva_recurrente AS ENUM (
+    'PENDIENTE_APROBACION',
+    'APROBADA',
+    'RECHAZADA',
+    'CANCELADA'
+);
+
+CREATE TYPE estado_lista_espera AS ENUM (
+    'ACTIVA',
+    'NOTIFICADA',
+    'RESERVADA',
+    'EXPIRADA',
+    'CANCELADA'
+);
+
+-- ============================================================
+-- TABLA: RESERVAS_RECURRENTES
+-- ============================================================
+-- Almacena patrones de reserva periódica pendientes de aprobación.
+-- Una vez aprobadas, el scheduler genera instancias (reservas_espacios).
+CREATE TABLE reservas_recurrentes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
+    tramo_id UUID NOT NULL REFERENCES tramos_horarios(id) ON DELETE CASCADE,
+    tipo_recurrencia tipo_recurrencia NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin_recurrencia DATE NOT NULL,
+    estado estado_reserva_recurrente NOT NULL DEFAULT 'PENDIENTE_APROBACION',
+    observaciones TEXT,
+    motivo_rechazo TEXT,
+    tokens_por_instancia INTEGER NOT NULL DEFAULT 0,
+    ultima_instancia_generada DATE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_fechas_recurrencia CHECK (fecha_fin_recurrencia > fecha_inicio)
+);
+
+CREATE INDEX idx_rec_usuario ON reservas_recurrentes(usuario_id);
+CREATE INDEX idx_rec_espacio ON reservas_recurrentes(espacio_id);
+CREATE INDEX idx_rec_estado ON reservas_recurrentes(estado);
+
+-- ============================================================
+-- FK: reserva_recurrente_id en reservas_espacios
+-- ============================================================
+ALTER TABLE reservas_espacios
+    ADD COLUMN reserva_recurrente_id UUID REFERENCES reservas_recurrentes(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_reservas_recurrente ON reservas_espacios(reserva_recurrente_id);
+
+-- ============================================================
+-- TABLA: LISTA_ESPERA
+-- ============================================================
+CREATE TABLE lista_espera (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    espacio_id UUID NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
+    tramo_id UUID NOT NULL REFERENCES tramos_horarios(id) ON DELETE CASCADE,
+    fecha DATE NOT NULL,
+    posicion INTEGER NOT NULL,
+    estado estado_lista_espera NOT NULL DEFAULT 'ACTIVA',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_lista_espera_usuario ON lista_espera(usuario_id);
+CREATE INDEX idx_lista_espera_slot ON lista_espera(espacio_id, tramo_id, fecha, estado);
