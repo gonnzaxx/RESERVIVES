@@ -18,7 +18,8 @@ from app.models.usuario import RolUsuario, Usuario
 from app.repositories.reserva_servicio_repo import ReservaServicioRepository
 from app.repositories.servicio_repo import ServicioRepository
 from app.schemas.reserva import ReservaServicioCreate
-from app.utils.datetime_utils import ensure_utc_aware
+from app.utils.datetime_utils import ensure_utc_aware, local_slot_to_utc_range
+from app.utils.logging import get_logger
 from app.utils.role_access import (
     BackofficeSection,
     MAX_USER_TOKENS,
@@ -41,6 +42,7 @@ class ReservaServicioService:
         self.session = session
         self.reserva_servicio_repo = ReservaServicioRepository(session)
         self.servicio_repo = ServicioRepository(session)
+        self.logger = get_logger("app.services.reserva_servicio")
 
     async def crear_reserva(
         self, usuario: Usuario, data: ReservaServicioCreate
@@ -73,8 +75,25 @@ class ReservaServicioService:
         if disp_tramo.reservado:
             raise ConflictException("Este tramo ya está reservado para esa fecha")
 
-        fecha_inicio = datetime.combine(data.fecha, tramo.hora_inicio).replace(tzinfo=timezone.utc)
-        fecha_fin = datetime.combine(data.fecha, tramo.hora_fin).replace(tzinfo=timezone.utc)
+        # Interpret slot times in local school timezone, then persist as UTC.
+        fecha_inicio, fecha_fin = local_slot_to_utc_range(
+            data.fecha,
+            tramo.hora_inicio,
+            tramo.hora_fin,
+        )
+        self.logger.info(
+            "service_reservation_slot_computed",
+            extra={
+                "extra_data": {
+                    "fecha": str(data.fecha),
+                    "tramo_id": str(data.tramo_id),
+                    "hora_inicio_local": str(tramo.hora_inicio),
+                    "hora_fin_local": str(tramo.hora_fin),
+                    "fecha_inicio_utc": fecha_inicio.isoformat(),
+                    "fecha_fin_utc": fecha_fin.isoformat(),
+                }
+            },
+        )
 
         # 3. Validar fechas
         inicio_utc = ensure_utc_aware(fecha_inicio)

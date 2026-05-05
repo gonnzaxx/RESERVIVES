@@ -3,6 +3,7 @@ Servicio de notificaciones in-app, preferencias y registro de entregas.
 """
 
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notificacion import (
@@ -164,12 +165,15 @@ class NotificationService:
         referencia_id: str | None = None,
         email_data: dict | None = None,
     ) -> None:
-        """Envía una notificación a todos los usuarios con rol ADMIN."""
+        """Envía una notificación a todos los usuarios con rol ADMIN o JEFE_ESTUDIOS."""
         try:
             from app.models.usuario import RolUsuario
             result = await self.db.execute(
                 select(Usuario.id, Usuario.email, Usuario.nombre)
-                .where(Usuario.rol == RolUsuario.ADMIN, Usuario.activo == True)
+                .where(
+                    Usuario.rol.in_([RolUsuario.ADMIN, RolUsuario.JEFE_ESTUDIOS]),
+                    Usuario.activo == True,
+                )
             )
             admins = result.all()
             
@@ -325,9 +329,22 @@ class NotificationService:
             return preferences
 
         preferences = PreferenciasNotificacion(usuario_id=usuario_id)
-        self.db.add(preferences)
-        await self.db.flush()
-        return preferences
+        try:
+            async with self.db.begin_nested():
+                self.db.add(preferences)
+                await self.db.flush()
+            return preferences
+        except IntegrityError:
+            # Another concurrent flow may create the same row first.
+            result = await self.db.execute(
+                select(PreferenciasNotificacion).where(
+                    PreferenciasNotificacion.usuario_id == usuario_id
+                )
+            )
+            existing = result.scalar_one_or_none()
+            if existing is not None:
+                return existing
+            raise
 
     async def update_preferences(self, usuario_id, payload: dict) -> PreferenciasNotificacion:
         preferences = await self.get_or_create_preferences(usuario_id)
@@ -458,8 +475,15 @@ class NotificationService:
             TipoNotificacion.NUEVO_ESPACIO: preferences.nuevo_espacio,
             TipoNotificacion.NUEVO_SERVICIO: preferences.nuevo_servicio,
             TipoNotificacion.NUEVO_ANUNCIO: preferences.nuevo_anuncio,
-            TipoNotificacion.RESERVA_CANCELADA: True,  
+            TipoNotificacion.NUEVA_ENCUESTA: preferences.nueva_encuesta,
+            TipoNotificacion.RESERVA_CANCELADA: True,
             TipoNotificacion.NUEVA_RESERVA_PENDIENTE: True,
+            TipoNotificacion.RESERVA_RECURRENTE_APROBADA: preferences.reserva_aprobada,
+            TipoNotificacion.RESERVA_RECURRENTE_RECHAZADA: preferences.reserva_rechazada,
+            TipoNotificacion.NUEVA_RESERVA_RECURRENTE_PENDIENTE: True,
+            TipoNotificacion.LISTA_ESPERA_DISPONIBLE: preferences.lista_espera,
+            TipoNotificacion.INCIDENCIA_RESUELTA: True,
+            TipoNotificacion.RECARGA_TOKENS: True,
         }
         return mapping.get(tipo, True)
 
@@ -471,6 +495,10 @@ class NotificationService:
     ) -> bool:
         if tipo == TipoNotificacion.NUEVO_ANUNCIO:
             return preferences.email_anuncios
+        if tipo == TipoNotificacion.INCIDENCIA_RESUELTA:
+            return preferences.email_incidencias
+        if tipo == TipoNotificacion.RECARGA_TOKENS:
+            return preferences.email_tokens
         return preferences.email_reservas
 
     async def _get_user_email(self, usuario_id) -> str | None:

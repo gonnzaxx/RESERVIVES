@@ -5,7 +5,7 @@ Lógica de negocio para consultar tramos y calcular disponibilidad
 por espacio o servicio en un día concreto.
 """
 
-from datetime import date, datetime, timezone, time as time_type
+from datetime import date, datetime, time as time_type, timezone
 from uuid import UUID
 
 from sqlalchemy import select, and_, delete
@@ -15,6 +15,7 @@ from app.models.reserva_espacio import ReservaEspacio, EstadoReserva
 from app.models.reserva_servicio import ReservaServicio
 from app.models.tramo_horario import TramoHorario, EspacioTramoPermitido, ServicioTramoPermitido
 from app.schemas.tramo import TramoHorarioResponse, TramoDisponibilidadResponse
+from app.utils.datetime_utils import combine_local_date_time
 
 
 class TramoService:
@@ -22,11 +23,6 @@ class TramoService:
 
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    @staticmethod
-    def _combine_utc(d: date, t: time_type) -> datetime:
-        """Combina fecha y hora en un datetime UTC-aware."""
-        return datetime.combine(d, t).replace(tzinfo=timezone.utc)
 
     async def get_todos_los_tramos(self) -> list[TramoHorario]:
         """Devuelve todos los tramos activos ordenados por turno y número."""
@@ -43,6 +39,46 @@ class TramoService:
             select(TramoHorario).where(TramoHorario.id == tramo_id)
         )
         return result.scalar_one_or_none()
+        
+    async def get_todos_los_tramos_admin(self) -> list[TramoHorario]:
+        """Devuelve TODOS los tramos (activos e inactivos) para el backoffice."""
+        result = await self.db.execute(
+            select(TramoHorario).order_by(TramoHorario.turno.desc(), TramoHorario.numero)
+        )
+        return list(result.scalars().all())
+
+    async def crear_tramo(self, datos: dict) -> TramoHorario:
+        """Crea un nuevo tramo horario. Lanza ValueError si turno+numero ya existe."""
+        from sqlalchemy.exc import IntegrityError
+        tramo = TramoHorario(**datos)
+        self.db.add(tramo)
+        try:
+            await self.db.flush()
+        except IntegrityError:
+            await self.db.rollback()
+            raise ValueError(f"Ya existe un tramo con turno '{datos['turno']}' y número {datos['numero']}")
+        await self.db.commit()
+        await self.db.refresh(tramo)
+        return tramo
+
+    async def actualizar_tramo(self, tramo_id: UUID, datos: dict) -> TramoHorario:
+        """Actualiza los campos indicados de un tramo. Lanza ValueError si no existe."""
+        tramo = await self.get_tramo_by_id(tramo_id)
+        if not tramo:
+            raise ValueError("Tramo no encontrado")
+        for campo, valor in datos.items():
+            setattr(tramo, campo, valor)
+        await self.db.commit()
+        await self.db.refresh(tramo)
+        return tramo
+
+    async def eliminar_tramo(self, tramo_id: UUID) -> None:
+        """Elimina físicamente el tramo horario."""
+        tramo = await self.get_tramo_by_id(tramo_id)
+        if not tramo:
+            raise ValueError("Tramo no encontrado")
+        await self.db.delete(tramo)
+        await self.db.commit()
 
     async def get_disponibilidad_espacio(
         self, espacio_id: UUID, fecha: date
@@ -63,8 +99,8 @@ class TramoService:
         todos_permitidos = len(tramos_permitidos_ids) == 0
 
         # Tramos ocupados ese día (reservas PENDIENTE o APROBADA)
-        inicio_dia = self._combine_utc(fecha, time_type(0, 0))
-        fin_dia = self._combine_utc(fecha, time_type(23, 59))
+        inicio_dia = combine_local_date_time(fecha, time_type(0, 0)).astimezone(timezone.utc)
+        fin_dia = combine_local_date_time(fecha, time_type(23, 59, 59)).astimezone(timezone.utc)
         result = await self.db.execute(
             select(ReservaEspacio.tramo_id).where(
                 and_(
@@ -96,8 +132,8 @@ class TramoService:
         tramos_permitidos_ids = set(result.scalars().all())
         todos_permitidos = len(tramos_permitidos_ids) == 0
 
-        inicio_dia = self._combine_utc(fecha, time_type(0, 0))
-        fin_dia = self._combine_utc(fecha, time_type(23, 59))
+        inicio_dia = combine_local_date_time(fecha, time_type(0, 0)).astimezone(timezone.utc)
+        fin_dia = combine_local_date_time(fecha, time_type(23, 59, 59)).astimezone(timezone.utc)
         result = await self.db.execute(
             select(ReservaServicio.tramo_id).where(
                 and_(
