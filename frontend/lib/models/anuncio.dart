@@ -1,4 +1,8 @@
-/// RESERVIVES - Modelo de Anuncio.
+/// Modelo de datos de los anuncios de la plataforma
+///
+/// Representa una publicación informativa o aviso dentro del sistema.
+/// Incluye soporte para contenido multimedia, estados de visibilidad
+/// y gestión de fechas de expiración.
 library;
 
 import 'package:reservives/config/constants.dart';
@@ -28,6 +32,7 @@ class Anuncio {
     this.nombreAutor,
   });
 
+  /// Crea una instancia de [Anuncio] desde un mapa JSON
   factory Anuncio.fromJson(Map<String, dynamic> json) {
     return Anuncio(
       id: json['id'] as String,

@@ -1,4 +1,8 @@
-/// RESERVIVES - Modelo de Servicio del Instituto.
+/// Modelo de Servicio.
+///
+/// Define la estructura de los servicios ofrecidos por el centro.
+/// Gestiona la información descriptiva,
+/// costes, visibilidad y reglas de antelación para las citas.
 library;
 
 import 'package:reservives/config/constants.dart';
@@ -58,6 +62,7 @@ class ServicioInstituto {
     );
   }
 
+  /// Construye una instancia de [ServicioInstituto] desde un mapa JSON.
   factory ServicioInstituto.fromJson(Map<String, dynamic> json) {
     return ServicioInstituto(
       id: json['id'] as String,
@@ -74,6 +79,7 @@ class ServicioInstituto {
     );
   }
 
+  /// Convierte la instancia a un formato JSON para persistencia o envío a la API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -1,8 +1,18 @@
+/// Modelo de Incidencia.
+///
+/// Gestiona el ciclo de vida de los reportes de problemas o sugerencias
+/// enviados por los usuarios, incluyendo su estado de resolución y el
+/// feedback del administrador.
+library;
+
+/// Representa el ciclo de vida y estados posibles de un reporte.
 enum EstadoIncidencia {
   pendiente,
   resuelta,
   descartada;
 
+  /// Convierte una cadena de texto proveniente del servidor al valor del enum.
+  /// No sensible a mayúsculas/minúsculas. Por defecto retorna [pendiente].
   static EstadoIncidencia fromString(String value) {
     switch (value.toUpperCase()) {
       case 'PENDIENTE':
@@ -16,9 +26,11 @@ enum EstadoIncidencia {
     }
   }
 
+  /// Serializa el nombre del estado para su envío al backend.
   String toJson() => name.toUpperCase();
 }
 
+/// Representa una incidencia reportada en el sistema.
 class Incidencia {
   final String id;
   final String usuarioId;
@@ -42,6 +54,7 @@ class Incidencia {
     this.nombreUsuario,
   });
 
+  /// Crea una instancia de [Incidencia] desde un mapa JSON.
   factory Incidencia.fromJson(Map<String, dynamic> json) {
     return Incidencia(
       id: json['id'],

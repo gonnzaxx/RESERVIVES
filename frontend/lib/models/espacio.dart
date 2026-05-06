@@ -1,10 +1,13 @@
-/// RESERVIVES - Modelo de Espacio.
-
-
+/// Modelo de Espacio
+///
+/// Define la estructura de los recursos físicos del centro (aulas, pistas, etc.).
+/// Gestiona la lógica de disponibilidad, costes en tokens, permisos por rol
+/// y reglas de reserva.
 library;
 
 import 'package:reservives/config/constants.dart';
 
+/// Define las categorías de espacios disponibles en el sistema.
 enum TipoEspacio {
   pista('PISTA'),
   aula('AULA');
@@ -12,6 +15,8 @@ enum TipoEspacio {
   final String value;
   const TipoEspacio(this.value);
 
+  /// Convierte una cadena del backend al valor de enum correspondiente.
+  /// Por defecto retorna [TipoEspacio.pista] si no hay coincidencia.
   factory TipoEspacio.fromString(String value) {
     return TipoEspacio.values.firstWhere(
           (e) => e.value == value,
@@ -20,6 +25,7 @@ enum TipoEspacio {
   }
 }
 
+/// Representa un espacio físico reservable.
 class Espacio {
   final String id;
   final String nombre;
@@ -95,6 +101,7 @@ class Espacio {
     );
   }
 
+  /// Construye un [Espacio] desde un mapa JSON.
   factory Espacio.fromJson(Map<String, dynamic> json) {
     return Espacio(
       id: json['id'] as String,
@@ -116,6 +123,7 @@ class Espacio {
     );
   }
 
+  /// Convierte la instancia a un mapa JSON para peticiones al servidor.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -1,10 +1,13 @@
-/// RESERVIVES - Modelo de Cafetería.
 
-
+/// Modelos de datos Cafetería.
+///
+/// Define la estructura del menú de la cafetería, organizando los artículos
+/// en categorías y gestionando precios, disponibilidad y destacados.
 library;
 
 import 'package:reservives/config/constants.dart';
 
+/// Representa una sección del menú
 class CategoriaCafeteria {
   final String id;
   final String nombre;
@@ -24,6 +27,7 @@ class CategoriaCafeteria {
     required this.productos,
   });
 
+  /// Crea una categoría y mapea recursivamente su lista de productos desde JSON.
   factory CategoriaCafeteria.fromJson(Map<String, dynamic> json) {
     final productosList = json['productos'] as List? ?? [];
     return CategoriaCafeteria(
@@ -40,6 +44,7 @@ class CategoriaCafeteria {
   }
 }
 
+/// Representa un artículo individual a la venta en la cafetería.
 class ProductoCafeteria {
   final String id;
   final String categoriaId;

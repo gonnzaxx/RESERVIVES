@@ -1,10 +1,13 @@
-/// RESERVIVES - Modelo de Reserva de Espacio.
-
-
+/// Modelo de Reserva de Espacio.
+///
+/// Gestiona el ciclo de vida de una solicitud de uso de instalaciones.
+/// Centraliza la información del usuario, el recurso solicitado, los tiempos
+/// vinculados y el estado administrativo de la transacción.
 library;
 
 import 'package:reservives/models/tramo_horario.dart';
 
+/// Define los estados posibles dentro del flujo de una reserva.
 enum EstadoReserva {
   pendiente('PENDIENTE'),
   aprobada('APROBADA'),
@@ -14,6 +17,7 @@ enum EstadoReserva {
   final String value;
   const EstadoReserva(this.value);
 
+  /// Convierte una cadena de texto del backend al valor de enum correspondiente.
   factory EstadoReserva.fromString(String value) {
     return EstadoReserva.values.firstWhere(
           (e) => e.value == value,
@@ -22,6 +26,7 @@ enum EstadoReserva {
   }
 }
 
+/// Representa una reserva de espacio o servicio en el sistema.
 class Reserva {
   final String id;
   final String usuarioId;
@@ -57,6 +62,7 @@ class Reserva {
     required this.updatedAt,
   });
 
+  /// Crea una [Reserva] desde un mapa JSON.
   factory Reserva.fromJson(Map<String, dynamic> json) {
     final espacioId = (json['espacio_id'] ?? json['servicio_id']).toString();
     final nombreEspacio = (json['nombre_espacio'] ?? json['nombre_servicio']) as String?;
@@ -83,6 +89,7 @@ class Reserva {
     );
   }
 
+  /// Convierte la instancia a un mapa JSON para ser enviado a la API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -97,6 +104,7 @@ class Reserva {
     };
   }
 
+  // Helpers de estado para facilitar la lógica de UI
   bool get isPendiente => estado == EstadoReserva.pendiente;
   bool get isAprobada => estado == EstadoReserva.aprobada;
   bool get isRechazada => estado == EstadoReserva.rechazada;

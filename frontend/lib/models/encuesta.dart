@@ -1,3 +1,11 @@
+/// RESERVIVES - Modelos de Encuestas.
+///
+/// Define la estructura para el sistema de votaciones y participación del alumnado
+/// del centro. Gestiona el ciclo de vida de la encuesta, el recuento de votos
+/// y el estado de participación del usuario.
+library;
+
+/// Representa una opción seleccionable dentro de una encuesta.
 class EncuestaOpcion {
   final String id;
   final String texto;
@@ -9,6 +17,9 @@ class EncuestaOpcion {
     required this.votos,
   });
 
+  /// Crea una opción desde JSON.
+  ///
+  /// Soporta diferentes nombres de campo ([votos_count] o [votos]) para mantener
   factory EncuestaOpcion.fromJson(Map<String, dynamic> json) {
     return EncuestaOpcion(
       id: json['id'],
@@ -18,6 +29,7 @@ class EncuestaOpcion {
   }
 }
 
+/// Representa una encuesta completa con su configuración y resultados.
 class Encuesta {
   final String id;
   final String titulo;
@@ -41,16 +53,15 @@ class Encuesta {
     required this.opciones,
   });
 
+  /// Crea una instancia de [Encuesta] desde un mapa JSON.
   factory Encuesta.fromJson(Map<String, dynamic> json) {
     return Encuesta(
       id: json['id'],
       titulo: json['titulo'],
       descripcion: json['descripcion'],
-      // El backend lo llama created_at
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()).toLocal(),
       fechaFin: DateTime.parse(json['fecha_fin']).toLocal(),
       activa: json['activa'] ?? true,
-      // Estos campos pueden faltar en el listado básico
       usuarioHaVotado: (json['voto_usuario_opcion_id'] != null) || (json['usuario_ha_votado'] ?? false),
       totalVotos: json['total_votos'] ?? 0,
       opciones: (json['opciones'] as List? ?? [])

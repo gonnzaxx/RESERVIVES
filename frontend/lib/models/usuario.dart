@@ -1,9 +1,13 @@
-/// RESERVIVES - Modelo de Usuario.
-
+/// Modelo de Usuario.
+///
+/// Define la entidad central de identidad del sistema. Gestiona la información
+/// de perfil, el sistema de moneda virtual (tokens) y la jerarquía de permisos
+/// mediante roles para el control de acceso.
 library;
 
 import 'package:reservives/config/constants.dart';
 
+/// Define los roles y privilegios disponibles.
 enum RolUsuario {
   alumno('ALUMNO'),
   profesor('PROFESOR'),
@@ -16,6 +20,8 @@ enum RolUsuario {
   final String value;
   const RolUsuario(this.value);
 
+  /// Convierte una cadena del backend al enum correspondiente.
+  /// Por defecto retorna [alumno].
   factory RolUsuario.fromString(String value) {
     final normalized = value.trim().toUpperCase().replaceAll(' ', '_');
     return RolUsuario.values.firstWhere(
@@ -25,6 +31,7 @@ enum RolUsuario {
   }
 }
 
+/// Representa a un usuario autenticado en la plataforma.
 class Usuario {
   final String id;
   final String nombre;
@@ -50,6 +57,7 @@ class Usuario {
     required this.updatedAt,
   });
 
+  /// Crea un [Usuario] desde un mapa JSON.
   factory Usuario.fromJson(Map<String, dynamic> json) {
     return Usuario(
       id: json['id'] as String,
@@ -65,6 +73,7 @@ class Usuario {
     );
   }
 
+  /// Serializa el objeto a JSON para su almacenamiento local o envío a la API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -80,6 +89,7 @@ class Usuario {
     };
   }
 
+  // Helpers de visualización y lógica de negocio
   String get nombreCompleto => '$nombre $apellidos';
   bool get isAlumno => rol == RolUsuario.alumno;
   bool get isProfesor => rol == RolUsuario.profesor;

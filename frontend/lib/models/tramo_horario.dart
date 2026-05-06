@@ -1,7 +1,11 @@
-/// RESERVIVES - Modelo de Tramo Horario.
-
+/// Modelo de Tramo Horario.
+///
+/// Define la estructura de los bloques temporales en los que se divide la jornada
+/// lectiva del centro. Gestiona la lógica de turnos (mañana/tarde), recreos
+/// y el estado de ocupación para el sistema de reservas.
 library;
 
+/// Representa un bloque de tiempo fijo en el calendario escolar.
 class TramoHorario {
   final String id;
   final String nombre;
@@ -23,6 +27,7 @@ class TramoHorario {
     required this.activo,
   });
 
+  /// Crea un [TramoHorario] desde un mapa JSON.
   factory TramoHorario.fromJson(Map<String, dynamic> json) {
     String parseHora(dynamic raw) {
       final s = (raw as String).substring(0, 5);
@@ -46,6 +51,7 @@ class TramoHorario {
   String get labelCompleto => esRecreo ? 'Recreo ($rangoHorario)' : '$nombre ($rangoHorario)';
 }
 
+/// Define los estados lógicos de un tramo tras cruzar datos de disponibilidad.
 enum EstadoTramo {
   disponible,
   reservado,
@@ -53,6 +59,7 @@ enum EstadoTramo {
   horarioPasado,
 }
 
+/// Representa el estado de ocupación de un [TramoHorario] para un recurso y fecha concretos.
 class TramoDisponibilidad {
   final TramoHorario tramo;
   final bool disponible;
@@ -68,6 +75,7 @@ class TramoDisponibilidad {
     this.mensaje,
   });
 
+  /// Clasifica la disponibilidad en un [EstadoTramo] para facilitar la lógica de estilos en UI.
   EstadoTramo get estado {
     if (mensaje == "Horario pasado") return EstadoTramo.horarioPasado;
     if (!permitido) return EstadoTramo.noPermitido;
@@ -75,6 +83,7 @@ class TramoDisponibilidad {
     return EstadoTramo.disponible;
   }
 
+  /// Construye el objeto de disponibilidad cruzando la información del tramo y su estado actual.
   factory TramoDisponibilidad.fromJson(Map<String, dynamic> json) {
     return TramoDisponibilidad(
       tramo: TramoHorario.fromJson(json['tramo'] as Map<String, dynamic>),

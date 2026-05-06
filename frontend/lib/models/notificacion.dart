@@ -1,5 +1,11 @@
+/// Modelos de Notificación.
+///
+/// Gestiona el sistema de alertas y comunicaciones internas de la aplicación.
+/// Permite clasificar las notificaciones por tipo para facilitar la navegación
+
 library;
 
+/// Clasificación de los eventos que pueden disparar una notificación.
 enum TipoNotificacion {
   reservaAprobada('RESERVA_APROBADA'),
   reservaRechazada('RESERVA_RECHAZADA'),
@@ -16,6 +22,8 @@ enum TipoNotificacion {
   final String value;
   const TipoNotificacion(this.value);
 
+  /// Convierte una cadena de texto del backend al tipo de notificación correspondiente.
+  /// En caso de no reconocer el tipo, se asigna [nuevoAnuncio] por defecto.
   factory TipoNotificacion.fromString(String value) {
     return TipoNotificacion.values.firstWhere(
           (e) => e.value == value,
@@ -24,6 +32,7 @@ enum TipoNotificacion {
   }
 }
 
+/// Representa una notificación individual recibida por el usuario.
 class Notificacion {
   final String id;
   final TipoNotificacion tipo;
@@ -43,6 +52,7 @@ class Notificacion {
     required this.createdAt,
   });
 
+  /// Crea una instancia de [Notificacion] desde un mapa JSON.
   factory Notificacion.fromJson(Map<String, dynamic> json) {
     return Notificacion(
       id: json['id'] as String,
