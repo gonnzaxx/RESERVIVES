@@ -7,8 +7,8 @@
 #   docker-compose up --build
 #
 # Acceso:
-#   - Frontend Web:  http://localhost:2121
-#   - Backend API:   http://localhost:8000/api/docs
+#   - Frontend Web:  https://vms.iesluisvives.org:2121
+#   - Backend API:   https://vms.iesluisvives.org:1212/api/docs
 #   - PostgreSQL:    localhost:5432
 # ============================================================
 
@@ -19,7 +19,9 @@ services:
   # Base de datos PostgreSQL
   # ========================================
   db:
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: database/Dockerfile
     container_name: reservives-db
     restart: unless-stopped
     env_file:
@@ -28,8 +30,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
@@ -47,11 +47,21 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
-    ports:
-      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+
+      # BACKEND en puerto 1212 con HTTPS
+      - "traefik.http.routers.api.rule=Host(`vms.iesluisvives.org`)"
+      - "traefik.http.routers.api.entrypoints=api"
+      - "traefik.http.routers.api.tls=true"
+
+      # Puerto interno del contenedor
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
       interval: 30s
@@ -67,11 +77,25 @@ services:
       dockerfile: Dockerfile
     container_name: reservives-frontend
     restart: unless-stopped
-    ports:
-      - "2121:80"
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+
+      # FRONT en 2121
+      - "traefik.http.routers.websecure.rule=Host(`vms.iesluisvives.org`)"
+      - "traefik.http.routers.websecure.entrypoints=websecure"
+      - "traefik.http.routers.websecure.tls=true"
+
+      # Puerto interno Apache/Nginx
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true
 
 volumes:
   postgres_data:
