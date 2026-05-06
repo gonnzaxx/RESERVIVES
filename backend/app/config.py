@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     AZURE_GROUP_ROLE_MAP: str = ""
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost:5000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost:5000,https://vms.iesluisvives.org:2121"
 
     # Tokens
     DEFAULT_MONTHLY_TOKENS: int = 20
