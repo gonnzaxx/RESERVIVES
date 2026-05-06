@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # Mapeo Azure AD/Entra ID -> rol interno
+    # Mapeo Azure AD/Entra ID - rol interno
     # Formato: "<group_id>:<ROL>,<group_id>:<ROL>"
     AZURE_GROUP_ROLE_MAP: str = ""
 
