@@ -1,10 +1,17 @@
+/// Sistema de Visualización de Imágenes y Avatares.
+///
+/// Este archivo contiene componentes de UI optimizados para la carga de imágenes
+/// desde red, gestionando estados de carga (shimmer), errores y placeholders.
+
 library;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+/// Un widget de imagen que maneja caché, placeholders y fallbacks.
 class RvImage extends StatelessWidget {
+
 
   final String? imageUrl;
   final double? width;
@@ -61,6 +68,7 @@ class RvImage extends StatelessWidget {
     return SizedBox(width: width, height: height, child: content);
   }
 
+  /// Construye un efecto de carga (shimmer) adaptado al tema actual.
   Widget _buildPlaceholder(BuildContext context, bool isDark) {
     final baseColor =
     isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
@@ -78,6 +86,7 @@ class RvImage extends StatelessWidget {
     );
   }
 
+  /// Construye el estado visual por defecto cuando no hay imagen disponible.
   Widget _buildFallback(BuildContext context, bool isDark) {
     if (fallbackWidget != null) return fallbackWidget!;
 
@@ -110,6 +119,7 @@ class RvImage extends StatelessWidget {
     );
   }
 
+  /// Calcula dinámicamente el tamaño del icono en base a las dimensiones del contenedor.
   double _computeIconSize() {
     if (width != null && height != null) {
       final smallest = width! < height! ? width! : height!;
@@ -119,8 +129,13 @@ class RvImage extends StatelessWidget {
   }
 }
 
+/// Widget especializado para mostrar avatares circulares de usuario.
+///
+/// Si no hay imagen, muestra la inicial del nombre del usuario
 class RvAvatar extends StatelessWidget {
   final String? imageUrl;
+
+  /// Texto utilizado para extraer la inicial de fallback.
   final String fallbackText;
   final double radius;
   final Color? backgroundColor;

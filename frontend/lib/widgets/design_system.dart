@@ -1,3 +1,9 @@
+/// RESERVIVES - Sistema de Diseño y Componentes de UI.
+///
+/// Este archivo tiene los componentes visuales personalizados de la aplicación.
+
+library;
+
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +15,10 @@ import 'package:reservives/config/app_theme.dart';
 
 import 'package:reservives/i10n/app_localizations.dart';
 
+
+// --- INTERACCIONES ---
+
+/// Proporciona un efecto de escala al pasar el mouse por encima.
 class RvHoverable extends StatefulWidget {
   final Widget child;
   final Widget Function(BuildContext context, bool isHovered, Widget child)? builder;
@@ -49,6 +59,9 @@ class _RvHoverableState extends State<RvHoverable> {
   }
 }
 
+// --- CONTENEDORES ---
+
+/// Tarjeta base con sombras , bordes redondeados y efectos de hover.
 class RvSurfaceCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -140,11 +153,15 @@ class _RvSurfaceCardState extends State<RvSurfaceCard> {
   }
 }
 
+// --- TIPOGRAFÍA Y CABECERAS ---
+
+/// Cabecera para pantallas principales.
 class RvPageHeader extends StatelessWidget {
   final String eyebrow;
   final String title;
   final String? subtitle;
   final Widget? trailing;
+  final TextAlign textAlign;
 
   const RvPageHeader({
     super.key,
@@ -152,6 +169,7 @@ class RvPageHeader extends StatelessWidget {
     this.eyebrow = '',
     this.subtitle,
     this.trailing,
+    this.textAlign = TextAlign.center,
   });
 
   @override
@@ -204,6 +222,7 @@ class RvPageHeader extends StatelessWidget {
   }
 }
 
+/// Cabecera para secciones dentro de una misma página.
 class RvSectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -347,6 +366,7 @@ class RvSearchBar extends StatelessWidget {
   }
 }
 
+/// Barra de búsqueda con soporte para "Debouncing" para optimizar llamadas a la API.
 class RvDebouncedSearchBar extends StatefulWidget {
   final String? hintText;
   final Duration debounce;
@@ -415,6 +435,9 @@ class _RvDebouncedSearchBarState extends State<RvDebouncedSearchBar> {
   }
 }
 
+// --- BOTONES Y ENTRADAS ---
+
+/// Botón principal con respuesta háptica y estado de carga integrado.
 class RvPrimaryButton extends StatefulWidget {
   final VoidCallback? onTap;
   final String label;
@@ -583,7 +606,7 @@ class RvGhostIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: dark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+      color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkWell(
         onTap: () {
@@ -604,6 +627,7 @@ class RvGhostIconButton extends StatelessWidget {
   }
 }
 
+/// Estado visual para cuando no existen elementos que mostrar.
 class RvEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -682,7 +706,7 @@ class RvEmptyState extends StatelessWidget {
                 child: RvPrimaryButton(
                   onTap: onButtonPressed!,
                   label: buttonLabel!,
-                  icon: Icons.arrow_forward_rounded,
+                  icon: Icons.refresh,
                 ),
               ),
             ],
@@ -745,7 +769,7 @@ class RvApiErrorState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -769,7 +793,7 @@ class RvApiErrorState extends StatelessWidget {
                 resolvedSubtitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -800,6 +824,9 @@ class RvApiErrorState extends StatelessWidget {
   }
 }
 
+// --- ESTADOS Y FEEDBACK ---
+
+/// Visualización de carga mediante el logo del centro con animación de pulso y rotación.
 class RvLogoLoader extends StatefulWidget {
   final double size;
 
@@ -855,6 +882,7 @@ class _RvLogoLoaderState extends State<RvLogoLoader> with SingleTickerProviderSt
   }
 }
 
+/// Widget auxiliar para mostrar el estado de carga (Skeletons)
 class RvSkeleton extends StatelessWidget {
   final double width;
   final double height;
@@ -888,6 +916,9 @@ class RvSkeleton extends StatelessWidget {
   }
 }
 
+// --- UTILIDADES GLOBALES (ALERTAS Y DIÁLOGOS) ---
+
+/// Utilidad para invocar Diálogos, Notificaciones y Confirmaciones de forma estandarizada.
 class RvAlerts {
   static void success(BuildContext context, String message) =>
       _showToast(context, message, Icons.check_circle_rounded, AppColors.success);
@@ -901,22 +932,34 @@ class RvAlerts {
   static void _showToast(BuildContext context, String message, IconData icon, Color color) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final width = MediaQuery.of(context).size.width;
+
+    final bool isWideScreen = width > 600;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+
+        width: isWideScreen ? 700 : null,
+        margin: isWideScreen ? null : const EdgeInsets.fromLTRB(20, 0, 20, 32),
+
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: color, size: 22),
             const SizedBox(width: 12),
             Expanded(
-                child: Text(message,
-                    style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.w600))),
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       ),

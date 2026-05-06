@@ -1,5 +1,7 @@
 /// RESERVIVES - Widget de Configuración de Tramos Horarios.
-
+///
+/// Este componente permite a los administradores definir qué franjas horarias
+/// son válidas para la reserva de un recurso específico (espacio o servicio).
 library;
 
 import 'package:flutter/material.dart';
@@ -36,6 +38,7 @@ class TramoPermitidoSelectorState extends ConsumerState<TramoPermitidoSelector> 
     _cargarConfiguracion();
   }
 
+  /// Recupera la configuración actual de tramos permitidos desde la API.
   Future<void> _cargarConfiguracion() async {
     try {
       final api = ref.read(apiClientProvider);
@@ -59,6 +62,7 @@ class TramoPermitidoSelectorState extends ConsumerState<TramoPermitidoSelector> 
     }
   }
 
+  /// Sincroniza la selección local con el servidor.
   Future<void> guardar() async {
     try {
       final api = ref.read(apiClientProvider);
