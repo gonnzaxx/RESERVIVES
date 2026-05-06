@@ -11,12 +11,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/firebase_options.dart';
 import 'package:reservives/services/api_client.dart';
 
-final pushNotificationsServiceProvider = Provider<PushNotificationsService>((
-    ref,
-    ) {
+/// Provider global para acceder al servicio de notificaciones push.
+final pushNotificationsServiceProvider = Provider<PushNotificationsService>((ref) {
   return PushNotificationsService(ref);
 });
 
+/// Definición del canal de notificaciones para Android
 const AndroidNotificationChannel _reservivesChannel =
 AndroidNotificationChannel(
   'reservives_notifications',
@@ -25,14 +25,19 @@ AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+/// Clave VAPID necesaria para recibir notificaciones en navegadores Web.
 const String _webVapidKey = String.fromEnvironment(
   'FIREBASE_WEB_VAPID_KEY',
   defaultValue: '',
 );
 
+/// Plugin para mostrar notificaciones locales cuando la app está en primer plano.
 final FlutterLocalNotificationsPlugin _localNotifications =
 FlutterLocalNotificationsPlugin();
 
+
+/// Handler global para procesar notificaciones de Firebase en segundo plano.
+/// Debe ser una función de nivel superior y estar anotada para el entry-point de la VM.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -42,36 +47,45 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {}
 }
 
+/// Inicializa el bootstrap de notificaciones: Firebase, Handlers y canales locales.
 Future<void> initializePushNotificationsBootstrap() async {
   try {
+    // Inicializar Firebase con las opciones de la plataforma actual.
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    // Configurar el handler de mensajes en segundo plano.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
+    // La configuración de notificaciones locales no es soportada igual en Web.
     if (kIsWeb) {
       return;
     }
 
+    // Configuración de inicialización para Android e iOS.
     const androidSettings = AndroidInitializationSettings('ic_notification');
     const iosSettings = DarwinInitializationSettings();
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
+
     await _localNotifications.initialize(initSettings);
 
+    // Crear el canal en Android para permitir notificaciones heads-up.
     await _localNotifications
         .resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin
     >()
         ?.createNotificationChannel(_reservivesChannel);
 
+    // Listener para mensajes cuando la app está abierta.
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
       if (notification == null) return;
 
+      // Mostrar la notificación localmente ya que Firebase no la muestra automáticamente en foreground.
       _localNotifications.show(
         notification.hashCode,
         notification.title,
@@ -100,12 +114,15 @@ Future<void> initializePushNotificationsBootstrap() async {
   }
 }
 
+/// Servicio encargado de la lógica de negocio de las notificaciones push:
+/// permisos, obtención de tokens y sincronización con el backend.
 class PushNotificationsService {
   PushNotificationsService(this._ref);
 
   final Ref _ref;
   StreamSubscription<String>? _tokenRefreshSubscription;
 
+  /// Solicita permisos al usuario y sincroniza el token FCM con nuestro servidor.
   Future<void> syncTokenWithBackend() async {
     try {
       final messaging = FirebaseMessaging.instance;
@@ -116,11 +133,14 @@ class PushNotificationsService {
         provisional: false,
       );
 
+      // Obtener el token actual del dispositivo.
       final token = await _getPushToken(messaging);
       if (token == null || token.isEmpty) return;
 
+      // Enviar el token inicial al backend.
       await _sendTokenToBackend(token);
 
+      // Suscribirse a la renovación del token (si Firebase lo invalida o cambia).
       _tokenRefreshSubscription ??= messaging.onTokenRefresh.listen((
           newToken,
           ) async {
@@ -145,6 +165,7 @@ class PushNotificationsService {
     }
   }
 
+  /// Obtiene el token de Firebase considerando las particularidades de la Web (VAPID).
   Future<String?> _getPushToken(FirebaseMessaging messaging) async {
     if (!kIsWeb) {
       return messaging.getToken();
@@ -161,6 +182,7 @@ class PushNotificationsService {
     return messaging.getToken(vapidKey: _webVapidKey);
   }
 
+  /// Envía el [token] al servidor mediante el [ApiClient].
   Future<void> _sendTokenToBackend(String token) {
     return _ref
         .read(apiClientProvider)
@@ -173,6 +195,7 @@ class PushNotificationsService {
     );
   }
 
+  /// Cancela las suscripciones activas para evitar fugas de memoria.
   void dispose() {
     _tokenRefreshSubscription?.cancel();
     _tokenRefreshSubscription = null;

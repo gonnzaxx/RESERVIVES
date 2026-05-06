@@ -1,38 +1,34 @@
-
-
+/// RESERVIVES - Authentication Service
+///
+/// Este servicio actúa como orquestador para los flujos de autenticación de la app,
+/// gestionando la comunicación entre el [authProvider] y el [apiClientProvider].
 library;
 
-import 'dart:typed_data';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:oauth2_client/oauth2_client.dart';
-import 'package:oauth2_client/oauth2_helper.dart';
-
-import 'package:reservives/config/constants.dart';
-import 'package:reservives/models/usuario.dart';
 import 'package:reservives/providers/announcements_provider.dart';
-import 'package:reservives/providers/chat_provider.dart';
+import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
 import 'package:reservives/providers/cafeteria_provider.dart';
-import 'package:reservives/providers/polls_provider.dart';
-import 'package:reservives/providers/spaces_provider.dart';
+import 'package:reservives/providers/chat_provider.dart';
 import 'package:reservives/providers/favourites_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
-import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/polls_provider.dart';
 import 'package:reservives/providers/service_provider.dart';
+import 'package:reservives/providers/spaces_provider.dart';
 import 'package:reservives/providers/time_slots_provider.dart';
-import 'package:reservives/providers/auth_provider.dart';
-import 'package:reservives/services/api_client.dart';
 
+/// Provider global para [AuthService].
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(ref);
 });
 
+/// Clase encargada de manejar acciones de autenticación y sincronización de datos de usuario.
 class AuthService {
   final Ref _ref;
 
   AuthService(this._ref);
 
+  /// Inicia el flujo de autenticación con Microsoft Azure AD.
   Future<String?> loginWithMicrosoft() async {
     try {
       await _ref.read(authProvider.notifier).login();
@@ -43,8 +39,10 @@ class AuthService {
     }
   }
 
+  /// Cierra la sesión actual y limpia todos los datos en caché de la aplicación.
   Future<void> logoutMicrosoft() async {
     await _ref.read(authProvider.notifier).logout();
+
     _ref.invalidate(anunciosProvider);
     _ref.invalidate(unreadNotificationsCountProvider);
     _ref.invalidate(menuCafeteriaProvider);
@@ -58,23 +56,5 @@ class AuthService {
     _ref.invalidate(misReservasServiciosProvider);
     _ref.invalidate(tramosProvider);
     _ref.invalidate(aiChatProvider);
-  }
-
-  Future<bool> uploadAvatar(Uint8List bytes, String fileName) async {
-    try {
-      final apiClient = _ref.read(apiClientProvider);
-      final response = await apiClient.postMultipart(
-        '/usuarios/me/avatar',
-        fileField: 'file',
-        fileBytes: bytes,
-        fileName: fileName,
-      );
-
-      final updatedUser = Usuario.fromJson(response);
-      await _ref.read(authProvider.notifier).updateUserData(updatedUser);
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }
