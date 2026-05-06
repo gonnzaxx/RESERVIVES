@@ -1,8 +1,17 @@
+/// RESERVIVES - Gestión de Elementos Favoritos.
+///
+/// Administra la persistencia y el estado reactivo de los espacios y servicios
+/// marcados como favoritos por el usuario. Permite un acceso rápido desde la
+/// biblioteca personal y sincroniza los cambios con el backend.
+library;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/espacio.dart';
 import 'package:reservives/models/servicio.dart';
+import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/api_client.dart';
 
+/// Estado inmutable que contiene los identificadores de los elementos favoritos.
 class FavoritosState {
   final List<String> espaciosIds;
   final List<String> serviciosIds;
@@ -27,14 +36,20 @@ class FavoritosState {
   }
 }
 
+/// Controlador para la lógica de marcadores (favoritos).
 class FavoritosNotifier extends Notifier<FavoritosState> {
 
   @override
   FavoritosState build() {
-    Future.microtask(() => cargarFavoritos());
+    // En modo invitado no hay sesión; omitimos la carga para evitar errores 401.
+    final isGuest = ref.read(authProvider).isGuest;
+    if (!isGuest) {
+      Future.microtask(() => cargarFavoritos());
+    }
     return FavoritosState();
   }
 
+  /// Recupera los listados de IDs favoritos desde la API.
   Future<void> cargarFavoritos() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -58,6 +73,7 @@ class FavoritosNotifier extends Notifier<FavoritosState> {
   bool isEspacioFavorito(String id) => state.espaciosIds.contains(id);
   bool isServicioFavorito(String id) => state.serviciosIds.contains(id);
 
+  /// Alterna el estado de favorito de un espacio.
   Future<bool> toggleEspacioFavorito(String id) async {
     final isFav = isEspacioFavorito(id);
     final apiClient = ref.read(apiClientProvider);
@@ -80,6 +96,7 @@ class FavoritosNotifier extends Notifier<FavoritosState> {
     }
   }
 
+  /// Alterna el estado de favorito de un servicio.
   Future<bool> toggleServicioFavorito(String id) async {
     final isFav = isServicioFavorito(id);
     final apiClient = ref.read(apiClientProvider);
@@ -103,10 +120,12 @@ class FavoritosNotifier extends Notifier<FavoritosState> {
   }
 }
 
+/// Provider global para el estado de los IDs favoritos.
 final favoritosProvider = NotifierProvider<FavoritosNotifier, FavoritosState>(() {
   return FavoritosNotifier();
 });
 
+/// Provider que resuelve los objetos [Espacio] completos basándose en los IDs favoritos.
 final listaFavoritosEspaciosProvider = FutureProvider.autoDispose<List<Espacio>>((ref) async {
   final favState = ref.watch(favoritosProvider);
   if (favState.espaciosIds.isEmpty) return [];
@@ -120,6 +139,7 @@ final listaFavoritosEspaciosProvider = FutureProvider.autoDispose<List<Espacio>>
   return todos.where((e) => favState.espaciosIds.contains(e.id)).toList();
 });
 
+/// Provider que resuelve los objetos [ServicioInstituto] completos basándose en los IDs favoritos.
 final listaFavoritosServiciosProvider = FutureProvider.autoDispose<List<ServicioInstituto>>((ref) async {
   final favState = ref.watch(favoritosProvider);
   if (favState.serviciosIds.isEmpty) return [];

@@ -1,3 +1,12 @@
+/// Servicio de Comunicación en Tiempo Real (WebSockets).
+///
+/// Este servicio establece una conexión bidireccional persistente con el servidor
+/// para recibir actualizaciones inmediatas sobre eventos.
+/// Automatiza la invalidación de caché y la actualización de contadores sin
+/// necesidad de recarga manual por parte del usuario.
+
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +17,8 @@ import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
 import 'dart:developer' as developer;
 
+/// Proveedor del servicio de WebSockets.
+/// Utiliza [autoDispose] para cerrar la conexión cuando el administrador sale del backoffice.
 final adminWebSocketProvider = Provider.autoDispose<AdminWebSocketService>((
   ref,
 ) {
@@ -16,6 +27,7 @@ final adminWebSocketProvider = Provider.autoDispose<AdminWebSocketService>((
   return service;
 });
 
+/// Orquestador de la conexión WebSocket para el panel de administración.
 class AdminWebSocketService {
   final Ref _ref;
   WebSocketChannel? _channel;
@@ -24,6 +36,8 @@ class AdminWebSocketService {
 
   AdminWebSocketService(this._ref);
 
+  /// Inicia el proceso de conexión al servidor.
+  /// Verifica que el usuario tenga privilegios de backoffice antes de proceder.
   void connect() {
     if (_isConnecting || _channel != null) return;
 
@@ -35,6 +49,7 @@ class AdminWebSocketService {
 
     _isConnecting = true;
 
+    // Adaptación dinámica de la URL base para soportar WS/WSS según el entorno.
     final wsUri = Uri.parse(AppConstants.apiBaseUrl).replace(
       scheme: AppConstants.apiBaseUrl.startsWith('https') ? 'wss' : 'ws',
     );
@@ -46,6 +61,8 @@ class AdminWebSocketService {
         (message) {
           developer.log('Admin WS received: $message', name: 'admin.websocket');
           final event = _extractEventName(message);
+
+          // Si el evento impacta en los datos del dashboard, notificamos el cambio de versión.
           if (shouldRefreshAdminDashboardCounters(event)) {
             _ref.read(adminCountersVersionProvider.notifier).bump();
           }
@@ -65,6 +82,7 @@ class AdminWebSocketService {
     }
   }
 
+  /// Lógica de reintento automático tras una caída de conexión o error.
   void _reconnect() {
     dispose();
     Future.delayed(const Duration(seconds: 5), () {
@@ -75,6 +93,7 @@ class AdminWebSocketService {
     });
   }
 
+  /// Cierra los flujos de datos y libera los recursos del socket.
   void dispose() {
     _subscription?.cancel();
     _channel?.sink.close();
@@ -82,6 +101,7 @@ class AdminWebSocketService {
     _isConnecting = false;
   }
 
+  /// Procesa el mensaje entrante (JSON) para extraer el nombre del evento.
   String? _extractEventName(dynamic message) {
     try {
       if (message is! String) return null;

@@ -1,4 +1,9 @@
-/// RESERVIVES - Proveedores de Servicios del Instituto.
+/// Proveedores de Servicios del Instituto.
+///
+/// Gestiona el catálogo de servicios (materiales, equipos, asesorías),
+/// la búsqueda de los mismos y el sistema de reservas específico para
+/// servicios con soporte para UI Optimista e invalidación de tokens.
+
 library;
 
 import 'dart:async';
@@ -11,12 +16,14 @@ import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/bookings_live_updates_provider.dart';
 import 'package:reservives/services/api_client.dart';
 
+/// Recupera la lista completa de servicios disponibles en el instituto.
 final serviciosInstitutoProvider = FutureProvider.autoDispose<List<ServicioInstituto>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get('/servicios/');
   return (response as List).map((e) => ServicioInstituto.fromJson(e)).toList();
 });
 
+/// Almacena la cadena de búsqueda actual para filtrar servicios.
 final serviciosSearchQueryProvider =
 NotifierProvider.autoDispose<_ServiciosSearchQuery, String>(
   _ServiciosSearchQuery.new,
@@ -29,6 +36,7 @@ class _ServiciosSearchQuery extends Notifier<String> {
   void setQuery(String value) => state = value;
 }
 
+/// Expone la lista de servicios filtrada por nombre, descripción o ubicación.
 final serviciosFiltradosProvider =
 Provider.autoDispose<AsyncValue<List<ServicioInstituto>>>((ref) {
   final serviciosAsync = ref.watch(serviciosInstitutoProvider);
@@ -45,6 +53,7 @@ Provider.autoDispose<AsyncValue<List<ServicioInstituto>>>((ref) {
   });
 });
 
+/// Obtiene los detalles de un servicio específico, intentando leerlo primero de la caché.
 final servicioDetalleProvider =
 FutureProvider.family.autoDispose<ServicioInstituto, String>(
       (ref, servicioId) async {
@@ -59,6 +68,7 @@ FutureProvider.family.autoDispose<ServicioInstituto, String>(
   },
 );
 
+/// Gestiona el historial de reservas de servicios del usuario actual.
 final misReservasServiciosProvider =
 AsyncNotifierProvider.autoDispose<MisReservasServiciosNotifier, List<Reserva>>(
       () => MisReservasServiciosNotifier(),
@@ -67,7 +77,8 @@ AsyncNotifierProvider.autoDispose<MisReservasServiciosNotifier, List<Reserva>>(
 class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
   @override
   Future<List<Reserva>> build() async {
-    ref.watch(reservasPollTickProvider);
+    // Escucha actualizaciones en tiempo real si el socket está activo.
+    ref.watch(bookingsLiveVersionProvider);
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.get('/servicios/reservas');
     return (response as List)
@@ -82,10 +93,12 @@ class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
     );
   }
 
+  /// Reemplaza el estado actual por un conjunto de datos externo.
   void setFromSnapshot(List<Reserva> snapshot) {
     state = AsyncData(List<Reserva>.from(snapshot));
   }
 
+  /// Inserta una reserva en la lista local antes de confirmar con el servidor.
   void insertOptimistic(Reserva reserva) {
     final current = _currentList();
     current.insert(0, reserva);
@@ -93,6 +106,7 @@ class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
     state = AsyncData(current);
   }
 
+  /// Reemplaza una reserva provisional por la confirmada por el servidor.
   void replaceOptimistic(String id, Reserva real) {
     final current = _currentList();
     final index = current.indexWhere((r) => r.id == id);
@@ -105,6 +119,7 @@ class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
     state = AsyncData(current);
   }
 
+  /// Refleja localmente la cancelación de una reserva.
   void markCancelledOptimistic(String reservaId) {
     final current = _currentList();
 
@@ -116,6 +131,7 @@ class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
   }
 }
 
+/// Controlador encargado de ejecutar nuevas reservas y cancelaciones.
 final reservarServicioProvider =
 AsyncNotifierProvider<ReservarServicioNotifier, Reserva?>(
   ReservarServicioNotifier.new,
@@ -125,6 +141,7 @@ class ReservarServicioNotifier extends AsyncNotifier<Reserva?> {
   @override
   Future<Reserva?> build() async => null;
 
+  /// Realiza la reserva de un servicio.
   Future<bool> reservar(
       String servicioId,
       DateTime fecha,
@@ -169,6 +186,7 @@ class ReservarServicioNotifier extends AsyncNotifier<Reserva?> {
       final reserva = Reserva.fromJson(response as Map<String, dynamic>);
       ref.read(misReservasServiciosProvider.notifier).replaceOptimistic(tempId, reserva);
 
+      // Actualizar saldo de tokens y perfil.
       unawaited(ref.read(authProvider.notifier).refreshCurrentUser());
 
       state = AsyncData(reserva);
@@ -180,6 +198,7 @@ class ReservarServicioNotifier extends AsyncNotifier<Reserva?> {
     }
   }
 
+  /// Cancela una reserva de servicio existente.
   Future<bool> cancelarReservaServicio(String reservaId) async {
     final previous = ref.read(misReservasServiciosProvider).maybeWhen(
       data: (items) => List<Reserva>.from(items),
@@ -207,6 +226,7 @@ class ReservarServicioNotifier extends AsyncNotifier<Reserva?> {
   }
 }
 
+/// Helper para crear una copia profunda de una reserva con un nuevo estado.
 Reserva _copyReservaWithEstado(Reserva reserva, EstadoReserva nuevoEstado) {
   return Reserva(
     id: reserva.id,
@@ -225,6 +245,7 @@ Reserva _copyReservaWithEstado(Reserva reserva, EstadoReserva nuevoEstado) {
   );
 }
 
+/// Traduce errores técnicos a mensajes comprensibles para el usuario.
 String _toFriendlyMessage(Object error) {
   if (error is ApiException) return error.message;
   return 'No se pudo completar la operación. Inténtalo de nuevo.';

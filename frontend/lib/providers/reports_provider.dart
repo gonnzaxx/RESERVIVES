@@ -1,3 +1,11 @@
+/// Gestión de Incidencias y Reportes.
+///
+/// Administra el ciclo de vida de los reportes de mantenimiento o problemas
+/// en el centro. Permite a los usuarios reportar averías y consultar su estado,
+/// y a los administradores gestionar y resolver dichas incidencias.
+
+library;
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/incidencia.dart';
@@ -8,6 +16,7 @@ AsyncNotifierProvider.autoDispose<MisIncidenciasNotifier, List<Incidencia>>(
       () => MisIncidenciasNotifier(),
 );
 
+/// Provider para el listado histórico de incidencias del usuario actual.
 class MisIncidenciasNotifier extends AsyncNotifier<List<Incidencia>> {
   @override
   Future<List<Incidencia>> build() async {
@@ -18,11 +27,13 @@ class MisIncidenciasNotifier extends AsyncNotifier<List<Incidencia>> {
         .toList();
   }
 
+  /// Refresca la lista de incidencias personales.
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => build());
   }
 
+  /// Añade una nueva incidencia localmente para evitar esperas de red.
   void addIncident(Incidencia incident) {
     state.whenData((list) {
       state = AsyncData([incident, ...list]);
@@ -30,11 +41,15 @@ class MisIncidenciasNotifier extends AsyncNotifier<List<Incidencia>> {
   }
 }
 
+/// Provider encargado del proceso de envío de nuevos reportes.
 final reportarIncidenciaProvider =
 AsyncNotifierProvider<ReportarIncidenciaNotifier, void>(
       () => ReportarIncidenciaNotifier(),
 );
 
+/// Envía un reporte de incidencia al servidor.
+///
+/// Tras el éxito, actualiza automáticamente el listado de [misIncidenciasProvider].
 class ReportarIncidenciaNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
@@ -49,6 +64,8 @@ class ReportarIncidenciaNotifier extends AsyncNotifier<void> {
       });
 
       final nueva = Incidencia.fromJson(response as Map<String, dynamic>);
+
+      // Actualización reactiva del listado personal.
       ref.read(misIncidenciasProvider.notifier).addIncident(nueva);
 
       state = const AsyncData(null);
@@ -60,7 +77,7 @@ class ReportarIncidenciaNotifier extends AsyncNotifier<void> {
   }
 }
 
-// Admin Providers
+/// Provider para que el personal de mantenimiento gestione todas las incidencias.
 final todasIncidenciasProvider =
 AsyncNotifierProvider.autoDispose<TodasIncidenciasNotifier, List<Incidencia>>(
       () => TodasIncidenciasNotifier(),
@@ -76,6 +93,10 @@ class TodasIncidenciasNotifier extends AsyncNotifier<List<Incidencia>> {
         .toList();
   }
 
+  /// Cambia el estado de una incidencia a 'RESUELTA' e incluye un comentario.
+  ///
+  /// Realiza una actualización optimista del estado local para reflejar el cambio
+  /// inmediatamente en el panel administrativo.
   Future<bool> resolver(String id, String? comentario) async {
     try {
       final apiClient = ref.read(apiClientProvider);

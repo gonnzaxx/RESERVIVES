@@ -1,4 +1,12 @@
-import 'dart:convert';
+/// Núcleo de Identidad y Ciclo de Vida de Sesión.
+///
+/// Gestiona el flujo de autenticación mediante Microsoft Entra ID (Azure),
+/// el modo invitado y la sincronización de tokens con el backend. Implementa
+/// persistencia local con validación de caducidad y estados reactivos.
+
+library;
+
+
 import 'package:flutter/painting.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,33 +16,39 @@ import 'package:reservives/models/usuario.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Estado de la autenticación
+/// Representación inmutable del estado de identidad del usuario.
 class AuthState {
   final Usuario? user;
   final String? token;
+  final bool isGuest;
   final bool isLoading;
   final String? error;
 
   AuthState({
     this.user,
     this.token,
+    this.isGuest = false,
     this.isLoading = false,
     this.error,
   });
 
-  bool get isAuthenticated => token != null;
+  /// Determina si existe una sesión activa, ya sea identificada o anónima.
+  bool get isAuthenticated => token != null || isGuest;
 
   AuthState copyWith({
     Usuario? user,
     String? token,
+    bool? isGuest,
     bool? isLoading,
     String? error,
     bool clearToken = false,
     bool clearUser = false,
+    bool clearGuest = false,
   }) {
     return AuthState(
       user: clearUser ? null : (user ?? this.user),
       token: clearToken ? null : (token ?? this.token),
+      isGuest: clearGuest ? false : (isGuest ?? this.isGuest),
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
     );
@@ -59,8 +73,14 @@ List<String> get _scopes => [
   'offline_access',
 ];
 
+/// Provider central para gestionar la autenticación y el ciclo de vida de la sesión.
+///
+/// Utiliza `Notifier` para exponer el estado inmutable [AuthState] y reaccionar
+/// a los cambios. Implementa el flujo de OAuth2 con Microsoft Entra ID y mantiene
+/// sincronizada la sesión del frontend con el backend, además de la persistencia local.
 class AuthProvider extends Notifier<AuthState> {
   static const _tokenKey = 'auth_token';
+  static const _guestKey = 'auth_guest_mode';
   static const _loginTimestampKey = 'auth_login_ts';
   static const _sessionDurationMinutes = 60;
   bool _sessionRestored = false;
@@ -117,6 +137,7 @@ class AuthProvider extends Notifier<AuthState> {
       state = state.copyWith(
         token: backendToken,
         user: userData,
+        isGuest: false,
         isLoading: false,
       );
       await _persistSession(backendToken);
@@ -130,6 +151,7 @@ class AuthProvider extends Notifier<AuthState> {
 
   /// Refresca los datos del usuario actual desde la API (/auth/me)
   Future<void> refreshCurrentUser() async {
+    if (state.isGuest) return;
     try {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.get('/auth/me');
@@ -141,7 +163,7 @@ class AuthProvider extends Notifier<AuthState> {
   }
 
   Future<void> loginWithMicrosoft(String token) async {
-    state = state.copyWith(token: token);
+    state = state.copyWith(token: token, isGuest: false);
     await _persistSession(token);
     await refreshCurrentUser();
   }
@@ -164,6 +186,7 @@ class AuthProvider extends Notifier<AuthState> {
       state = state.copyWith(
         token: backendToken,
         user: userData,
+        isGuest: false,
         isLoading: false,
       );
       await _persistSession(backendToken);
@@ -172,11 +195,40 @@ class AuthProvider extends Notifier<AuthState> {
     }
   }
 
+  /// Inicia sesión temporal como invitado.
+  ///
+  /// Borra cualquier token o usuario previo e indica a la aplicación que
+  /// debe funcionar en modo restringido (Guest Mode).
+  Future<void> loginAsGuest() async {
+    state = state.copyWith(isLoading: true, error: null, clearToken: true, clearUser: true);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.post('/auth/guest');
+      state = state.copyWith(isGuest: true, isLoading: false);
+      await _persistGuestSession();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Cierra la sesión activa del usuario.
+  ///
+  /// Elimina los datos locales (excepto configuraciones persistentes como el idioma
+  /// o el flag de onboarding), limpia la memoria caché de imágenes y resetea el estado
+  /// a su valor por defecto (sin autenticar).
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedLanguageCode = prefs.getString('language_code');
       final hasSeenOnboarding = prefs.getBool('has_seen_onboarding');
+      final tutorialSeenByUser = <String, bool>{};
+      for (final key in prefs.getKeys()) {
+        if (!key.startsWith('has_seen_app_tutorial')) continue;
+        final value = prefs.getBool(key);
+        if (value != null) {
+          tutorialSeenByUser[key] = value;
+        }
+      }
 
       await prefs.clear();
 
@@ -185,6 +237,9 @@ class AuthProvider extends Notifier<AuthState> {
       }
       if (hasSeenOnboarding != null) {
         await prefs.setBool('has_seen_onboarding', hasSeenOnboarding);
+      }
+      for (final entry in tutorialSeenByUser.entries) {
+        await prefs.setBool(entry.key, entry.value);
       }
       await _clearPersistedSession();
     } catch (_) {}
@@ -197,6 +252,17 @@ class AuthProvider extends Notifier<AuthState> {
   Future<void> _persistSession(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
+    await prefs.setBool(_guestKey, false);
+    await prefs.setString(
+      _loginTimestampKey,
+      DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  Future<void> _persistGuestSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.setBool(_guestKey, true);
     await prefs.setString(
       _loginTimestampKey,
       DateTime.now().toUtc().toIso8601String(),
@@ -206,16 +272,22 @@ class AuthProvider extends Notifier<AuthState> {
   Future<void> _clearPersistedSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    await prefs.remove(_guestKey);
     await prefs.remove(_loginTimestampKey);
   }
 
+  /// Restaura la sesión desde el almacenamiento local si existe y es válida.
+  ///
+  /// Comprueba si hay un token o una sesión de invitado guardada, evalúa su
+  /// fecha de expiración y, si sigue siendo válida, recupera los datos del usuario.
   Future<void> _restorePersistedSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
+      final isGuest = prefs.getBool(_guestKey) ?? false;
       final loginTsRaw = prefs.getString(_loginTimestampKey);
 
-      if (token == null || loginTsRaw == null) {
+      if ((token == null && !isGuest) || loginTsRaw == null) {
         state = AuthState();
         return;
       }
@@ -236,7 +308,12 @@ class AuthProvider extends Notifier<AuthState> {
         return;
       }
 
-      state = state.copyWith(token: token, isLoading: true, error: null);
+      if (isGuest) {
+        state = state.copyWith(isGuest: true, isLoading: false, error: null);
+        return;
+      }
+
+      state = state.copyWith(token: token, isLoading: true, error: null, isGuest: false);
       await refreshCurrentUser();
 
       if (state.user == null) {

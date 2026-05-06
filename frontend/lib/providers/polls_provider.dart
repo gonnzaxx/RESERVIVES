@@ -1,18 +1,29 @@
+/// Gestión de Encuestas y Participación.
+///
+/// Administra el ciclo de vida de las encuestas del centro, permitiendo tanto
+/// la participación de los usuarios (votos) como la administración (creación,
+/// edición y borrado).
+
+library;
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/encuesta.dart';
 import 'package:reservives/services/api_client.dart';
 
+/// Provider para la vista pública de encuestas activas para el usuario.
 final todasEncuestasProvider =
 AsyncNotifierProvider.autoDispose<TodasEncuestasNotifier, List<Encuesta>>(
       () => TodasEncuestasNotifier(),
 );
 
+/// Provider para la vista de gestión administrativa de encuestas.
 final adminEncuestasProvider =
 AsyncNotifierProvider.autoDispose<AdminEncuestasNotifier, List<Encuesta>>(
       () => AdminEncuestasNotifier(),
 );
 
+/// Controlador para operaciones administrativas sobre las encuestas.
 class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
   @override
   Future<List<Encuesta>> build() async {
@@ -23,10 +34,12 @@ class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
         .toList();
   }
 
+  /// Refresca la lista de encuestas del administrador.
   Future<void> refresh() async {
     state = await AsyncValue.guard(() => build());
   }
 
+  /// Crea una nueva encuesta y sincroniza los listados globales.
   Future<bool> crearEncuesta({
     required String titulo,
     String? descripcion,
@@ -43,7 +56,8 @@ class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
         'activa': true,
       });
       await refresh();
-      // También invalidamos el de usuarios finales
+
+      // Invalidamos el provider de usuarios para que vean la nueva encuesta.
       ref.invalidate(todasEncuestasProvider);
       return true;
     } catch (e) {
@@ -51,6 +65,7 @@ class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
     }
   }
 
+  /// Elimina una encuesta de forma permanente.
   Future<bool> eliminarEncuesta(String id) async {
     try {
       final apiClient = ref.read(apiClientProvider);
@@ -63,6 +78,7 @@ class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
     }
   }
 
+  /// Actualiza parámetros específicos de una encuesta existente.
   Future<bool> actualizarEncuesta({
     required String id,
     String? titulo,
@@ -87,6 +103,7 @@ class AdminEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
   }
 }
 
+/// Controlador para la interacción del usuario con las encuestas.
 class TodasEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
   @override
   Future<List<Encuesta>> build() async {
@@ -101,6 +118,7 @@ class TodasEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
     state = await AsyncValue.guard(() => build());
   }
 
+  /// Refresca la lista para obtener resultados de votaciones actualizados.
   Future<bool> votar(String encuestaId, String opcionId) async {
     try {
       final apiClient = ref.read(apiClientProvider);
@@ -116,6 +134,7 @@ class TodasEncuestasNotifier extends AsyncNotifier<List<Encuesta>> {
     }
   }
 
+  /// Replica las capacidades de creación/edición para acceso rápido desde la vista general.
   Future<bool> crearEncuesta({
     required String titulo,
     String? descripcion,
