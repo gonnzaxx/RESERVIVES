@@ -5,12 +5,12 @@ class AppConstants {
   // URL base de la API
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/api',
+    defaultValue: 'https://tu_dominio_o_ip:1212/api',
   );
 
   // Nombre de la app
-  static const String appName = 'RESERVIVES';
-  static const String appTagline = 'IES Luis Vives';
+  static const String appName = 'AppName Example';
+  static const String appTagline = 'Tagline Example';
 
   // Microsoft EntraID
   static const String azureClientId = 'AZURE_CLIENT_ID';

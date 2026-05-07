@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +45,7 @@ class AdminServicesScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
                 title: context.tr('admin.services.title'),
-                eyebrow: 'Mantenimiento',
+                eyebrow: context.tr('admin.services.eyebrow'),
                 trailing: Row(
                   children: [
                     RvGhostIconButton(
@@ -124,7 +123,7 @@ class AdminServicesScreen extends ConsumerWidget {
 
     final result = await _showServicioForm(
       context: context,
-      title: servicio == null ? 'Nuevo servicio' : 'Editar servicio',
+      title: servicio == null ? context.tr('admin.services.new') : context.tr('admin.services.edit'),
       nombreCtrl: nombreCtrl,
       descCtrl: descCtrl,
       ubicacionCtrl: ubicacionCtrl,
@@ -142,7 +141,7 @@ class AdminServicesScreen extends ConsumerWidget {
 
     if (result != true) return;
     if (nombreCtrl.text.trim().isEmpty) {
-      RvAlerts.error(context, 'El nombre es obligatorio.');
+      RvAlerts.error(context, context.tr('admin.services.error.nameRequired'));
       return;
     }
 
@@ -169,19 +168,26 @@ class AdminServicesScreen extends ConsumerWidget {
         await apiClient.put('/servicios/${servicio.id}', body: body);
       }
       ref.invalidate(adminServicesProvider);
-      if (context.mounted) RvAlerts.success(context, servicio == null ? 'Servicio creado' : 'Servicio actualizado');
+      if (context.mounted) RvAlerts.success(context, servicio == null ? context.tr('admin.service.alert.create') : context.tr('admin.service.alert.update'));
     } catch (error) {
       if (context.mounted) RvAlerts.error(context, toFriendlyErrorMessage(error));
     }
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref, ServicioInstituto servicio) async {
-    final confirmed = await RvAlerts.confirm(context, title: 'Eliminar servicio', content: '¿Seguro que quieres eliminar "${servicio.nombre}"?', confirmLabel: 'Eliminar', isDestructive: true);
+    final confirmed = await RvAlerts.confirm(
+        context,
+        title:
+        context.tr('admin.delete.service'),
+        content: '¿Seguro que quieres eliminar "${servicio.nombre}"?',
+        confirmLabel: context.tr('admin.remove.text'),
+        isDestructive: true);
+
     if (!confirmed) return;
     try {
       await ref.read(apiClientProvider).delete('/servicios/${servicio.id}');
       ref.invalidate(adminServicesProvider);
-      if (context.mounted) RvAlerts.success(context, 'Servicio eliminado');
+      if (context.mounted) RvAlerts.success(context, context.tr('admin.service.alert.remove'));
     } catch (error) { if (context.mounted) RvAlerts.error(context, toFriendlyErrorMessage(error)); }
   }
 
@@ -198,21 +204,24 @@ class AdminServicesScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
             Text('Tramos de "${servicio.nombre}"', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
-            const Text('Configura qué tramos horarios aplican para este servicio.'),
+            Text(context.tr('admin.services.slots.subtitle')),
             const SizedBox(height: 24),
             Flexible(child: SingleChildScrollView(child: TramoPermitidoSelector(key: selectorKey, resourceId: servicio.id, isServicio: true))),
             const SizedBox(height: 24),
             Row(children: [
-              Expanded(child: TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar'))),
+              Expanded(child: TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('generic.cancel')))),
               const SizedBox(width: 16),
-              Expanded(child: RvPrimaryButton(label: 'Guardar tramos', onTap: () async {
+              Expanded(child: RvPrimaryButton(label: context.tr('generic.save'), onTap: () async {
                 try {
                   await selectorKey.currentState?.guardar();
-                  if (ctx.mounted) { Navigator.pop(ctx); RvAlerts.success(context, 'Configuración de tramos guardada'); }
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    RvAlerts.success(context, context.tr('admin.services.slots.success'));
+                  }
                 } catch (e) { if (ctx.mounted) RvAlerts.error(context, toFriendlyErrorMessage(e)); }
               })),
             ]),
@@ -236,22 +245,17 @@ class AdminServicesScreen extends ConsumerWidget {
         decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
         padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 24),
           Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 24),
-          TextField(controller: nombreCtrl, decoration: const InputDecoration(labelText: 'Nombre *', prefixIcon: Icon(Icons.room_service_outlined))),
-          const SizedBox(height: 16),
-          TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Descripción', prefixIcon: Icon(Icons.description_outlined))),
-          const SizedBox(height: 16),
+          TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: '${context.tr('admin.common.name')} *', prefixIcon: const Icon(Icons.room_service_outlined))),          const SizedBox(height: 16),
+          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('admin.common.description'), prefixIcon: const Icon(Icons.description_outlined))),          const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: TextField(controller: ubicacionCtrl, decoration: const InputDecoration(labelText: 'Ubicación', prefixIcon: Icon(Icons.location_on_outlined)))),
-            const SizedBox(width: 12),
-            Expanded(child: TextField(controller: precioCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Tokens', prefixIcon: Icon(Icons.stars_rounded)))),
-          ]),
+            Expanded(child: TextField(controller: ubicacionCtrl, decoration: InputDecoration(labelText: context.tr('admin.common.location'), prefixIcon: const Icon(Icons.location_on_outlined)))),            const SizedBox(width: 12),
+            Expanded(child: TextField(controller: precioCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: context.tr('admin.common.tokens'), prefixIcon: const Icon(Icons.stars_rounded)))),          ]),
           const SizedBox(height: 16),
-          TextField(controller: horarioCtrl, decoration: const InputDecoration(labelText: 'Horario', prefixIcon: Icon(Icons.access_time_rounded))),
-          const SizedBox(height: 24),
+          TextField(controller: horarioCtrl, decoration: InputDecoration(labelText: context.tr('admin.common.schedule'), prefixIcon: const Icon(Icons.access_time_rounded))),          const SizedBox(height: 24),
           GestureDetector(
             onTap: () async {
               final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -271,16 +275,12 @@ class AdminServicesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Row(children: [
-            Expanded(flex: 2, child: SwitchListTile(title: const Text('Activo', style: TextStyle(fontSize: 14)), value: activo, onChanged: (v) { setState(() => activo = v); onActivoChanged(v); }, contentPadding: EdgeInsets.zero)),
-            const SizedBox(width: 12),
-            Expanded(child: TextField(controller: ordenCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Posición'))),
-          ]),
+            Expanded(flex: 2, child: SwitchListTile(title: Text(context.tr('admin.common.active'), style: const TextStyle(fontSize: 14)), value: activo, onChanged: (v) { setState(() => activo = v); onActivoChanged(v); }, contentPadding: EdgeInsets.zero)),            const SizedBox(width: 12),
+            Expanded(child: TextField(controller: ordenCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: context.tr('admin.common.position')))),          ]),
           const SizedBox(height: 32),
           Row(children: [
-            Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar'))),
-            const SizedBox(width: 16),
-            Expanded(child: RvPrimaryButton(onTap: () => Navigator.pop(context, true), label: 'Guardar')),
-          ]),
+            Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel')))),            const SizedBox(width: 16),
+            Expanded(child: RvPrimaryButton(onTap: () => Navigator.pop(context, true), label: context.tr('generic.save'))),          ]),
         ])),
       )),
     );
@@ -296,54 +296,156 @@ class _AdminServiceMobileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: RvSurfaceCard(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+    final theme = Theme.of(context);
+
+    return RvSurfaceCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          // Contenido principal
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Imagen
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
+                    width: 72, height: 72,
+                    child: item.imagenUrl != null
+                        ? RvImage(imageUrl: item.imagenUrl!, fit: BoxFit.cover)
+                        : Container(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                      child: const Icon(Icons.room_service_rounded, color: AppColors.primaryBlue),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!item.activo)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: RvBadge(label: context.tr('admin.services.inactive'), color: Colors.grey),
+                        ),
+                      Text(
+                        item.nombre,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time_rounded, size: 12, color: theme.hintColor),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.horario ?? context.tr('admin.services.noSchedule'),
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      RvBadge(
+                        label: '${item.precioTokens} Tokens',
+                        icon: Icons.stars_rounded,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Divisor
+          Divider(height: 1, thickness: 0.5, color: theme.dividerColor.withValues(alpha: 0.15)),
+
+          // Barra de acciones
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.schedule_rounded,
+                    label: context.tr('admin.services.slots.label'),
+                    onTap: onTramos,
+                  ),
+                ),
+                SizedBox(
+                  height: 28,
+                  child: VerticalDivider(width: 1, thickness: 0.5, color: theme.dividerColor.withValues(alpha: 0.15)),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.edit_outlined,
+                    label: context.tr('generic.edit'),
+                    onTap: onEdit,
+                  ),
+                ),
+                SizedBox(
+                  height: 28,
+                  child: VerticalDivider(width: 1, thickness: 0.5, color: theme.dividerColor.withValues(alpha:0.15)),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.delete_outline_rounded,
+                    label: context.tr('generic.delete'),
+                    onTap: onDelete,
+                    isDestructive: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).hintColor;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: SizedBox(
-                width: 80, height: 100,
-                child: item.imagenUrl != null
-                    ? RvImage(imageUrl: item.imagenUrl!, fit: BoxFit.cover)
-                    : Container(color: AppColors.primaryBlue.withOpacity(0.1), child: const Icon(Icons.room_service_rounded, color: AppColors.primaryBlue)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.nombre,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis
-                  ),
-                  const SizedBox(height: 4),
-                  Text(item.horario ?? 'Sin horario',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  RvBadge(label: '${item.precioTokens} Tokens', icon: Icons.stars_rounded, color: AppColors.primaryBlue),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RvGhostIconButton(icon: Icons.edit_outlined, onTap: onEdit),
-                  const SizedBox(height: 8),
-                  RvGhostIconButton(icon: Icons.schedule_rounded, onTap: onTramos),
-                  const SizedBox(height: 8),
-                  RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: onDelete),
-                ],
-              ),
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -374,7 +476,7 @@ class _AdminServiceWebCard extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                     child: item.imagenUrl != null
                         ? RvImage(imageUrl: item.imagenUrl!, fit: BoxFit.cover)
-                        : Container(color: AppColors.primaryBlue.withOpacity(0.1), child: const Icon(Icons.room_service_rounded, color: AppColors.primaryBlue, size: 48)),
+                        : Container(color: AppColors.primaryBlue.withValues(alpha: 0.1), child: const Icon(Icons.room_service_rounded, color: AppColors.primaryBlue, size: 48)),
                   ),
                 ),
                 if(!item.activo)
@@ -384,7 +486,7 @@ class _AdminServiceWebCard extends StatelessWidget {
                   right: 12,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.all(2),

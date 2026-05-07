@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/admin_settings_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
+import 'package:reservives/screens/admin/admin_tramos_section.dart';
+import 'package:reservives/config/constants.dart';
 
 class AdminSettingsScreen extends ConsumerStatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -58,114 +60,173 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     return Scaffold(
       body: SafeArea(
         child: state.isLoading && state.data.isEmpty
-            ? const Center(child: RvLogoLoader())
+            ? const _AdminSettingsSkeleton()
             : state.error != null && state.data.isEmpty
-                ? Center(
-                    child: RvApiErrorState(
-                      onRetry: () =>
-                          ref.read(adminSettingsProvider.notifier).loadSettings(),
+            ? Center(
+          child: RvApiErrorState(
+            onRetry: () =>
+                ref.read(adminSettingsProvider.notifier).loadSettings(),
+          ),
+        )
+            : Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: RvPageHeader(
+                        title: context.tr('admin.settings.title'),
+                        eyebrow: context.tr('admin.settings.eyebrow'),
+                        subtitle: context.tr('admin.settings.subtitle'),
+                      ),
                     ),
-                  )
-                : Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: RvPageHeader(
-                                  title: context.tr('admin.settings.title'),
-                                  eyebrow: 'Configuracion',
-                                  subtitle:
-                                      context.tr('admin.settings.subtitle'),
-                                ),
-                              ),
-                              RvGhostIconButton(
-                                icon: Icons.refresh_rounded,
-                                onTap: () => ref
-                                    .read(adminSettingsProvider.notifier)
-                                    .loadSettings(),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 20,
-                            ),
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 1200),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (isWeb)
-                                      _buildWebLayout()
-                                    else
-                                      _buildMobileLayout(),
-                                    const SizedBox(height: 100),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 16),
+                    RvGhostIconButton(
+                      icon: Icons.refresh_rounded,
+                      onTap: () => ref
+                          .read(adminSettingsProvider.notifier)
+                          .loadSettings(),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isWeb)
+                            _buildWebLayout()
+                          else
+                            _buildMobileLayout(),
+                          const SizedBox(height: 120), // Espacio para el FAB
+                        ],
+                      ),
                     ),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomSheet: !state.isLoading && state.data.isNotEmpty
-          ? _buildBottomAction(state.isLoading)
+      // Botón de guardar como Floating Action Button moderno
+      floatingActionButton: !state.isLoading && state.data.isNotEmpty
+          ? Padding(
+        padding: const EdgeInsets.only(bottom: 16, right: 8),
+        child: FloatingActionButton.extended(
+          onPressed: state.isLoading ? null : _saveSettings,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          icon: state.isLoading
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.save_rounded),
+          label: Text(
+            context.tr('common.save').toUpperCase(),
+            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1),
+          ),
+        ),
+      )
           : null,
     );
   }
 
   Widget _buildWebLayout() {
-    return Wrap(
-      spacing: 24,
-      runSpacing: 24,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSection(
+                title: context.tr('admin.settings.section.tokens'),
+                icon: Icons.stars_rounded,
+                child: Column(
+                  children: [
+                    _numberField(controller: _tokensInicialesAlumnoCtrl, label: context.tr('admin.settings.tokens.students.initial'), icon: Icons.school_rounded, min: 1),
+                    const SizedBox(height: 20),
+                    _numberField(controller: _tokensInicialesProfesorCtrl, label: context.tr('admin.settings.tokens.teachers.initial'), icon: Icons.badge_rounded, min: 1),
+                    const SizedBox(height: 20),
+                    _numberField(controller: _tokensRecargaAlumnoCtrl, label: context.tr('admin.settings.tokens.students.monthly'), icon: Icons.autorenew_rounded, min: 1),
+                    const SizedBox(height: 20),
+                    _numberField(controller: _tokensRecargaProfesorCtrl, label: context.tr('admin.settings.tokens.teachers.monthly'), icon: Icons.refresh_rounded, min: 1),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                title: context.tr('admin.settings.eyebrow'),
+                icon: Icons.settings_suggest_rounded,
+                child: Column(
+                  children: [
+                    _buildSwitchTile(
+                      value: _reservasHabilitadas,
+                      onChanged: (v) => setState(() => _reservasHabilitadas = v),
+                      title: context.tr('admin.settings.reserves.allowed'),
+                      subtitle: context.tr('admin.settings.reserves.allowed.subtitle'),
+                    ),
+                    const Divider(height: 32),
+                    _numberField(controller: _announcementExpiryCtrl, label: context.tr('admin.settings.announcements.expiry'), icon: Icons.timer_outlined, min: 1),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                title: context.tr('admin.settings.notification.text'),
+                icon: Icons.mail_rounded,
+                child: _buildSwitchTile(
+                  value: _smtpEnabled,
+                  onChanged: (v) => setState(() => _smtpEnabled = v),
+                  title: context.tr('admin.settings.email.enabled'),
+                  subtitle: context.tr('admin.settings.email.automatic'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        const Expanded(
+          flex: 3,
+          child: AdminTramosSection(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return Column(
       children: [
         _buildSection(
           title: context.tr('admin.settings.section.tokens'),
           icon: Icons.stars_rounded,
           child: Column(
             children: [
-              _numberField(
-                controller: _tokensInicialesAlumnoCtrl,
-                label: 'Tokens iniciales - alumnos',
-                icon: Icons.school_rounded,
-                min: 1,
-              ),
+              _numberField(controller: _tokensInicialesAlumnoCtrl, label: context.tr('admin.settings.tokens.students.initial'), icon: Icons.school_rounded, min: 1),
               const SizedBox(height: 20),
-              _numberField(
-                controller: _tokensInicialesProfesorCtrl,
-                label: 'Tokens iniciales - profesores',
-                icon: Icons.badge_rounded,
-                min: 1,
-              ),
+              _numberField(controller: _tokensInicialesProfesorCtrl, label: context.tr('admin.settings.tokens.teachers.initial'), icon: Icons.badge_rounded, min: 1),
               const SizedBox(height: 20),
-              _numberField(
-                controller: _tokensRecargaAlumnoCtrl,
-                label: 'Tokens renovacion mensual - alumnos',
-                icon: Icons.autorenew_rounded,
-                min: 1,
-              ),
+              _numberField(controller: _tokensRecargaAlumnoCtrl, label: context.tr('admin.settings.tokens.students.monthly'), icon: Icons.autorenew_rounded, min: 1),
               const SizedBox(height: 20),
-              _numberField(
-                controller: _tokensRecargaProfesorCtrl,
-                label: 'Tokens renovacion mensual - profesores',
-                icon: Icons.refresh_rounded,
-                min: 1,
-              ),
+              _numberField(controller: _tokensRecargaProfesorCtrl, label: context.tr('admin.settings.tokens.teachers.monthly'), icon: Icons.refresh_rounded, min: 1),
             ],
           ),
         ),
+        const SizedBox(height: 24),
         _buildSection(
-          title: 'Sistema',
+          title: context.tr('admin.settings.eyebrow'),
           icon: Icons.settings_suggest_rounded,
           child: Column(
             children: [
@@ -176,37 +237,23 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 subtitle: context.tr('admin.settings.reserves.allowed.subtitle'),
               ),
               const Divider(height: 32),
-              _numberField(
-                controller: _announcementExpiryCtrl,
-                label: context.tr('admin.settings.announcements.expiry'),
-                icon: Icons.timer_outlined,
-                min: 1,
-              ),
+              _numberField(controller: _announcementExpiryCtrl, label: context.tr('admin.settings.announcements.expiry'), icon: Icons.timer_outlined, min: 1),
             ],
           ),
         ),
+        const SizedBox(height: 24),
         _buildSection(
           title: context.tr('admin.settings.notification.text'),
           icon: Icons.mail_rounded,
-          child: Column(
-            children: [
-              _buildSwitchTile(
-                value: _smtpEnabled,
-                onChanged: (v) => setState(() => _smtpEnabled = v),
-                title: context.tr('admin.settings.email.enabled'),
-                subtitle: 'Envio automatico de notificaciones',
-              ),
-            ],
+          child: _buildSwitchTile(
+            value: _smtpEnabled,
+            onChanged: (v) => setState(() => _smtpEnabled = v),
+            title: context.tr('admin.settings.email.enabled'),
+            subtitle: context.tr('admin.settings.email.automatic'),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return Column(
-      children: [
-        _buildWebLayout(),
+        const SizedBox(height: 24),
+        const AdminTramosSection(),
       ],
     );
   }
@@ -216,32 +263,21 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    final width = MediaQuery.of(context).size.width;
-    final cardWidth = width > 1200
-        ? (1200 - 48 - 48) / 3
-        : (width > 900 ? (width - 48 - 24) / 2 : double.infinity);
-
-    return SizedBox(
-      width: cardWidth,
-      child: RvSurfaceCard(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            child,
-          ],
-        ),
+    return RvSurfaceCard(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          child,
+        ],
       ),
     );
   }
@@ -258,37 +294,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         HapticFeedback.lightImpact();
         onChanged(v);
       },
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
       subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
       contentPadding: EdgeInsets.zero,
-      activeColor: Theme.of(context).colorScheme.primary,
-    );
-  }
-
-  Widget _buildBottomAction(bool isLoading) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05)),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: RvPrimaryButton(
-            onTap: isLoading ? null : _saveSettings,
-            isLoading: isLoading,
-            label: context.tr('common.save'),
-            icon: Icons.save_rounded,
-          ),
-        ),
-      ),
+      activeThumbColor: Theme.of(context).colorScheme.primary,
     );
   }
 
@@ -298,13 +307,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     required IconData icon,
     int min = 0,
   }) {
-    return _textField(
-      controller: controller,
-      label: label,
-      icon: icon,
-      isNumber: true,
-      min: min,
-    );
+    return _textField(controller: controller, label: label, icon: icon, isNumber: true, min: min);
   }
 
   Widget _textField({
@@ -320,19 +323,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       controller: controller,
       enabled: enabled,
       keyboardType: isNumber ? TextInputType.number : TextInputType.emailAddress,
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        color: enabled ? null : theme.disabledColor,
-      ),
+      style: TextStyle(fontWeight: FontWeight.bold, color: enabled ? null : theme.disabledColor),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
         filled: true,
-        fillColor: theme.dividerColor.withOpacity(0.03),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
+        fillColor: theme.dividerColor.withValues(alpha: 0.03),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       ),
       validator: (value) {
         if (!enabled) return null;
@@ -341,9 +338,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         if (isNumber) {
           final parsed = int.tryParse(raw);
           if (parsed == null) return context.tr('validation.mustBeInt');
-          if (parsed < min) {
-            return context.tr('validation.minValue').replaceAll('{n}', '$min');
-          }
+          if (parsed < min) return context.tr('validation.minValue').replaceAll('{n}', '$min');
         }
         return null;
       },
@@ -354,29 +349,20 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final state = ref.read(adminSettingsProvider);
     if (state.isLoading || state.data.isEmpty) return;
 
-    _tokensInicialesAlumnoCtrl.text =
-        state.data['tokens_iniciales_alumno'] ??
-            state.data['tokens_iniciales_nuevo_usuario'] ??
-            '20';
-    _tokensInicialesProfesorCtrl.text =
-        state.data['tokens_iniciales_profesor'] ?? '60';
-    _tokensRecargaAlumnoCtrl.text =
-        state.data['tokens_recarga_mensual_alumno'] ??
-            state.data['tokens_por_recarga_alumno'] ??
-            '20';
-    _tokensRecargaProfesorCtrl.text =
-        state.data['tokens_recarga_mensual_profesor'] ?? '60';
-    _announcementExpiryCtrl.text =
-        state.data['dias_caducidad_anuncio_defecto'] ?? '30';
+    _tokensInicialesAlumnoCtrl.text = state.data['tokens_iniciales_alumno'] ?? state.data['tokens_iniciales_nuevo_usuario'] ?? '20';
+    _tokensInicialesProfesorCtrl.text = state.data['tokens_iniciales_profesor'] ?? '60';
+    _tokensRecargaAlumnoCtrl.text = state.data['tokens_recarga_mensual_alumno'] ?? state.data['tokens_por_recarga_alumno'] ?? '20';
+    _tokensRecargaProfesorCtrl.text = state.data['tokens_recarga_mensual_profesor'] ?? '60';
+    _announcementExpiryCtrl.text = state.data['dias_caducidad_anuncio_defecto'] ?? '30';
 
     setState(() {
       _smtpEnabled = state.data['smtp_enabled']?.toLowerCase() == 'true';
-      _reservasHabilitadas =
-          state.data['se_permiten_reservas']?.toLowerCase() != 'false';
+      _reservasHabilitadas = state.data['se_permiten_reservas']?.toLowerCase() != 'false';
     });
   }
 
   Future<void> _saveSettings() async {
+
     if (!_formKey.currentState!.validate()) return;
     final success = await ref.read(adminSettingsProvider.notifier).updateSettings({
       'tokens_iniciales_alumno': _tokensInicialesAlumnoCtrl.text.trim(),
@@ -392,5 +378,83 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     if (mounted && success) {
       RvAlerts.success(context, context.tr('admin.settings.saved'));
     }
+  }
+}
+
+class _AdminSettingsSkeleton extends StatelessWidget {
+  const _AdminSettingsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final isWeb = MediaQuery.of(context).size.width > 900;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header skeleton
+              const RvSkeleton(width: 160, height: 12, borderRadius: 6),
+              const SizedBox(height: 10),
+              const RvSkeleton(width: 240, height: 22, borderRadius: 8),
+              const SizedBox(height: 8),
+              const RvSkeleton(width: 320, height: 14, borderRadius: 6),
+              const SizedBox(height: 32),
+              if (isWeb)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 2, child: _sectionsSkeleton()),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 3, child: _cardSkeleton(fieldCount: 6)),
+                  ],
+                )
+              else
+                _sectionsSkeleton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionsSkeleton() {
+    return Column(
+      children: [
+        _cardSkeleton(fieldCount: 4),
+        const SizedBox(height: 24),
+        _cardSkeleton(fieldCount: 2),
+        const SizedBox(height: 24),
+        _cardSkeleton(fieldCount: 1),
+      ],
+    );
+  }
+
+  Widget _cardSkeleton({required int fieldCount}) {
+    return RvSurfaceCard(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título de sección
+          Row(
+            children: const [
+              RvSkeleton(width: 20, height: 20, borderRadius: 6),
+              SizedBox(width: 12),
+              RvSkeleton(width: 140, height: 16, borderRadius: 6),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Campos
+          for (int i = 0; i < fieldCount; i++) ...[
+            RvSkeleton(width: double.infinity, height: 56, borderRadius: 16),
+            if (i < fieldCount - 1) const SizedBox(height: 20),
+          ],
+        ],
+      ),
+    );
   }
 }

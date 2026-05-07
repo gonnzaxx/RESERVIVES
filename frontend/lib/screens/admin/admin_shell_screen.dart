@@ -25,7 +25,8 @@ class AdminShellScreen extends ConsumerWidget {
       (BackofficeSection.summary, '/admin', context.tr('admin.shell.summary'), Icons.dashboard_rounded),
       (BackofficeSection.users, '/admin/usuarios', context.tr('admin.shell.users'), Icons.people_alt_rounded),
       (BackofficeSection.bookings, '/admin/reservas', context.tr('admin.shell.bookings'), Icons.approval_rounded),
-      (BackofficeSection.polls, '/admin/encuestas', context.tr('admin.shell.polls'), Icons.how_to_vote_rounded),
+      (BackofficeSection.bookings, '/admin/historial', context.tr('admin.shell.record'), Icons.history_rounded),
+      (BackofficeSection.polls, '/admin/encuestas', context.tr('polls.user.title'), Icons.how_to_vote_rounded),
       (BackofficeSection.incidents, '/admin/incidencias', context.tr('admin.shell.incidents'), Icons.report_problem_rounded),
       (BackofficeSection.metrics, '/admin/metricas', context.tr('admin.shell.metrics'), Icons.bar_chart_rounded),
       (BackofficeSection.spaces, '/admin/espacios', context.tr('admin.shell.spaces'), Icons.grid_view_rounded),
@@ -54,7 +55,7 @@ class AdminShellScreen extends ConsumerWidget {
                     child: IconButton(
                       onPressed: () {
                         if (user != null && canAccessMainApp(user.rol)) {
-                          Future.microtask(() => context.goNamed('home'));
+                          Future.microtask(() => context.goNamed('perfil'));
                           return;
                         }
                         final fallback = user == null ? '/login' : firstAllowedAdminRoute(user) ?? '/login';

@@ -7,6 +7,7 @@ import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
+import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -73,7 +74,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
                 title: context.tr('admin.users.title'),
-                eyebrow: 'Gestión',
+                eyebrow: context.tr('admin.users.eyebrow'),
                 trailing: Row(
                   children: [
                     RvGhostIconButton(
@@ -132,24 +133,29 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
       child: DropdownButtonFormField<String>(
-        value: _selectedRole,
+        initialValue: _selectedRole,
+        dropdownColor: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        icon: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.primary),
+        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+        elevation: 16,
         decoration: InputDecoration(
           labelText: context.tr('admin.users.filterByRole'),
           prefixIcon: const Icon(Icons.filter_list_rounded),
           filled: true,
           fillColor: theme.dividerColor.withValues(alpha: 0.05),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
         items: [
-          DropdownMenuItem(value: 'TODOS', child: Text(context.tr('admin.users.role.all'))),
-          DropdownMenuItem(value: 'ALUMNO', child: Text(context.tr('admin.users.role.student'))),
-          DropdownMenuItem(value: 'PROFESOR', child: Text(context.tr('admin.users.role.teacher'))),
-          DropdownMenuItem(value: 'ADMIN', child: Text(context.tr('admin.users.role.admin'))),
-          DropdownMenuItem(value: 'CAFETERIA', child: Text(context.tr('admin.users.role.cafeteria'))),
-          DropdownMenuItem(value: 'JEFE_ESTUDIOS', child: Text(context.tr('admin.users.role.jefeEstudios'))),
-          DropdownMenuItem(value: 'SECRETARIA', child: Text(context.tr('admin.users.role.secretaria'))),
-          DropdownMenuItem(value: 'PROFESOR_SERVICIO', child: Text(context.tr('admin.users.role.profesorServicio'))),
-        ],
+          'TODOS', 'ALUMNO', 'PROFESOR', 'ADMIN', 'CAFETERIA',
+          'JEFE_ESTUDIOS', 'SECRETARIA', 'PROFESOR_SERVICIO'
+        ].map((role) {
+          return DropdownMenuItem(
+            value: role,
+            child: Text(role == 'TODOS' ? context.tr('admin.users.role.all') : _roleLabelFromValue(context, role)),
+          );
+        }).toList(),
         onChanged: (value) {
           if (value != null) setState(() => _selectedRole = value);
         },
@@ -183,31 +189,37 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 children: [
                   Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: theme.dividerColor, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 24),
-                  Text('Editar a', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                  Text(context.tr('admin.user.editUser.text'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
                   Text(user.nombreCompleto, style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 24),
+
                   DropdownButtonFormField<String>(
-                    value: currentRole,
+                    initialValue: currentRole,
+                    dropdownColor: theme.cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    icon: Icon(Icons.unfold_more_rounded, color: theme.colorScheme.primary),
                     decoration: InputDecoration(
-                      labelText: 'Rol del usuario',
+                      labelText: context.tr('admin.user.editUser.label.rol'),
                       prefixIcon: const Icon(Icons.manage_accounts_rounded),
                       filled: true,
                       fillColor: theme.dividerColor.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     ),
                     items: [
-                      DropdownMenuItem(value: 'ALUMNO', child: Text(_roleLabelFromValue(context, 'ALUMNO'))),
-                      DropdownMenuItem(value: 'PROFESOR', child: Text(_roleLabelFromValue(context, 'PROFESOR'))),
-                      DropdownMenuItem(value: 'ADMIN', child: Text(_roleLabelFromValue(context, 'ADMIN'))),
-                      DropdownMenuItem(value: 'CAFETERIA', child: Text(_roleLabelFromValue(context, 'CAFETERIA'))),
-                      DropdownMenuItem(value: 'JEFE_ESTUDIOS', child: Text(_roleLabelFromValue(context, 'JEFE_ESTUDIOS'))),
-                      DropdownMenuItem(value: 'SECRETARIA', child: Text(_roleLabelFromValue(context, 'SECRETARIA'))),
-                      DropdownMenuItem(value: 'PROFESOR_SERVICIO', child: Text(_roleLabelFromValue(context, 'PROFESOR_SERVICIO'))),
-                    ],
+                      'ALUMNO', 'PROFESOR', 'ADMIN', 'CAFETERIA',
+                      'JEFE_ESTUDIOS', 'SECRETARIA', 'PROFESOR_SERVICIO'
+                    ].map((role) {
+                      return DropdownMenuItem(
+                        value: role,
+                        child: Text(_roleLabelFromValue(context, role)),
+                      );
+                    }).toList(),
                     onChanged: (value) {
                       if (value != null) setStateModal(() => currentRole = value);
                     },
                   ),
+
                   const SizedBox(height: 16),
                   TextField(
                     controller: tokenController,
@@ -215,8 +227,8 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*')),
                     ],
-                    decoration: const InputDecoration(
-                        labelText: 'Añadir o quitar tokens',
+                    decoration: InputDecoration(
+                        labelText: context.tr('admin.user.editUser.label.tokens'),
                         hintText: 'Ej: 10 o -5',
                         prefixIcon: Icon(Icons.stars_rounded),
                         suffixText: 'Tokens'
@@ -252,6 +264,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       if (result['rol'] != user.rol.value) {
         await apiClient.put('/usuarios/${user.id}', body: {'rol': result['rol']});
         changed = true;
+        final currentUser = ref.read(authProvider).user;
+        if (currentUser != null && currentUser.id == user.id) {
+          await ref.read(authProvider.notifier).refreshCurrentUser();
+        }
       }
 
       final tokensToAdd = result['tokens'] as int?;

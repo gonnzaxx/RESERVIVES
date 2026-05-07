@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +35,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
                 title: context.tr('cafeteria.admin.title'),
-                eyebrow: 'Inventario',
+                eyebrow: context.tr('cafeteria.admin.eyebrow'),
                 trailing: Row(
                   children: [
                     RvGhostIconButton(
@@ -100,7 +99,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 24),
             Text(context.tr('admin.common.new'), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
@@ -145,35 +144,235 @@ class AdminCafeteriaScreen extends ConsumerWidget {
   Future<void> _showCategoriaForm({required BuildContext context, required WidgetRef ref, CategoriaCafeteria? categoria}) async {
     final nombreCtrl = TextEditingController(text: categoria?.nombre ?? '');
     final descCtrl = TextEditingController(text: categoria?.descripcion ?? '');
-    final result = await showDialog<bool>(
+    final isEdit = categoria != null;
+    final theme = Theme.of(context);
+
+    final result = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text(categoria == null ? context.tr('cafeteria.admin.newCatTitle') : context.tr('cafeteria.admin.editCatTitle')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nombreCtrl, decoration: const InputDecoration(labelText: 'Nombre')),
-            const SizedBox(height: 12),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Descripción')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel'))),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(context.tr('generic.save'))),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetCtx, setState) {
+          final isValid = nombreCtrl.text.trim().isNotEmpty;
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16, 0, 16,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: theme.dividerColor.withValues(alpha: 0.12),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.hintColor.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentPurple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          isEdit ? Icons.edit_rounded : Icons.add_rounded,
+                          color: AppColors.accentPurple,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEdit
+                                ? context.tr('cafeteria.admin.editCatTitle')
+                                : context.tr('cafeteria.admin.newCatTitle'),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          Text(
+                            isEdit
+                                ? context.tr('cafeteria.admin.editCatSubtitle')
+                                : context.tr('cafeteria.admin.newCatSubtitle'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Campo nombre
+                  Text(
+                    context.tr('admin.spaces.form.name'),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.hintColor,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nombreCtrl,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: context.tr('cafeteria.admin.catNameHint'),
+                      prefixIcon: const Icon(Icons.label_outline_rounded, size: 20),
+                      filled: true,
+                      fillColor: theme.brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.03),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: AppColors.accentPurple.withValues(alpha:0.6),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Campo descripción
+                  Text(
+                    context.tr('cafeteria.admin.descriptionLabel'),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.hintColor,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: context.tr('cafeteria.admin.catDescHint'),
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.only(bottom: 40),
+                        child: Icon(Icons.description_outlined, size: 20),
+                      ),
+                      filled: true,
+                      fillColor: theme.brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.03),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: AppColors.accentPurple.withValues(alpha: 0.6),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Botones
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            side: BorderSide(
+                              color: theme.dividerColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            context.tr('generic.cancel'),
+                            style: TextStyle(color: theme.hintColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: RvPrimaryButton(
+                          backgroundColor: AppColors.accentPurple,
+                          onTap: isValid ? () => Navigator.pop(ctx, true) : null,
+                          label: isEdit
+                              ? context.tr('generic.save')
+                              : context.tr('cafeteria.admin.createCategory'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
+
     if (result != true) return;
     try {
       final apiClient = ref.read(apiClientProvider);
       if (categoria == null) {
-        await apiClient.post('/cafeteria/categorias', body: {'nombre': nombreCtrl.text.trim(), 'descripcion': descCtrl.text.trim(), 'orden': 0});
+        await apiClient.post('/cafeteria/categorias', body: {
+          'nombre': nombreCtrl.text.trim(),
+          'descripción': descCtrl.text.trim(),
+          'orden': 0,
+        });
       } else {
-        await apiClient.put('/cafeteria/categorias/${categoria.id}', body: {'nombre': nombreCtrl.text.trim(), 'descripcion': descCtrl.text.trim(), 'orden': categoria.orden});
+        await apiClient.put('/cafeteria/categorias/${categoria.id}', body: {
+          'nombre': nombreCtrl.text.trim(),
+          'descripción': descCtrl.text.trim(),
+          'orden': categoria.orden,
+        });
       }
       ref.invalidate(adminCafeteriaProvider);
-    } catch (e) { if (context.mounted) RvAlerts.error(context, toFriendlyErrorMessage(e)); }
+      if (context.mounted) {
+        RvAlerts.success(
+          context,
+          isEdit
+              ? context.tr('cafeteria.admin.editCatSuccess')
+              : context.tr('cafeteria.admin.newCatSuccess'),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) RvAlerts.error(context, toFriendlyErrorMessage(e));
+    }
   }
 
   Future<void> _deleteProducto(BuildContext context, WidgetRef ref, ProductoCafeteria producto) async {
@@ -186,7 +385,10 @@ class AdminCafeteriaScreen extends ConsumerWidget {
   }
 
   Future<void> _createProducto(BuildContext context, WidgetRef ref, List<CategoriaCafeteria> categorias) async {
-    if (categorias.isEmpty) { RvAlerts.error(context, 'Crea una categoría primero'); return; }
+    if (categorias.isEmpty) {
+      RvAlerts.error(context, context.tr('cafeteria.admin.error.noCategory'));
+      return;
+    }
     final nombreCtrl = TextEditingController();
     final precioCtrl = TextEditingController(text: '0');
     final descCtrl = TextEditingController();
@@ -227,7 +429,10 @@ class AdminCafeteriaScreen extends ConsumerWidget {
 
   Future<void> _saveProducto(BuildContext context, WidgetRef ref, String? id, String nombre, String desc, String precioText, String catId, bool disp, Uint8List? bytes, String? name, {String? currentUrl, bool destacado = false}) async {
     final precio = double.tryParse(precioText.replaceAll(',', '.'));
-    if (nombre.isEmpty || precio == null) { RvAlerts.error(context, 'Datos inválidos'); return; }
+    if (nombre.isEmpty || precio == null) {
+      RvAlerts.error(context, context.tr('admin.common.invalidData'));
+      return;
+    }
     try {
       final apiClient = ref.read(apiClientProvider);
       String? uploadedImageUrl = currentUrl;
@@ -235,11 +440,18 @@ class AdminCafeteriaScreen extends ConsumerWidget {
         final uploadResponse = await apiClient.postMultipart('/uploads/imagen', fileField: 'file', fileBytes: bytes, fileName: name);
         uploadedImageUrl = uploadResponse['url'] as String?;
       }
-      final body = {'categoria_id': catId, 'nombre': nombre, 'descripcion': desc, 'imagen_url': uploadedImageUrl, 'precio': precio, 'disponible': disp, 'destacado': destacado};
+      final body = {'categoria_id': catId, 'nombre': nombre, 'descripción': desc, 'imagen_url': uploadedImageUrl, 'precio': precio, 'disponible': disp, 'destacado': destacado};
       if (id == null) { await apiClient.post('/cafeteria/productos', body: body); }
-      else { await apiClient.put('/cafeteria/productos/$id', body: body); }
+      else {
+        await apiClient.put('/cafeteria/productos/$id', body: body);
+      }
+
       ref.invalidate(adminCafeteriaProvider);
-    } catch (e) { if (context.mounted) RvAlerts.error(context, toFriendlyErrorMessage(e)); }
+    } catch (e) {
+      if (context.mounted) {
+        RvAlerts.error(context, toFriendlyErrorMessage(e));
+        }
+    }
   }
 
   Future<bool?> _showProductoForm({
@@ -257,22 +469,30 @@ class AdminCafeteriaScreen extends ConsumerWidget {
         decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
         padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(2)))),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+
           const SizedBox(height: 24),
           Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
+
           DropdownButtonFormField<String>(
-            value: initialCategoriaId, decoration: const InputDecoration(labelText: 'Categoría', prefixIcon: Icon(Icons.category_outlined)),
+            initialValue: initialCategoriaId,
+            decoration: InputDecoration(
+                labelText: context.tr('cafeteria.admin.categoriaLabel'),
+                prefixIcon: Icon(Icons.category_outlined)
+            ),
             items: categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre))).toList(),
             onChanged: (v) { onCategoriaChanged(v); },
           ),
+
           const SizedBox(height: 16),
-          TextField(controller: nombreCtrl, decoration: const InputDecoration(labelText: 'Nombre', prefixIcon: Icon(Icons.drive_file_rename_outline))),
+          TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: context.tr('admin.spaces.form.name'), prefixIcon: const Icon(Icons.drive_file_rename_outline))),
           const SizedBox(height: 16),
-          TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Descripción', prefixIcon: Icon(Icons.description_outlined))),
+          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('cafeteria.admin.descriptionLabel'), prefixIcon: const Icon(Icons.description_outlined))),
           const SizedBox(height: 16),
-          TextField(controller: precioCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Precio', prefixIcon: Icon(Icons.euro_symbol), suffixText: '€')),
+          TextField(controller: precioCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('cafeteria.admin.priceLabel'), prefixIcon: const Icon(Icons.euro_symbol), suffixText: '€')),
           const SizedBox(height: 24),
+
           GestureDetector(
             onTap: () async {
               final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -288,7 +508,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          SwitchListTile(title: const Text('Disponible para venta'), value: disponible, onChanged: (v) { setState(() => disponible = v); onDisponibleChanged(v); }, contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: Text(context.tr('cafeteria.admin.availableForSale')), value: disponible, onChanged: (v) { setState(() => disponible = v); onDisponibleChanged(v); }, contentPadding: EdgeInsets.zero),
           const SizedBox(height: 32),
           Row(children: [
             Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel')))),
@@ -314,12 +534,12 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
+      leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.1), child: Icon(icon, color: color)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: Theme.of(context).dividerColor.withOpacity(0.05),
+      tileColor: Theme.of(context).dividerColor.withValues(alpha: 0.05),
     );
   }
 }
@@ -335,8 +555,8 @@ class _CategoriaExpansionTile extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
-        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
         title: Text(categoria.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('${categoria.productos.length} productos'),
         trailing: Row(
@@ -373,7 +593,7 @@ class _ProductoAdminListTile extends ConsumerWidget {
                 width: 60, height: 60,
                 child: producto.imagenUrl != null
                     ? RvImage(imageUrl: producto.imagenUrl!, fit: BoxFit.cover)
-                    : Container(color: Colors.orange.withOpacity(0.1), child: const Icon(Icons.fastfood_rounded, color: Colors.orange, size: 24)),
+                    : Container(color: Colors.orange.withValues(alpha: 0.1), child: const Icon(Icons.fastfood_rounded, color: Colors.orange, size: 24)),
               ),
             ),
             const SizedBox(width: 16),
@@ -387,7 +607,7 @@ class _ProductoAdminListTile extends ConsumerWidget {
                 ],
               ),
             ),
-            if (!producto.disponible) const RvBadge(label: "AGOTADO", color: Colors.grey),
+            if (!producto.disponible) RvBadge(label: context.tr('cafeteria.admin.outOfStock'), color: Colors.grey),
             const SizedBox(width: 8),
             RvGhostIconButton(icon: Icons.edit_outlined, onTap: () => const AdminCafeteriaScreen()._editProducto(context, ref, allCats, producto)),
             const SizedBox(width: 12),

@@ -133,7 +133,7 @@ final listaFavoritosEspaciosProvider = FutureProvider.autoDispose<List<Espacio>>
   final apiClient = ref.read(apiClientProvider);
   final List<Espacio> favoritos = [];
 
-  final response = await apiClient.get('/espacios');
+  final response = await apiClient.get('/espacios/');
   final todos = (response as List).map((e) => Espacio.fromJson(e)).toList();
   
   return todos.where((e) => favState.espaciosIds.contains(e.id)).toList();
@@ -145,7 +145,7 @@ final listaFavoritosServiciosProvider = FutureProvider.autoDispose<List<Servicio
   if (favState.serviciosIds.isEmpty) return [];
   
   final apiClient = ref.read(apiClientProvider);
-  final response = await apiClient.get('/servicios');
+  final response = await apiClient.get('/servicios/');
   final todos = (response as List).map((e) => ServicioInstituto.fromJson(e)).toList();
   
   return todos.where((e) => favState.serviciosIds.contains(e.id)).toList();

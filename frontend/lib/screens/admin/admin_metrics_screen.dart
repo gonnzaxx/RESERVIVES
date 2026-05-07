@@ -4,6 +4,7 @@ import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
+import 'package:reservives/config/constants.dart';
 
 final adminMetricsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
@@ -31,7 +32,7 @@ class AdminMetricsScreen extends ConsumerWidget {
                   Expanded(
                     child: RvPageHeader(
                       title: context.tr('admin.metrics.title'),
-                      eyebrow: 'Analítica',
+                      eyebrow: context.tr('admin.metrics.subtitle'),
                     ),
                   ),
                   RvGhostIconButton(
@@ -56,7 +57,7 @@ class AdminMetricsScreen extends ConsumerWidget {
                     ),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1200),
+                        constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -139,7 +140,7 @@ class _MetricsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) return const RvSurfaceCard(child: Center(child: Text("No hay datos suficientes")));
+    if (items.isEmpty) return  RvSurfaceCard(child: Center(child: Text(context.tr('admin.metrics.noData'))));
 
     final sorted = List.from(items)..sort((a, b) => (b['valor'] as int).compareTo(a['valor'] as int));
     final width = MediaQuery.of(context).size.width;

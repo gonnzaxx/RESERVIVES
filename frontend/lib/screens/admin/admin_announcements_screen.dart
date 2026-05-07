@@ -12,6 +12,7 @@ import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
 
+/// Provider que gestiona la carga de anuncios desde la API.
 final adminAnnouncementsProvider = FutureProvider.autoDispose<List<Anuncio>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get('/anuncios/todos');
@@ -46,7 +47,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
                 title: context.tr('admin.announcements.title'),
-                eyebrow: 'Comunicación',
+                eyebrow: context.tr('admin.announcements.eyebrow'),
                 trailing: Row(
                   children: [
                     RvGhostIconButton(
@@ -110,6 +111,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     );
   }
 
+  /// Inicializa el flujo para crear un nuevo anuncio.
   Future<void> _createAnuncio(BuildContext context, WidgetRef ref) async {
     final titleCtrl = TextEditingController();
     final contentCtrl = TextEditingController();
@@ -133,6 +135,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     _processSave(context, ref, null, titleCtrl.text, contentCtrl.text, destacado, imageBytes, imageName);
   }
 
+  /// Prepara los datos actuales y abre el formulario para editar un anuncio existente.
   Future<void> _editAnuncio(BuildContext context, WidgetRef ref, Anuncio anuncio) async {
     final titleCtrl = TextEditingController(text: anuncio.titulo);
     final contentCtrl = TextEditingController(text: anuncio.contenido);
@@ -158,6 +161,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     _processSave(context, ref, anuncio.id, titleCtrl.text, contentCtrl.text, destacado, imageBytes, imageName, currentUrl: anuncio.imagenUrl);
   }
 
+  /// Lógica unificada para POST (crear) y PUT (editar).
   Future<void> _processSave(BuildContext context, WidgetRef ref, String? id, String title, String content, bool destacado, Uint8List? bytes, String? name, {String? currentUrl}) async {
     if (title.trim().isEmpty || content.trim().isEmpty) {
       RvAlerts.error(context, context.tr('admin.announcement.error.fields'));
@@ -168,6 +172,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
       final apiClient = ref.read(apiClientProvider);
       String? uploadedImageUrl = currentUrl;
 
+      // Si el usuario seleccionó una imagen nueva, la subimos primero
       if (bytes != null && name != null) {
         final uploadResponse = await apiClient.postMultipart('/uploads/imagen', fileField: 'file', fileBytes: bytes, fileName: name);
         uploadedImageUrl = uploadResponse['url'] as String?;
@@ -189,6 +194,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     }
   }
 
+  /// Elimina un anuncio tras la confirmación del usuario.
   Future<void> _deleteAnuncio(BuildContext context, WidgetRef ref, Anuncio anuncio) async {
     final confirmed = await RvAlerts.confirm(
       context,
@@ -207,6 +213,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
     }
   }
 
+  /// Formulario en ModalBottomSheet para la entrada de datos.
   Future<bool?> _showAnuncioForm({
     required BuildContext context,
     required String title,
@@ -233,14 +240,18 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 24),
                 Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 24),
+
+                // Campos de entrada
                 TextField(controller: titleCtrl, decoration: InputDecoration(labelText: context.tr('announcements.admin.titleLabel'), prefixIcon: const Icon(Icons.title_rounded))),
                 const SizedBox(height: 16),
                 TextField(controller: contentCtrl, maxLines: 4, decoration: InputDecoration(labelText: context.tr('announcements.admin.contentLabel'), alignLabelWithHint: true, prefixIcon: const Padding(padding: EdgeInsets.only(bottom: 60), child: Icon(Icons.description_outlined)))),
                 const SizedBox(height: 24),
+
+                // Selector de Imagen
                 GestureDetector(
                   onTap: () async {
                     final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -261,6 +272,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                // Opción de destacar anuncio
                 SwitchListTile(
                   title: Text(context.tr('announcements.featured')),
                   subtitle: Text(context.tr('announcements.admin.featuredSubtitle'), style: const TextStyle(fontSize: 12)),
@@ -270,6 +282,8 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
                   tileColor: Theme.of(context).cardColor,
                 ),
                 const SizedBox(height: 32),
+
+                // Botones de acción
                 Row(children: [
                   Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel')))),
                   const SizedBox(width: 16),
@@ -293,42 +307,159 @@ class _AdminAnnouncementMobileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accentColor = anuncio.destacado ? AppColors.accentPurple : AppColors.primaryBlue;
+
     return RvSurfaceCard(
       padding: EdgeInsets.zero,
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 100, height: 160,
-            padding: const EdgeInsets.all(8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: anuncio.imagenUrl != null
-                  ? RvImage(imageUrl: anuncio.imagenUrl!, fit: BoxFit.cover)
-                  : Container(color: (anuncio.destacado ? AppColors.accentPurple : AppColors.primaryBlue).withOpacity(0.1),
-                  child: Icon(anuncio.destacado ? Icons.push_pin_rounded : Icons.article_rounded,
-                      color: anuncio.destacado ? AppColors.accentPurple : AppColors.primaryBlue)),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: SizedBox(
+                    width: 64, height: 64,
+                    child: anuncio.imagenUrl != null
+                        ? RvImage(imageUrl: anuncio.imagenUrl!, fit: BoxFit.cover)
+                        : Container(
+                      color: accentColor.withValues(alpha: 0.1),
+                      child: Icon(
+                        anuncio.destacado ? Icons.push_pin_rounded : Icons.article_rounded,
+                        color: accentColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (anuncio.destacado)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: RvBadge(
+                            label: context.tr('announcements.featured'),
+                            color: AppColors.accentPurple,
+                            icon: Icons.push_pin_rounded,
+                          ),
+                        ),
+                      Text(
+                        anuncio.titulo,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        anuncio.contenido,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded, size: 11, color: theme.hintColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(anuncio.fechaPublicacion),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.hintColor,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 16, 12, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(anuncio.titulo, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Text(anuncio.contenido, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const Spacer(),
-                  Text(DateFormat('dd/MM/yyyy').format(anuncio.fechaPublicacion), style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor, fontSize: 10)),
-                ],
-              ),
+
+
+          Divider(height: 1, thickness: 0.5, color: theme.dividerColor.withValues(alpha: 0.15)),
+
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.edit_outlined,
+                    label: context.tr('generic.edit'),
+                    onTap: onEdit,
+                  ),
+                ),
+                SizedBox(
+                  height: 28,
+                  child: VerticalDivider(
+                    width: 1,
+                    thickness: 0.5,
+                    color: theme.dividerColor.withValues(alpha: 0.15),
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.delete_outline_rounded,
+                    label: context.tr('generic.delete'),
+                    onTap: onDelete,
+                    isDestructive: true,
+                  ),
+                ),
+              ],
             ),
           ),
-          Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            RvGhostIconButton(icon: Icons.edit_outlined, onTap: onEdit),
-            RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: onDelete),
-          ]),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).hintColor;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -353,8 +484,8 @@ class _AdminAnnouncementWebCard extends StatelessWidget {
               Positioned.fill(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                   child: anuncio.imagenUrl != null
                       ? RvImage(imageUrl: anuncio.imagenUrl!, fit: BoxFit.cover)
-                      : Container(color: AppColors.primaryBlue.withOpacity(0.05),
-                      child: Icon(Icons.article_rounded, size: 48, color: AppColors.primaryBlue.withOpacity(0.2))))),
+                      : Container(color: AppColors.primaryBlue.withValues(alpha: 0.05),
+                      child: Icon(Icons.article_rounded, size: 48, color: AppColors.primaryBlue.withValues(alpha: 0.2))))),
               if(anuncio.destacado) Positioned(top: 12, right: 12, child: RvBadge(label: "DESTACADO", color: AppColors.accentPurple, icon: Icons.push_pin_rounded)),
             ]),
           ),

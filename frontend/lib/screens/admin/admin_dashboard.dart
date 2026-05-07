@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +10,6 @@ import 'package:reservives/widgets/design_system.dart';
 
 final adminSummaryProvider = FutureProvider<AdminSummary>((ref) async {
   ref.watch(adminCountersVersionProvider);
-  ref.watch(adminCountersPollTickProvider);
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get('/admin/summary');
   return AdminSummary.fromJson(response as Map<String, dynamic>);
@@ -19,25 +17,19 @@ final adminSummaryProvider = FutureProvider<AdminSummary>((ref) async {
 
 final adminPendingApprovalsCountProvider = FutureProvider<int>((ref) async {
   ref.watch(adminCountersVersionProvider);
-  ref.watch(adminCountersPollTickProvider);
   final apiClient = ref.read(apiClientProvider);
 
   final espacios = await apiClient.get('/reservas-espacios/?estado=PENDIENTE');
   final servicios = await apiClient.get(
     '/servicios/reservas/todas?estado=PENDIENTE',
   );
+  final recurrentes = await apiClient.get(
+    '/reservas-recurrentes/?estado=PENDIENTE_APROBACION',
+  );
 
-  return (espacios as List).length + (servicios as List).length;
-});
-
-final adminCountersPollTickProvider = StreamProvider<int>((ref) async* {
-  var tick = 0;
-  yield tick;
-  while (true) {
-    await Future<void>.delayed(const Duration(seconds: 30));
-    tick++;
-    yield tick;
-  }
+  return (espacios as List).length +
+      (servicios as List).length +
+      (recurrentes as List).length;
 });
 
 class AdminDashboardKpis {
@@ -74,22 +66,6 @@ class AdminDashboard extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardState extends ConsumerState<AdminDashboard> {
-  Timer? _pollTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) {
-      ref.invalidate(adminDashboardKpisProvider);
-    });
-  }
-
-  @override
-  void dispose() {
-    _pollTimer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final kpisAsync = ref.watch(adminDashboardKpisProvider);
@@ -309,7 +285,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                           ),
                           _AdminShortcut(
                             title: context.tr('incidents.admin.title'),
-                            subtitle: 'Reportes, averias y problemas tecnicos',
+                            subtitle: 'Reportes, averías y problemas técnicos',
                             icon: Icons.report_problem_rounded,
                             color: AppColors.error,
                             onTap: () => context.pushNamed('admin_incidencias'),

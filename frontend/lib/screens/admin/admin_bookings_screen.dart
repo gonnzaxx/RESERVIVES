@@ -5,13 +5,17 @@ import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/reserva.dart';
+import 'package:reservives/models/reserva_recurrente.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
+import 'package:reservives/providers/reservas_recurrentes_provider.dart';
 import 'package:reservives/screens/admin/admin_dashboard.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 
+/// Provider que unifica la carga de reservas pendientes.
 final pendingBookingsProvider = FutureProvider.autoDispose<List<Reserva>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
+  // Obtenemos por separado reservas de espacios y de servicios
   final espacios = await apiClient.get('/reservas-espacios/?estado=PENDIENTE');
   final servicios = await apiClient.get('/servicios/reservas/todas?estado=PENDIENTE');
 
@@ -19,6 +23,8 @@ final pendingBookingsProvider = FutureProvider.autoDispose<List<Reserva>>((ref) 
     ...(espacios as List).map((json) => Reserva.fromJson(json as Map<String, dynamic>)),
     ...(servicios as List).map((json) => Reserva.fromJson(json as Map<String, dynamic>)),
   ];
+
+  // Ordenación para mostrar lo más reciente primero
   all.sort((a, b) => b.fechaInicio.compareTo(a.fechaInicio));
   return all;
 });
@@ -26,8 +32,12 @@ final pendingBookingsProvider = FutureProvider.autoDispose<List<Reserva>>((ref) 
 class AdminBookingsScreen extends ConsumerWidget {
   const AdminBookingsScreen({super.key});
 
+  /// Lógica centralizada para aprobar o rechazar una reserva.
+  /// Detecta automáticamente si es un Servicio o un Espacio para usar el endpoint correcto.
   Future<void> _updateReserva(BuildContext context, WidgetRef ref, Reserva reserva, String action, {String? motivo}) async {
     final isServicio = reserva.tipoEspacio == 'SERVICIO';
+
+    // Construcción dinámica del endpoint según el tipo de reserva y la acción
     final endpoint = isServicio
         ? '/servicios/reservas/${reserva.id}/$action'
         : '/reservas-espacios/${reserva.id}/$action';
@@ -52,6 +62,71 @@ class AdminBookingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _approveRecurring(
+    BuildContext context,
+    WidgetRef ref,
+    ReservaRecurrente reserva,
+  ) async {
+    final ok =
+        await ref.read(adminReservaRecurrenteProvider.notifier).aprobar(reserva.id);
+    if (!context.mounted) return;
+    if (ok) {
+      ref.invalidate(reservasRecurrentesPendientesProvider);
+      ref.invalidate(adminPendingApprovalsCountProvider);
+      notifyAdminCountersChanged(ref);
+      RvAlerts.success(context, 'Reserva recurrente aprobada');
+    } else {
+      RvAlerts.error(context, 'No se pudo aprobar la reserva recurrente');
+    }
+  }
+
+  Future<void> _rejectRecurring(
+    BuildContext context,
+    WidgetRef ref,
+    ReservaRecurrente reserva,
+  ) async {
+    final motivoCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Rechazar reserva recurrente'),
+        content: TextField(
+          controller: motivoCtrl,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Motivo (opcional)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Rechazar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final ok = await ref.read(adminReservaRecurrenteProvider.notifier).rechazar(
+          reserva.id,
+          motivo: motivoCtrl.text.trim().isEmpty ? null : motivoCtrl.text.trim(),
+        );
+    if (!context.mounted) return;
+    if (ok) {
+      ref.invalidate(reservasRecurrentesPendientesProvider);
+      ref.invalidate(adminPendingApprovalsCountProvider);
+      notifyAdminCountersChanged(ref);
+      RvAlerts.success(context, 'Reserva recurrente rechazada');
+    } else {
+      RvAlerts.error(context, 'No se pudo rechazar la reserva recurrente');
+    }
+  }
+
+  /// Muestra un diálogo para que el administrador introduzca el motivo del rechazo.
   Future<void> _showRejectDialog(BuildContext context, WidgetRef ref, Reserva reserva) async {
     final motivoCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
@@ -76,7 +151,7 @@ class AdminBookingsScreen extends ConsumerWidget {
                   decoration: InputDecoration(
                     hintText: context.tr('admin.bookings.rejectHint'),
                     filled: true,
-                    fillColor: Theme.of(context).dividerColor.withOpacity(0.05),
+                    fillColor: Theme.of(context).dividerColor.withValues(alpha: 0.05),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -113,8 +188,10 @@ class AdminBookingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookingsAsync = ref.watch(pendingBookingsProvider);
+    final recurrentAsync = ref.watch(reservasRecurrentesPendientesProvider);
     final width = MediaQuery.of(context).size.width;
 
+    // Configuración de grid responsivo
     int crossAxisCount = 1;
     if (width > 1200) {
       crossAxisCount = 3;
@@ -126,11 +203,12 @@ class AdminBookingsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Cabecera con botón de refresco manual
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
               child: RvPageHeader(
                 title: context.tr('admin.bookings.title'),
-                eyebrow: 'Validaciones',
+                eyebrow: context.tr('admin.bookings.eyebrow'),
                 trailing: Row(
                   children: [
                     RvGhostIconButton(
@@ -145,23 +223,74 @@ class AdminBookingsScreen extends ConsumerWidget {
             Expanded(
               child: bookingsAsync.when(
                 data: (bookings) {
-                  if (bookings.isEmpty) {
-                    return Center(child: RvEmptyState(icon: Icons.done_all_rounded, title: context.tr('admin.bookings.emptyTitle'), subtitle: context.tr('admin.bookings.emptySubtitle')));
+                  final recurrent = recurrentAsync.when(
+                    data: (items) => items,
+                    loading: () => <ReservaRecurrente>[],
+                    error: (_, __) => <ReservaRecurrente>[],
+                  );
+                  if (bookings.isEmpty && recurrent.isEmpty) {
+                    return Center(
+                      child: RvEmptyState(
+                        icon: Icons.done_all_rounded,
+                        title: context.tr('admin.bookings.emptyTitle'),
+                        subtitle: context.tr('admin.bookings.emptySubtitle'),
+                      ),
+                    );
                   }
 
-                  return GridView.builder(
+                  return SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      mainAxisExtent: 340,
-                    ),
-                    itemCount: bookings.length,
-                    itemBuilder: (context, index) => _BookingAdminCard(
-                      reserva: bookings[index],
-                      onApprove: () => _updateReserva(context, ref, bookings[index], 'aprobar'),
-                      onReject: () => _showRejectDialog(context, ref, bookings[index]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (recurrent.isNotEmpty) ...[
+                          Text(
+                            'Reservas recurrentes pendientes',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          ...recurrent.map(
+                            (r) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _RecurringBookingAdminCard(
+                                reserva: r,
+                                onApprove: () => _approveRecurring(context, ref, r),
+                                onReject: () => _rejectRecurring(context, ref, r),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        if (bookings.isNotEmpty) ...[
+                          Text(
+                            'Reservas puntuales pendientes',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 250,
+                            ),
+                            itemCount: bookings.length,
+                            itemBuilder: (context, index) => _BookingAdminCard(
+                              reserva: bookings[index],
+                              onApprove: () => _updateReserva(context, ref, bookings[index], 'aprobar'),
+                              onReject: () => _showRejectDialog(context, ref, bookings[index]),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   );
                 },
@@ -216,7 +345,7 @@ class _BookingAdminCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: (isServicio ? AppColors.accentPurple : AppColors.primaryBlue).withOpacity(0.1),
+                          color: (isServicio ? AppColors.accentPurple : AppColors.primaryBlue).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -261,7 +390,7 @@ class _BookingAdminCard extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: theme.dividerColor.withOpacity(0.05),
+                      color: theme.dividerColor.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -310,7 +439,7 @@ class _BookingAdminCard extends StatelessWidget {
                       foregroundColor: AppColors.error,
                       textStyle: const TextStyle(fontWeight: FontWeight.w900),
                     ),
-                    child: const Text("Rechazar"),
+                    child: Text(context.tr('admin.bookings.reject')),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -318,11 +447,83 @@ class _BookingAdminCard extends StatelessWidget {
                   child: RvPrimaryButton(
                     backgroundColor: AppColors.success,
                     onTap: onApprove,
-                    label: "Aprobar",
+                    label: context.tr('admin.booking.approve'),
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecurringBookingAdminCard extends StatelessWidget {
+  final ReservaRecurrente reserva;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  const _RecurringBookingAdminCard({
+    required this.reserva,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return RvSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.repeat_rounded, color: AppColors.accentPurple),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  reserva.nombreEspacio ?? 'Reserva recurrente',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+              RvBadge(
+                label: reserva.tipoRecurrencia.label,
+                icon: Icons.schedule_rounded,
+                color: AppColors.accentPurple,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('Usuario: ${reserva.nombreUsuario ?? '-'}', style: theme.textTheme.bodySmall),
+          Text('Tramo: ${reserva.nombreTramo ?? '-'}', style: theme.textTheme.bodySmall),
+          Text(
+            'Desde ${DateFormat('d/MM/yyyy').format(reserva.fechaInicio)} hasta ${DateFormat('d/MM/yyyy').format(reserva.fechaFinRecurrencia)}',
+            style: theme.textTheme.bodySmall,
+          ),
+          if ((reserva.observaciones ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(reserva.observaciones!, style: theme.textTheme.bodySmall),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: onReject,
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  child: const Text('Rechazar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: RvPrimaryButton(
+                  backgroundColor: AppColors.success,
+                  onTap: onApprove,
+                  label: 'Aprobar',
+                ),
+              ),
+            ],
           ),
         ],
       ),

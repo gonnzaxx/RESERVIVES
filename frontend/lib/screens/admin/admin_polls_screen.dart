@@ -33,7 +33,7 @@ class AdminPollsScreen extends ConsumerWidget {
                   Expanded(
                     child: RvPageHeader(
                       title: context.tr('admin.polls.title'),
-                      eyebrow: 'Participación',
+                      eyebrow: context.tr('admin.polls.eyebrow'),
                     ),
                   ),
                   Row(
@@ -219,7 +219,7 @@ class _AdminPollCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryBlue.withOpacity(0.1),
+                        color: AppColors.primaryBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -314,7 +314,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: theme.dividerColor.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: theme.dividerColor.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 24),
           Text(context.tr('admin.polls.create'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 20),
@@ -411,7 +411,7 @@ class _EditPollSheetState extends ConsumerState<_EditPollSheet> {
           Text(context.tr('admin.polls.editTitle'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 20),
           TextField(controller: _titleController, decoration: const InputDecoration(labelText: 'Pregunta')),
-          SwitchListTile(title: const Text('Activa'), value: _activa, onChanged: (v) => setState(() => _activa = v)),
+          SwitchListTile(title: Text(context.tr('admin.polls.active')), value: _activa, onChanged: (v) => setState(() => _activa = v)),
           const SizedBox(height: 24),
           RvPrimaryButton(onTap: _submit, label: 'Guardar cambios', isLoading: _isSaving),
         ],

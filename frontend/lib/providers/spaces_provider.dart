@@ -40,7 +40,7 @@ final espaciosProvider = FutureProvider.autoDispose<List<Espacio>>((ref) async {
     queryParams = {'tipo': tipo.value};
   }
 
-  final response = await apiClient.get('/espacios', queryParams: queryParams);
+  final response = await apiClient.get('/espacios/', queryParams: queryParams);
 
   var spaces = (response as List).map((e) => Espacio.fromJson(e)).toList();
 
