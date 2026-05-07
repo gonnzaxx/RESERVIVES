@@ -247,7 +247,6 @@ class _AdminFilterPanel extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
                   Container(
                     width: 36,
                     height: 4,

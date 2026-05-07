@@ -8,32 +8,31 @@ import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
-import 'package:reservives/models/usuario.dart';
+import 'package:reservives/models/servicio.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
-import 'package:reservives/providers/spaces_provider.dart';
-import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/bookings_provider.dart';
-import 'package:reservives/providers/bookings_live_updates_provider.dart';
+import 'package:reservives/providers/navigation_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/providers/time_slots_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/constants.dart';
-import 'package:reservives/providers/lista_espera_provider.dart';
 
-
-class BookingScreen extends ConsumerStatefulWidget {
-  final String espacioId;
-  const BookingScreen({super.key, required this.espacioId});
+class ServiceBookingScreen extends ConsumerStatefulWidget {
+  final String servicioId;
+  const ServiceBookingScreen({super.key, required this.servicioId});
 
   @override
-  ConsumerState<BookingScreen> createState() => _BookingScreenState();
+  ConsumerState<ServiceBookingScreen> createState() =>
+      _ServiceBookingScreenState();
 }
 
-class _BookingScreenState extends ConsumerState<BookingScreen> {
+class _ServiceBookingScreenState
+    extends ConsumerState<ServiceBookingScreen> {
   late DateTime _selectedDate;
   String? _selectedTramoId;
-  final TextEditingController _observacionesCtrl = TextEditingController();
+  final TextEditingController _obsCtrl = TextEditingController();
   late ConfettiController _confettiController;
   int _shakeTrigger = 0;
 
@@ -43,26 +42,19 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     _selectedDate = getInitialDate(DateTime.now());
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 3));
-    Future.microtask(
-            () => ref.read(bookingsWebSocketProvider).connect());
   }
 
   @override
   void dispose() {
-    _observacionesCtrl.dispose();
+    _obsCtrl.dispose();
     _confettiController.dispose();
     super.dispose();
   }
 
-  bool _isWeekend(DateTime d) => d.weekday == 6 || d.weekday == 7;
+  bool _isWeekend(DateTime d) =>
+      d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
 
-  DateTime _maxBookingDate() => DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  ).add(const Duration(days: 30));
-
-  Future<void> _onBook() async {
+  Future<void> _onBook(ServicioInstituto servicio) async {
     if (_selectedTramoId == null) {
       HapticFeedback.heavyImpact();
       setState(() => _shakeTrigger++);
@@ -73,13 +65,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     final sw = Stopwatch()..start();
     final success =
-    await ref.read(crearReservaProvider.notifier).crearReserva(
-      widget.espacioId,
+    await ref.read(reservarServicioProvider.notifier).reservar(
+      servicio.id,
       _selectedDate,
       _selectedTramoId!,
-      _observacionesCtrl.text.isEmpty
-          ? null
-          : _observacionesCtrl.text,
+      _obsCtrl.text.isEmpty ? null : _obsCtrl.text,
     );
 
     final elapsed = sw.elapsed;
@@ -91,17 +81,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     Navigator.of(context).pop();
 
     if (success) {
-      ref.invalidate(misReservasProvider);
+      ref.invalidate(misReservasServiciosProvider);
       ref.invalidate(activityHistoryProvider);
       _confettiController.play();
 
-      final reserva = ref.read(crearReservaProvider).value;
+      final reserva = ref.read(reservarServicioProvider).value;
       if (reserva == null) {
         context.goNamed('servicios');
         return;
       }
 
-      await _showSuccessSheet(reserva);
+      await _showSuccessSheet(
+          reserva, reserva.nombreEspacio ?? servicio.nombre);
 
       if (!mounted) return;
       ref.read(servicesTabIndexProvider.notifier).setIndex(2);
@@ -109,15 +100,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       return;
     }
 
-    final error = ref.read(crearReservaProvider).error;
+    final error = ref.read(reservarServicioProvider).error;
     RvAlerts.error(
       context,
       toFriendlyErrorMessage(
-          error, fallback: context.tr('booking.error')),
+          error, fallback: context.tr('services.error.booking')),
     );
   }
 
-  Future<void> _showSuccessSheet(dynamic reserva) async {
+  Future<void> _showSuccessSheet(
+      dynamic reserva, String nombre) async {
     final isDark =
         Theme.of(context).brightness == Brightness.dark;
     final isPending = reserva.isPendiente;
@@ -159,9 +151,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 size: 36,
                 color: color,
               ),
-            )
-                .animate()
-                .scale(
+            ).animate().scale(
                 duration: 400.ms, curve: Curves.easeOutBack),
             const SizedBox(height: 20),
             Text(
@@ -169,7 +159,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   ? context.tr(
                   'booking.confirm.application.pending')
                   : context.tr('booking.confirm.application'),
-              style: Theme.of(context)
+              style: Theme.of(ctx)
                   .textTheme
                   .headlineSmall
                   ?.copyWith(
@@ -180,16 +170,14 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             const SizedBox(height: 10),
             Text(
               isPending
-                  ? 'Tu solicitud para "${reserva.nombreEspacio}" está pendiente de revisión.'
-                  : 'Reserva confirmada en "${reserva.nombreEspacio}". ¡Que lo disfrutes!',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                  height: 1.6,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary),
+                  ? 'Tu solicitud para "$nombre" está pendiente de revisión.'
+                  : 'Tu reserva de "$nombre" se ha confirmado correctamente.',
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                height: 1.6,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -260,7 +248,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Estamos confirmando tu plaza…',
+                        'Estamos gestionando tu servicio…',
                         style: TextStyle(
                           color: isDark
                               ? AppColors.darkTextSecondary
@@ -289,10 +277,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isWeb = MediaQuery.of(context).size.width > 700;
-    final espacioAsync =
-    ref.watch(espacioDetalleProvider(widget.espacioId));
+    final servicioAsync =
+    ref.watch(servicioDetalleProvider(widget.servicioId));
+    final bookingState = ref.watch(reservarServicioProvider);
     final user = ref.watch(authProvider).user;
-    final bookingState = ref.watch(crearReservaProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -303,26 +291,17 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                     maxWidth: AppConstants.webMaxWidth),
-                child: espacioAsync.when(
-                  data: (espacio) {
-                    final usesTokens = user?.usesTokens ?? true;
-                    final costo = espacio.precioTokens;
-                    final costoEfectivo =
-                    usesTokens ? costo : 0;
+                child: servicioAsync.when(
+                  data: (servicio) {
+                    final usesTokens = user?.usesTokens == true;
+                    final costo = servicio.precioTokens;
                     final tieneTokens = usesTokens
-                        ? (user?.tokens ?? 0) >= costoEfectivo
+                        ? (user?.tokens ?? 0) >= costo
                         : true;
-                    final maxAdvance = _maxBookingDate();
-                    final effectiveLastDate = DateTime.now()
-                        .add(Duration(
-                        days: espacio.antelacionDias))
-                        .isBefore(maxAdvance)
-                        ? DateTime.now().add(
-                        Duration(
-                            days: espacio.antelacionDias))
-                        : maxAdvance;
+                    final maxDate = DateTime.now().add(
+                        Duration(days: servicio.antelacionDias));
                     final exceedsMaxWindow =
-                    _selectedDate.isAfter(effectiveLastDate);
+                    _selectedDate.isAfter(maxDate);
 
                     return SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
@@ -336,14 +315,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                               RvGhostIconButton(
                                 icon: Icons
                                     .arrow_back_ios_new_rounded,
-                                onTap: () {
-                                  if (context.canPop()) {
-                                    context.pop();
-                                  } else {
-                                    context
-                                        .goNamed('servicios');
-                                  }
-                                },
+                                onTap: () => context.canPop()
+                                    ? context.pop()
+                                    : context
+                                    .goNamed('servicios'),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -352,7 +327,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                   CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      context.tr('profile.accountEyebrow')
+                                      context
+                                          .tr('profile.accountEyebrow')
                                           .toUpperCase(),
                                       style: theme.textTheme
                                           .labelSmall
@@ -377,28 +353,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                   ],
                                 ),
                               ),
-                              RvGhostIconButton(
-                                icon: Icons
-                                    .calendar_month_rounded,
-                                onTap: () => context.push(
-                                    '/calendario/${widget.espacioId}'),
-                              ),
-                              if (user?.rol !=
-                                  RolUsuario.alumno) ...[
-                                const SizedBox(width: 4),
-                                RvGhostIconButton(
-                                  icon: Icons.repeat_rounded,
-                                  onTap: () => context.push(
-                                      '/reserva-recurrente/${widget.espacioId}'),
-                                ),
-                              ],
                             ],
                           ).animate().fadeIn(duration: 300.ms),
 
                           const SizedBox(height: 20),
 
-                          _InfoCard(
-                            espacio: espacio,
+                          _ServiceInfoCard(
+                            servicio: servicio,
                             usesTokens: usesTokens,
                             costo: costo,
                             isDark: isDark,
@@ -415,63 +376,57 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                           ),
 
                           const SizedBox(height: 24),
-
                           _SectionLabel(
-                              label:
-                              context.tr('booking.date'),
-                              theme: theme),
+                            label: context.tr('booking.date'),
+                            theme: theme,
+                          ),
                           const SizedBox(height: 10),
                           _DateField(
                             selectedDate: _selectedDate,
-                            effectiveLastDate: effectiveLastDate,
+                            effectiveLastDate: maxDate,
                             isDark: isDark,
                             theme: theme,
                             isWeekend: _isWeekend,
+                            labelKey: context.tr('services.date'),
                             onDateSelected: (d) => setState(() {
                               _selectedDate = d;
                               _selectedTramoId = null;
                             }),
-                          )
-                              .animate()
-                              .fadeIn(
+                          ).animate().fadeIn(
                               delay: 120.ms, duration: 300.ms),
 
                           const SizedBox(height: 24),
 
                           _SectionLabel(
-                              label: context.tr(
-                                  'bookings.time.slot.text'),
-                              theme: theme),
+                            label: context
+                                .tr('booking.availableSlots'),
+                            theme: theme,
+                          ),
                           const SizedBox(height: 10),
-                          _TramoSelector(
-                            espacioId: widget.espacioId,
+                          _TramoServiceSelector(
+                            servicioId: servicio.id,
                             selectedDate: _selectedDate,
                             selectedTramoId: _selectedTramoId,
                             isDark: isDark,
                             theme: theme,
                             onTramoSelected: (id) => setState(
                                     () => _selectedTramoId = id),
-                          )
-                              .animate()
-                              .fadeIn(
+                          ).animate().fadeIn(
                               delay: 160.ms, duration: 300.ms),
 
                           const SizedBox(height: 24),
 
                           _SectionLabel(
-                              label:
-                              context.tr('booking.notes'),
-                              theme: theme),
+                            label: context.tr('booking.notes'),
+                            theme: theme,
+                          ),
                           const SizedBox(height: 10),
                           _NotesField(
-                            controller: _observacionesCtrl,
+                            controller: _obsCtrl,
                             isDark: isDark,
                             theme: theme,
-                            hint: context
-                                .tr('booking.notesHint'),
-                          )
-                              .animate()
-                              .fadeIn(
+                            hint: context.tr('booking.notesHint'),
+                          ).animate().fadeIn(
                               delay: 180.ms, duration: 300.ms),
 
                           const SizedBox(height: 20),
@@ -480,8 +435,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                             tieneTokens: tieneTokens,
                             isWeekend: _isWeekend(_selectedDate),
                             exceedsMaxWindow: exceedsMaxWindow,
-                            requiereAut:
-                            espacio.requiereAutorizacion,
                           ),
 
                           const SizedBox(height: 16),
@@ -496,8 +449,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                   _isWeekend(_selectedDate) ||
                                   exceedsMaxWindow,
                               shakeTrigger: _shakeTrigger,
-                              label: context.tr('booking.confirm'),
-                              onTap: _onBook,
+                              label:
+                              context.tr('booking.confirm'),
+                              onTap: () => _onBook(servicio),
                               onShake: () => setState(
                                       () => _shakeTrigger++),
                               theme: theme,
@@ -513,8 +467,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   error: (_, __) => Center(
                     child: RvApiErrorState(
                       onRetry: () => ref.invalidate(
-                          espacioDetalleProvider(
-                              widget.espacioId)),
+                          servicioDetalleProvider(
+                              widget.servicioId)),
                     ),
                   ),
                 ),
@@ -542,33 +496,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  final ThemeData theme;
-
-  const _SectionLabel({required this.label, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: theme.textTheme.labelMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.2,
-      ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  final dynamic espacio;
+class _ServiceInfoCard extends StatelessWidget {
+  final ServicioInstituto servicio;
   final bool usesTokens;
   final int costo;
   final bool isDark;
   final ThemeData theme;
 
-  const _InfoCard({
-    required this.espacio,
+  const _ServiceInfoCard({
+    required this.servicio,
     required this.usesTokens,
     required this.costo,
     required this.isDark,
@@ -601,8 +537,8 @@ class _InfoCard extends StatelessWidget {
           Row(
             children: [
               RvBadge(
-                label: espacio.tipo.value,
-                icon: Icons.place_rounded,
+                label: context.tr('services.eyebrow'),
+                icon: Icons.home_repair_service_rounded,
                 color: AppColors.accentPurple,
               ),
               const Spacer(),
@@ -619,7 +555,7 @@ class _InfoCard extends StatelessWidget {
                 ),
                 child: Text(
                   usesTokens
-                      ? '$costo ${context.tr('booking.tokens')}'
+                      ? '$costo ${context.tr("booking.tokens")}'
                       : context.tr('booking.freeForTeachers'),
                   style: TextStyle(
                     color: primary,
@@ -632,12 +568,27 @@ class _InfoCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            espacio.nombre,
+            servicio.nombre,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
             ),
           ),
+          if (servicio.descripcion != null &&
+              servicio.descripcion!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              servicio.descripcion!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -650,6 +601,7 @@ class _DateField extends StatefulWidget {
   final bool isDark;
   final ThemeData theme;
   final bool Function(DateTime) isWeekend;
+  final String labelKey;
   final ValueChanged<DateTime> onDateSelected;
 
   const _DateField({
@@ -658,6 +610,7 @@ class _DateField extends StatefulWidget {
     required this.isDark,
     required this.theme,
     required this.isWeekend,
+    required this.labelKey,
     required this.onDateSelected,
   });
 
@@ -678,12 +631,15 @@ class _DateFieldState extends State<_DateField> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () async {
+          final now = DateTime.now();
           final date = await showDatePicker(
             context: context,
             initialDate: widget.selectedDate,
-            firstDate: DateTime.now(),
+            firstDate:
+            DateTime(now.year, now.month, now.day),
             lastDate: widget.effectiveLastDate,
-            selectableDayPredicate: (d) => !widget.isWeekend(d),
+            selectableDayPredicate: (d) =>
+            !widget.isWeekend(d),
           );
           if (date != null) widget.onDateSelected(date);
         },
@@ -715,8 +671,11 @@ class _DateFieldState extends State<_DateField> {
                   color: primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(Icons.calendar_today_rounded,
-                    size: 18, color: primary),
+                child: Icon(
+                  Icons.calendar_today_rounded,
+                  size: 18,
+                  color: primary,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -724,7 +683,7 @@ class _DateFieldState extends State<_DateField> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      context.tr('bookings.date.text'),
+                      widget.labelKey,
                       style: widget.theme.textTheme.labelSmall
                           ?.copyWith(
                         color: widget.isDark
@@ -739,7 +698,8 @@ class _DateFieldState extends State<_DateField> {
                       DateFormat('EEEE d MMMM', 'es')
                           .format(widget.selectedDate),
                       style: widget.theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(
+                          fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -817,13 +777,11 @@ class _Banners extends StatelessWidget {
   final bool tieneTokens;
   final bool isWeekend;
   final bool exceedsMaxWindow;
-  final bool requiereAut;
 
   const _Banners({
     required this.tieneTokens,
     required this.isWeekend,
     required this.exceedsMaxWindow,
-    required this.requiereAut,
   });
 
   @override
@@ -846,12 +804,6 @@ class _Banners extends StatelessWidget {
           _BannerTile(
             icon: Icons.calendar_month_rounded,
             text: context.tr('booking.maxWeekError'),
-            color: AppColors.warning,
-          ),
-        if (tieneTokens && requiereAut)
-          _BannerTile(
-            icon: Icons.hourglass_top_rounded,
-            text: context.tr('booking.pendingApproval'),
             color: AppColors.warning,
           ),
       ],
@@ -904,7 +856,8 @@ class _BannerTile extends StatelessWidget {
                     .textTheme
                     .bodySmall
                     ?.copyWith(
-                    color: color, fontWeight: FontWeight.w600),
+                    color: color,
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -1002,16 +955,54 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
   }
 }
 
-class _TramoSelector extends ConsumerWidget {
-  final String espacioId;
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final ThemeData theme;
+
+  const _SectionLabel({required this.label, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: theme.textTheme.labelMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
+      ),
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  final bool isDark;
+  const _SheetHandle({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: (isDark ? Colors.white : Colors.black)
+              .withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+}
+
+class _TramoServiceSelector extends ConsumerWidget {
+  final String servicioId;
   final DateTime selectedDate;
   final String? selectedTramoId;
   final bool isDark;
   final ThemeData theme;
   final ValueChanged<String> onTramoSelected;
 
-  const _TramoSelector({
-    required this.espacioId,
+  const _TramoServiceSelector({
+    required this.servicioId,
     required this.selectedDate,
     required this.selectedTramoId,
     required this.isDark,
@@ -1022,8 +1013,8 @@ class _TramoSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final disponibilidadAsync = ref.watch(
-      disponibilidadEspacioProvider(
-          (espacioId: espacioId, fecha: selectedDate)),
+      disponibilidadServicioProvider(
+          (servicioId: servicioId, fecha: selectedDate)),
     );
 
     return disponibilidadAsync.when(
@@ -1037,7 +1028,8 @@ class _TramoSelector extends ConsumerWidget {
           return _TramoEmpty(
               isDark: isDark,
               theme: theme,
-              isError: false);
+              isError: false,
+              mensaje: context.tr('booking.noSlots'));
         }
 
         final manana = visibles
@@ -1052,7 +1044,7 @@ class _TramoSelector extends ConsumerWidget {
           children: [
             if (manana.isNotEmpty) ...[
               _TurnoHeader(
-                label: context.tr('bookings.morning.shift'),
+                label: context.tr('booking.morning'),
                 icon: Icons.wb_sunny_outlined,
                 theme: theme,
                 isDark: isDark,
@@ -1061,8 +1053,6 @@ class _TramoSelector extends ConsumerWidget {
               _TramoGrid(
                 items: manana,
                 selectedTramoId: selectedTramoId,
-                espacioId: espacioId,
-                fecha: selectedDate,
                 isDark: isDark,
                 theme: theme,
                 onSelect: onTramoSelected,
@@ -1071,7 +1061,7 @@ class _TramoSelector extends ConsumerWidget {
             if (tarde.isNotEmpty) ...[
               const SizedBox(height: 20),
               _TurnoHeader(
-                label: context.tr('bookings.afternoon.shift'),
+                label: context.tr('booking.afternoon'),
                 icon: Icons.nights_stay_outlined,
                 theme: theme,
                 isDark: isDark,
@@ -1080,8 +1070,6 @@ class _TramoSelector extends ConsumerWidget {
               _TramoGrid(
                 items: tarde,
                 selectedTramoId: selectedTramoId,
-                espacioId: espacioId,
-                fecha: selectedDate,
                 isDark: isDark,
                 theme: theme,
                 onSelect: onTramoSelected,
@@ -1091,13 +1079,17 @@ class _TramoSelector extends ConsumerWidget {
         );
       },
       loading: () => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2)),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )),
       error: (_, __) => _TramoEmpty(
         isDark: isDark,
         theme: theme,
         isError: true,
+        mensaje: context.tr('booking.slotsError'),
         onRetry: () =>
-            ref.invalidate(disponibilidadEspacioProvider),
+            ref.invalidate(disponibilidadServicioProvider),
       ),
     );
   }
@@ -1146,8 +1138,6 @@ class _TurnoHeader extends StatelessWidget {
 class _TramoGrid extends StatelessWidget {
   final List<TramoDisponibilidad> items;
   final String? selectedTramoId;
-  final String espacioId;
-  final DateTime fecha;
   final bool isDark;
   final ThemeData theme;
   final ValueChanged<String> onSelect;
@@ -1155,8 +1145,6 @@ class _TramoGrid extends StatelessWidget {
   const _TramoGrid({
     required this.items,
     required this.selectedTramoId,
-    required this.espacioId,
-    required this.fecha,
     required this.isDark,
     required this.theme,
     required this.onSelect,
@@ -1179,8 +1167,6 @@ class _TramoGrid extends StatelessWidget {
         itemBuilder: (context, i) => _TramoChip(
           disponibilidad: items[i],
           isSelected: selectedTramoId == items[i].tramo.id,
-          espacioId: espacioId,
-          fecha: fecha,
           isDark: isDark,
           theme: theme,
           onTap: items[i].disponible
@@ -1192,55 +1178,36 @@ class _TramoGrid extends StatelessWidget {
   }
 }
 
-class _TramoChip extends ConsumerStatefulWidget {
+class _TramoChip extends StatefulWidget {
   final TramoDisponibilidad disponibilidad;
   final bool isSelected;
-  final VoidCallback? onTap;
-  final String espacioId;
-  final DateTime fecha;
   final bool isDark;
   final ThemeData theme;
+  final VoidCallback? onTap;
 
   const _TramoChip({
     required this.disponibilidad,
     required this.isSelected,
-    required this.espacioId,
-    required this.fecha,
     required this.isDark,
     required this.theme,
     this.onTap,
   });
 
   @override
-  ConsumerState<_TramoChip> createState() => _TramoChipState();
+  State<_TramoChip> createState() => _TramoChipState();
 }
 
-class _TramoChipState extends ConsumerState<_TramoChip> {
+class _TramoChipState extends State<_TramoChip> {
   bool _hovered = false;
-
-  void _onTapOcupado() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ListaEsperaSheet(
-        espacioId: widget.espacioId,
-        tramoId: widget.disponibilidad.tramo.id,
-        fecha: widget.fecha,
-        nombreTramo: widget.disponibilidad.tramo.rangoHorario,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final primary = widget.theme.colorScheme.primary;
-    final isReservado = widget.disponibilidad.reservado;
-    final esPasado =
-        widget.disponibilidad.estado == EstadoTramo.horarioPasado;
     final isEnabled = widget.onTap != null;
 
     Color bgColor;
     Color borderColor;
+
     if (widget.isSelected) {
       bgColor = primary;
       borderColor = primary;
@@ -1254,7 +1221,9 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
     } else {
       bgColor = _hovered
           ? primary.withValues(alpha: 0.06)
-          : (widget.isDark ? AppColors.darkCard : Colors.white);
+          : (widget.isDark
+          ? AppColors.darkCard
+          : Colors.white);
       borderColor = _hovered
           ? primary.withValues(alpha: 0.25)
           : (widget.isDark
@@ -1263,19 +1232,20 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
     }
 
     return MouseRegion(
-      cursor: isEnabled || (isReservado && !esPasado)
+      cursor: isEnabled
           ? SystemMouseCursors.click
           : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: isReservado && !esPasado ? _onTapOcupado : widget.onTap,
+        onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: borderColor, width: 1.5),
+            border:
+            Border.all(color: borderColor, width: 1.5),
             boxShadow: widget.isSelected
                 ? [
               BoxShadow(
@@ -1295,14 +1265,15 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
                   color: widget.isSelected
                       ? Colors.white
                       : (isEnabled
-                      ? widget.theme.textTheme.bodyLarge?.color
+                      ? widget.theme.textTheme.bodyLarge
+                      ?.color
                       : widget.theme.disabledColor),
                   fontWeight: FontWeight.w800,
                   fontSize: 13,
                 ),
               ),
               const SizedBox(height: 3),
-              _chipSubtitle(widget.theme, primary),
+              _subtitle(widget.theme),
             ],
           ),
         ),
@@ -1314,29 +1285,25 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
     );
   }
 
-  Widget _chipSubtitle(ThemeData theme, Color primary) {
-    final baseStyle = TextStyle(
+  Widget _subtitle(ThemeData theme) {
+    final style = TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w600,
-      color: widget.isSelected
-          ? Colors.white70
-          : theme.disabledColor,
+      color: widget.isSelected ? Colors.white70 : theme.disabledColor,
     );
-
     if (widget.disponibilidad.reservado) {
-      return Text('Ocupado', style: baseStyle);
+      return Text('Ocupado', style: style);
     }
-    if (widget.disponibilidad.estado == EstadoTramo.horarioPasado) {
-      return Text('Pasado', style: baseStyle);
+    if (widget.disponibilidad.estado ==
+        EstadoTramo.horarioPasado) {
+      return Text('Pasado', style: style);
     }
     if (widget.isSelected) {
-      return Text(
-        'Seleccionado',
-        style: baseStyle.copyWith(color: Colors.white),
-      );
+      return Text('Seleccionado',
+          style: style.copyWith(color: Colors.white));
     }
     return Text(widget.disponibilidad.tramo.nombre,
-        style: baseStyle);
+        style: style);
   }
 }
 
@@ -1344,12 +1311,14 @@ class _TramoEmpty extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
   final bool isError;
+  final String mensaje;
   final VoidCallback? onRetry;
 
   const _TramoEmpty({
     required this.isDark,
     required this.theme,
     required this.isError,
+    required this.mensaje,
     this.onRetry,
   });
 
@@ -1379,9 +1348,7 @@ class _TramoEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            isError
-                ? 'Error al cargar tramos'
-                : 'No hay tramos disponibles',
+            mensaje,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontWeight: FontWeight.w600),
@@ -1398,155 +1365,6 @@ class _TramoEmpty extends StatelessWidget {
   }
 }
 
-
-class _ListaEsperaSheet extends ConsumerWidget {
-  final String espacioId;
-  final String tramoId;
-  final DateTime fecha;
-  final String nombreTramo;
-
-  const _ListaEsperaSheet({
-    required this.espacioId,
-    required this.tramoId,
-    required this.fecha,
-    required this.nombreTramo,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
-    final countAsync = ref.watch(listaEsperaCountProvider((
-    espacioId: espacioId,
-    tramoId: tramoId,
-    fecha: fecha,
-    )));
-    final actionState = ref.watch(listaEsperaActionProvider);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-          24, 14, 24, MediaQuery.of(context).padding.bottom + 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _SheetHandle(isDark: isDark),
-          const SizedBox(height: 24),
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.10),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.queue_rounded,
-                size: 30, color: AppColors.warning),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Tramo ocupado',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'El tramo $nombreTramo está reservado.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          countAsync.when(
-            data: (n) => Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(
-                  color:
-                  AppColors.warning.withValues(alpha: 0.22),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                '$n en espera',
-                style: const TextStyle(
-                  color: AppColors.warning,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            loading: () => const SizedBox(
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 24),
-          RvPrimaryButton(
-            onTap: actionState.isLoading
-                ? null
-                : () async {
-              final ok = await ref
-                  .read(listaEsperaActionProvider.notifier)
-                  .unirse(
-                espacioId: espacioId,
-                tramoId: tramoId,
-                fecha: fecha,
-              );
-              if (context.mounted) {
-                Navigator.pop(context);
-                if (ok) {
-                  RvAlerts.success(
-                      context,
-                      'Ya estás en lista de espera');
-                }
-              }
-            },
-            label: actionState.isLoading
-                ? 'Procesando…'
-                : 'Unirse a la lista de espera',
-            icon: Icons.queue_rounded,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SheetHandle extends StatelessWidget {
-  final bool isDark;
-  const _SheetHandle({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: (isDark ? Colors.white : Colors.black)
-              .withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-}
-
 class _BookingSkeleton extends StatelessWidget {
   final bool isWeb;
   final bool isDark;
@@ -1557,17 +1375,21 @@ class _BookingSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(20, isWeb ? 20 : 10, 20, 40),
+      padding:
+      EdgeInsets.fromLTRB(20, isWeb ? 20 : 10, 20, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const RvSkeleton(width: 200, height: 28, borderRadius: 6),
+          const RvSkeleton(
+              width: 200, height: 28, borderRadius: 6),
           const SizedBox(height: 20),
           Container(
-            height: 110,
+            height: 120,
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
-              borderRadius: BorderRadius.circular(AppRadii.l),
+              color:
+              isDark ? AppColors.darkCard : Colors.white,
+              borderRadius:
+              BorderRadius.circular(AppRadii.l),
               border: Border.all(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.06)
@@ -1577,14 +1399,16 @@ class _BookingSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const RvSkeleton(width: 80, height: 12, borderRadius: 4),
+          const RvSkeleton(
+              width: 80, height: 12, borderRadius: 4),
           const SizedBox(height: 10),
           const RvSkeleton(
               width: double.infinity,
               height: 66,
               borderRadius: AppRadii.m),
           const SizedBox(height: 24),
-          const RvSkeleton(width: 100, height: 12, borderRadius: 4),
+          const RvSkeleton(
+              width: 100, height: 12, borderRadius: 4),
           const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,

@@ -249,7 +249,6 @@ class _TramosSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Turno header skeleton
         Padding(
           padding: const EdgeInsets.only(bottom: 12, top: 8),
           child: Row(
@@ -262,7 +261,6 @@ class _TramosSkeleton extends StatelessWidget {
             ],
           ),
         ),
-        // Tramo tiles skeleton
         for (int i = 0; i < 4; i++) ...[
           Container(
             margin: const EdgeInsets.only(bottom: 8),

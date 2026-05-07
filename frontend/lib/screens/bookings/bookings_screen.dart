@@ -1,11 +1,14 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/i10n/app_localizations.dart';
+import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/screens/bookings/widgets/spaces_tab.dart';
 import 'package:reservives/screens/bookings/widgets/my_bookings_tab.dart';
 import 'package:reservives/screens/bookings/widgets/services_tab.dart';
 import 'package:reservives/widgets/design_system.dart';
+import 'package:reservives/config/constants.dart';
 
 class ServicesScreen extends ConsumerStatefulWidget {
   const ServicesScreen({super.key});
@@ -17,12 +20,16 @@ class ServicesScreen extends ConsumerStatefulWidget {
 class _ServicesScreenState extends ConsumerState<ServicesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _controller;
+  bool _guestMode = false;
 
   @override
   void initState() {
     super.initState();
+    _guestMode = ref.read(authProvider).isGuest;
     final initialIndex = ref.read(servicesTabIndexProvider);
-    _controller = TabController(length: 3, vsync: this, initialIndex: initialIndex);
+    final tabLength = _guestMode ? 2 : 3;
+    final safeIndex = initialIndex >= tabLength ? 0 : initialIndex;
+    _controller = TabController(length: tabLength, vsync: this, initialIndex: safeIndex);
     _controller.addListener(() {
       if (!_controller.indexIsChanging) {
         ref.read(servicesTabIndexProvider.notifier).setIndex(_controller.index);
@@ -51,7 +58,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen>
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
+            constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
             child: Column(
               children: [
                 Padding(
@@ -76,11 +83,16 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen>
                 Expanded(
                   child: TabBarView(
                     controller: _controller,
-                    children: const [
-                      InstalacionesTab(),
-                      ServiciosTab(),
-                      ReservasTab(),
-                    ],
+                    children: _guestMode
+                        ? const [
+                            InstalacionesTab(),
+                            ServiciosTab(),
+                          ]
+                        : const [
+                            InstalacionesTab(),
+                            ServiciosTab(),
+                            ReservasTab(),
+                          ],
                   ),
                 ),
               ],
@@ -99,61 +111,82 @@ class _PillsTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TabBar(
-        controller: controller,
-        indicator: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          height: 54,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? Colors.white10 : Colors.white.withValues(alpha: 0.4),
+              width: 1.5,
             ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: TabBar(
+            controller: controller,
+            indicator: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.primary.withValues(alpha: 0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            labelColor: Colors.white,
+            unselectedLabelColor: isDark
+                ? Colors.white.withValues(alpha: 0.5)
+                : Colors.black.withValues(alpha: 0.5),
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -0.2,
+            ),
+            dividerColor: Colors.transparent,
+            indicatorSize: TabBarIndicatorSize.tab,
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            tabs: [
+              Tab(text: context.tr('services.tabs.spaces')),
+              Tab(text: context.tr('services.tabs.services')),
+              if (controller.length == 3)
+                Tab(text: context.tr('services.tabs.bookings')),
+            ],
+          ),
         ),
-        labelColor: Colors.white,
-        unselectedLabelColor: isDark
-            ? Colors.white.withValues(alpha: 0.6)
-            : Colors.black.withValues(alpha: 0.6),
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
-        ),
-        dividerColor: Colors.transparent,
-        indicatorSize: TabBarIndicatorSize.tab,
-        splashFactory: NoSplash.splashFactory,
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        tabs: [
-          Tab(text: context.tr('services.tabs.spaces')),
-          Tab(text: context.tr('services.tabs.services')),
-          Tab(text: context.tr('services.tabs.bookings')),
-        ],
       ),
     );
   }
 }
+
+

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/models/servicio.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/favourites_provider.dart';
 import 'package:reservives/providers/service_provider.dart';
-import 'package:reservives/screens/bookings/service_booking_sheet.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
 import 'package:reservives/i10n/app_localizations.dart';
+
 
 class ServiciosTab extends ConsumerStatefulWidget {
   const ServiciosTab({super.key});
@@ -23,57 +26,72 @@ class _ServiciosTabState extends ConsumerState<ServiciosTab> {
   Widget build(BuildContext context) {
     final serviciosAsync = ref.watch(serviciosFiltradosProvider);
     final query = ref.watch(serviciosSearchQueryProvider);
-    final user = ref.watch(authProvider).user;
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(serviciosInstitutoProvider.future),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-            child: RvDebouncedSearchBar(
-              initialValue: query,
-              hintText: context.tr('search.placeholder'),
-              onDebouncedChanged: (val) =>
-                  ref.read(serviciosSearchQueryProvider.notifier).setQuery(val),
+      child: CustomScrollView(
+        slivers: [
+          // Buscador
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: RvDebouncedSearchBar(
+                initialValue: query,
+                hintText: context.tr('search.placeholder'),
+                onDebouncedChanged: (val) =>
+                    ref.read(serviciosSearchQueryProvider.notifier).setQuery(val),
+              ),
             ),
           ),
-          Expanded(
-            child: serviciosAsync.when(
-              data: (servicios) {
-                if (servicios.isEmpty) {
-                  return ListView(
-                    children: [
-                      const SizedBox(height: 100),
-                      RvEmptyState(
-                        icon: Icons.build_circle_outlined,
-                        title: context.tr('services.services.emptyTitle'),
-                        subtitle: context.tr('services.services.emptySubtitle'),
-                        buttonLabel: context.tr('common.refresh'),
-                        onButtonPressed: () => ref
-                            .read(serviciosSearchQueryProvider.notifier)
-                            .setQuery(''),
-                      ),
-                    ],
-                  );
-                }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-                  itemCount: servicios.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final servicio = servicios[index];
-                    final tokenText = user?.usesTokens == true
-                        ? '${servicio.precioTokens} tokens'
-                        : context.tr('services.no.cost');
-
-                    return _ServicioCard(servicio: servicio, tokenText: tokenText);
-                  },
+          // Contenido
+          serviciosAsync.when(
+            data: (servicios) {
+              if (servicios.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: RvEmptyState(
+                      icon: Icons.build_circle_outlined,
+                      title: context.tr('services.services.emptyTitle'),
+                      subtitle: context.tr('services.services.emptySubtitle'),
+                      buttonLabel: context.tr('common.refresh'),
+                      onButtonPressed: () => ref
+                          .read(serviciosSearchQueryProvider.notifier)
+                          .setQuery(''),
+                    ),
+                  ),
                 );
-              },
-              loading: () => const LoadingSkeletonList(),
-              error: (error, _) => Center(
+              }
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _ServicioCard(servicio: servicios[index])
+                          .animate()
+                          .fadeIn(
+                        delay: Duration(milliseconds: 40 * index),
+                        duration: 300.ms,
+                      )
+                          .slideY(
+                        begin: 0.05,
+                        duration: 300.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
+                    ),
+                    childCount: servicios.length,
+                  ),
+                ),
+              );
+            },
+            loading: () =>
+            const SliverToBoxAdapter(child: LoadingSkeletonList()),
+            error: (_, __) => SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
                 child: RvApiErrorState(
                   onRetry: () => ref.invalidate(serviciosInstitutoProvider),
                 ),
@@ -86,108 +104,128 @@ class _ServiciosTabState extends ConsumerState<ServiciosTab> {
   }
 }
 
-class _ServicioCard extends ConsumerWidget {
+class _ServicioCard extends ConsumerStatefulWidget {
   final ServicioInstituto servicio;
-  final String tokenText;
-
-  const _ServicioCard({required this.servicio, required this.tokenText});
+  const _ServicioCard({required this.servicio});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(AppRadii.m),
-        boxShadow: AppShadows.soft(context),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadii.m),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => showServiceBookingSheet(context, servicio),
+  ConsumerState<_ServicioCard> createState() => _ServicioCardState();
+}
+
+class _ServicioCardState extends ConsumerState<_ServicioCard> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final auth = ref.watch(authProvider);
+    final isGuest = auth.isGuest;
+    final user = auth.user;
+
+    final effectiveTokens =
+    user?.usesTokens == true ? widget.servicio.precioTokens : 0;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          if (isGuest) {
+            context.goNamed('restricted');
+            return;
+          }
+          context.pushNamed(
+            'reserva_servicio',
+            pathParameters: {'servicioId': widget.servicio.id},
+          );
+        },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          scale: _pressed ? 0.98 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(AppRadii.l),
+              border: Border.all(
+                color: _hovered
+                    ? theme.colorScheme.primary.withValues(alpha: 0.30)
+                    : (isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.05)),
+                width: 1.5,
+              ),
+              boxShadow:
+              _hovered ? AppShadows.deep(context) : AppShadows.soft(context),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RvImage(
-                    imageUrl: servicio.imagenUrl,
-                    width: 72,
-                    height: 72,
-                    borderRadius: BorderRadius.circular(18),
-                    fallbackIcon: Icons.build_circle_rounded,
-                    fallbackIconColor: AppColors.accentPurple,
+                  // Imagen
+                  _ServiceImage(
+                    servicio: widget.servicio,
+                    hovered: _hovered,
                   ),
+
                   const SizedBox(width: 14),
+
+                  // Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Badge
+                        _BadgeRow(servicio: widget.servicio),
+
+                        const SizedBox(height: 8),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Text(
-                                servicio.nombre,
-                                style: Theme.of(context).textTheme.titleMedium,
+                                widget.servicio.nombre,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
                             ),
-                            Consumer(
-                              builder: (context, ref, _) {
-                                final favs = ref.watch(favoritosProvider);
-                                final isFav = favs.serviciosIds.contains(servicio.id);
-                                return IconButton(
-                                  onPressed: () async {
-                                    final added = await ref
-                                        .read(favoritosProvider.notifier)
-                                        .toggleServicioFavorito(servicio.id);
-                                    if (!context.mounted) return;
-                                    RvAlerts.success(
-                                      context,
-                                      added
-                                          ? context.tr('favorites.added')
-                                          : context.tr('favorites.removed'),
-                                    );
-                                  },
-                                  icon: Icon(
-                                    isFav
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    color: isFav
-                                        ? AppColors.error
-                                        : Theme.of(context).dividerColor,
-                                    size: 20,
-                                  ),
-                                );
-                              },
-                            ),
+                            _FavButton(servicioId: widget.servicio.id),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        if (servicio.descripcion != null)
+
+                        if (widget.servicio.descripcion != null &&
+                            widget.servicio.descripcion!.isNotEmpty) ...[
+                          const SizedBox(height: 5),
                           Text(
-                            servicio.descripcion!,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            widget.servicio.descripcion!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                              height: 1.5,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (servicio.ubicacion != null)
-                              InfoPill(
-                                icon: Icons.location_on_rounded,
-                                text: servicio.ubicacion!,
-                              ),
-                            InfoPill(
-                              icon: Icons.stars_rounded,
-                              text: tokenText,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ],
+                        ],
+
+                        const SizedBox(height: 12),
+
+                        _InfoPills(
+                          servicio: widget.servicio,
+                          user: user,
+                          effectiveTokens: effectiveTokens,
                         ),
+
                       ],
                     ),
                   ),
@@ -196,6 +234,243 @@ class _ServicioCard extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ServiceImage extends StatelessWidget {
+  final ServicioInstituto servicio;
+  final bool hovered;
+
+  const _ServiceImage({required this.servicio, required this.hovered});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 92,
+      height: 92,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: hovered
+            ? [
+          BoxShadow(
+            color: Colors.black
+                .withValues(alpha: isDark ? 0.40 : 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          )
+        ]
+            : [],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: RvImage(
+          imageUrl: servicio.imagenUrl,
+          width: 92,
+          height: 92,
+          fallbackIcon: Icons.build_circle_rounded,
+          fallbackIconColor: AppColors.accentPurple,
+        ),
+      ),
+    );
+  }
+}
+
+class _BadgeRow extends StatelessWidget {
+  final ServicioInstituto servicio;
+
+  const _BadgeRow({required this.servicio});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        RvBadge(
+          label: context.tr('services.type.service'),
+          color: AppColors.accentPurple,
+          icon: Icons.build_circle_rounded,
+        ),
+        RvBadge(
+          label: context.tr('spaces.availability'),
+          color: AppColors.success,
+          icon: Icons.check_circle_rounded,
+        ),
+      ],
+    );
+  }
+}
+
+class _FavButton extends ConsumerStatefulWidget {
+  final String servicioId;
+
+  const _FavButton({required this.servicioId});
+
+  @override
+  ConsumerState<_FavButton> createState() => _FavButtonState();
+}
+
+class _FavButtonState extends ConsumerState<_FavButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 1.35).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    final isGuest = ref.read(authProvider).isGuest;
+    if (isGuest) {
+      RvAlerts.info(context, context.tr('favorites.guest.loginRequired'));
+      return;
+    }
+    _ctrl.forward().then((_) => _ctrl.reverse());
+    HapticFeedback.lightImpact();
+    final added = await ref
+        .read(favoritosProvider.notifier)
+        .toggleServicioFavorito(widget.servicioId);
+    if (!mounted) return;
+    RvAlerts.success(
+      context,
+      added
+          ? context.tr('favorites.added')
+          : context.tr('favorites.removed'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final favs = ref.watch(favoritosProvider);
+    final isFav = favs.serviciosIds.contains(widget.servicioId);
+
+    return ScaleTransition(
+      scale: _scale,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isFav
+                ? AppColors.error.withValues(alpha: 0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            color: isFav ? AppColors.error : Theme.of(context).dividerColor,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoPills extends StatelessWidget {
+  final ServicioInstituto servicio;
+  final dynamic user;
+  final int effectiveTokens;
+
+  const _InfoPills({
+    required this.servicio,
+    required this.user,
+    required this.effectiveTokens,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pillBg = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.04);
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (servicio.ubicacion != null)
+          _Pill(
+            icon: Icons.location_on_rounded,
+            text: servicio.ubicacion!,
+            bg: pillBg,
+            iconColor: AppColors.accentPurple,
+          ),
+        _Pill(
+          icon: Icons.stars_rounded,
+          text: user?.usesTokens == true
+              ? '$effectiveTokens tokens'
+              : context.tr('services.no.cost'),
+          bg: pillBg,
+          iconColor: AppColors.warning,
+        ),
+      ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color bg;
+  final Color iconColor;
+
+  const _Pill({
+    required this.icon,
+    required this.text,
+    required this.bg,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      constraints: const BoxConstraints(maxWidth: 200), 
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: iconColor),
+          const SizedBox(width: 5),
+          Flexible( 
+            child: Text(
+              text,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+              overflow: TextOverflow.ellipsis, 
+              maxLines: 1,
+            ),
+          ),
+        ],
       ),
     );
   }
