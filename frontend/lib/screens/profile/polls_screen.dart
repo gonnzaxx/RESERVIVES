@@ -1,46 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/encuesta.dart';
 import 'package:reservives/providers/polls_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/config/constants.dart';
 
 class VotacionesScreen extends ConsumerWidget {
   const VotacionesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final width = MediaQuery.of(context).size.width;
-    final isWeb = width > 700;
+    final isWeb = MediaQuery.of(context).size.width > 700;
     final encuestasAsync = ref.watch(todasEncuestasProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
+            constraints:
+            const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                  padding:
+                  EdgeInsets.fromLTRB(8, 12, 20, isWeb ? 20 : 8),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       RvGhostIconButton(
-                        icon: Icons.arrow_back_rounded,
+                        icon: Icons.arrow_back_ios_new_rounded,
                         onTap: () => Navigator.pop(context),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          context.tr('polls.user.title'),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.tr('profile.accountEyebrow').toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                letterSpacing: 0.9,
+                                fontWeight: FontWeight.w700,
+                                color: theme.hintColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              context.tr('polls.user.title'),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
+                  ).animate().fadeIn(duration: 300.ms),
                 ),
                 Expanded(
                   child: encuestasAsync.when(
@@ -56,23 +80,44 @@ class VotacionesScreen extends ConsumerWidget {
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () => ref.read(todasEncuestasProvider.notifier).refresh(),
+                        onRefresh: () =>
+                            ref.read(todasEncuestasProvider.notifier).refresh(),
                         child: ListView.builder(
-                          padding: EdgeInsets.fromLTRB(20, isWeb ? 16 : 4, 20, 100),
+                          padding: EdgeInsets.fromLTRB(
+                              20, isWeb ? 8 : 4, 20, 100),
                           itemCount: encuestas.length,
                           itemBuilder: (context, index) {
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: _EncuestaCard(encuesta: encuestas[index]),
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _EncuestaCard(
+                                encuesta: encuestas[index],
+                                isDark: isDark,
+                                theme: theme,
+                                isWeb: isWeb,
+                              )
+                                  .animate()
+                                  .fadeIn(
+                                delay: Duration(
+                                    milliseconds: 50 * index),
+                                duration: 300.ms,
+                              )
+                                  .slideY(
+                                begin: 0.04,
+                                delay: Duration(
+                                    milliseconds: 50 * index),
+                                duration: 300.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
                             );
                           },
                         ),
                       );
                     },
-                    loading: () => const _VotacionesSkeleton(),
-                    error: (e, _) => Center(
+                    loading: () => _VotacionesSkeleton(isWeb: isWeb),
+                    error: (_, __) => Center(
                       child: RvApiErrorState(
-                        onRetry: () => ref.invalidate(todasEncuestasProvider),
+                        onRetry: () =>
+                            ref.invalidate(todasEncuestasProvider),
                       ),
                     ),
                   ),
@@ -86,9 +131,22 @@ class VotacionesScreen extends ConsumerWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ENCUESTA CARD
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _EncuestaCard extends ConsumerStatefulWidget {
   final Encuesta encuesta;
-  const _EncuestaCard({required this.encuesta});
+  final bool isDark;
+  final ThemeData theme;
+  final bool isWeb;
+
+  const _EncuestaCard({
+    required this.encuesta,
+    required this.isDark,
+    required this.theme,
+    required this.isWeb,
+  });
 
   @override
   ConsumerState<_EncuestaCard> createState() => _EncuestaCardState();
@@ -100,85 +158,144 @@ class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final yaVoto = widget.encuesta.usuarioHaVotado;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final activa = widget.encuesta.activa;
 
-    return RvSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  widget.encuesta.titulo,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.l),
+        border: Border.all(
+          color: widget.isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.05),
+          width: 1.5,
+        ),
+        boxShadow: AppShadows.soft(context),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!activa)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _StatusPill(
+                            label: 'Finalizada',
+                            color: AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      Text(
+                        widget.encuesta.titulo,
+                        style: widget.theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (yaVoto) ...[
+                  const SizedBox(width: 12),
+                  RvBadge(
+                    label: context.tr('polls.user.voted'),
+                    icon: Icons.check_circle_rounded,
+                    color: AppColors.success,
+                  ),
+                ],
+              ],
+            ),
+
+            if (widget.encuesta.descripcion != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                widget.encuesta.descripcion!,
+                style: widget.theme.textTheme.bodyMedium?.copyWith(
+                  color: widget.isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                  height: 1.5,
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+
+            // ── Divisor de marca ─────────────────────────────────────────────
+            Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.brandGradient,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Container(
+                  width: 6,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: widget.theme.colorScheme.primary
+                        .withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Opciones ─────────────────────────────────────────────────────
+            ...widget.encuesta.opciones.map((opc) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _OpcionItem(
+                  opcion: opc,
+                  totalVotos: widget.encuesta.totalVotos,
+                  yaVoto: yaVoto,
+                  isSelected: _selectedOptionId == opc.id,
+                  activa: activa,
+                  isDark: widget.isDark,
+                  theme: widget.theme,
+                  onSelect: (id) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedOptionId = id);
+                  },
+                ),
+              );
+            }),
+
+            // ── Botón votar ──────────────────────────────────────────────────
+            if (!yaVoto && activa) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: widget.isWeb
+                    ? Alignment.centerRight
+                    : Alignment.center,
+                child: SizedBox(
+                  width: widget.isWeb ? 200 : double.infinity,
+                  child: RvPrimaryButton(
+                    label: context.tr('polls.user.voteButton'),
+                    isLoading: _isVoting,
+                    onTap: _selectedOptionId == null ? null : _votar,
+                    icon: Icons.how_to_vote_rounded,
                   ),
                 ),
               ),
-              if (yaVoto)
-                RvBadge(
-                  label: context.tr('polls.user.voted'),
-                  icon: Icons.check_circle_rounded,
-                  color: AppColors.success,
-                ),
             ],
-          ),
-          if (widget.encuesta.descripcion != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              widget.encuesta.descripcion!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
-              ),
-            ),
           ],
-          const SizedBox(height: 24),
-          ...widget.encuesta.opciones.map((opc) {
-            final isSelected = _selectedOptionId == opc.id;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _OpcionItem(
-                opcion: opc,
-                totalVotos: widget.encuesta.totalVotos,
-                yaVoto: yaVoto,
-                isSelected: isSelected,
-                activa: widget.encuesta.activa,
-                onSelect: (id) => setState(() => _selectedOptionId = id),
-              ),
-            );
-          }),
-          if (!yaVoto && widget.encuesta.activa) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: isWeb ? Alignment.centerRight : Alignment.center,
-              child: SizedBox(
-                width: isWeb ? 200 : double.infinity,
-                child: RvPrimaryButton(
-                  label: context.tr('polls.user.voteButton'),
-                  isLoading: _isVoting,
-                  onTap: _selectedOptionId == null ? null : _votar,
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-
-              if (!widget.encuesta.activa)
-                RvBadge(
-                  label: "FINALIZADA",
-                  color: theme.disabledColor,
-                ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -187,29 +304,59 @@ class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
     if (_selectedOptionId == null) return;
     setState(() => _isVoting = true);
 
-    final success = await ref.read(todasEncuestasProvider.notifier).votar(
-      widget.encuesta.id,
-      _selectedOptionId!,
-    );
+    final success = await ref
+        .read(todasEncuestasProvider.notifier)
+        .votar(widget.encuesta.id, _selectedOptionId!);
 
     if (mounted) {
       setState(() => _isVoting = false);
       if (success) {
-        // Mostramos el alert de éxito
-        RvAlerts.success(
-          context,
-          context.tr('polls.user.success'),
-        );
+        RvAlerts.success(context, context.tr('polls.user.success'));
       } else {
-        // Mostramos el alert de error
-        RvAlerts.error(
-          context,
-          context.tr('polls.user.error'),
-        );
+        RvAlerts.error(context, context.tr('polls.user.error'));
       }
     }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATUS PILL
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: color.withValues(alpha: 0.22),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPCION ITEM
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _OpcionItem extends StatelessWidget {
   final EncuestaOpcion opcion;
@@ -217,6 +364,8 @@ class _OpcionItem extends StatelessWidget {
   final bool yaVoto;
   final bool isSelected;
   final bool activa;
+  final bool isDark;
+  final ThemeData theme;
   final Function(String) onSelect;
 
   const _OpcionItem({
@@ -225,138 +374,130 @@ class _OpcionItem extends StatelessWidget {
     required this.yaVoto,
     required this.isSelected,
     required this.activa,
+    required this.isDark,
+    required this.theme,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final porcentaje = totalVotos > 0 ? (opcion.votos / totalVotos) : 0.0;
+    final porcentaje =
+    totalVotos > 0 ? (opcion.votos / totalVotos) : 0.0;
+    final primary = theme.colorScheme.primary;
 
     if (yaVoto || !activa) {
-      return Container(
-        height: 52,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: theme.dividerColor.withValues(alpha: 0.05),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0, end: porcentaje),
-                duration: const Duration(seconds: 1),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return FractionallySizedBox(
-                    widthFactor: value,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            (yaVoto ? AppColors.primaryBlue : Colors.grey).withValues(alpha: 0.25),
-                            (yaVoto ? AppColors.primaryBlue : Colors.grey).withValues(alpha: 0.1),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        opcion.texto,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    TweenAnimationBuilder<double>(
-                      tween: Tween<double>(begin: 0, end: porcentaje * 100),
-                      duration: const Duration(seconds: 1),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, value, child) {
-                        return Text(
-                          '${value.toStringAsFixed(1)}%',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: yaVoto ? AppColors.primaryBlue : null,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      return _ResultBar(
+        opcion: opcion,
+        porcentaje: porcentaje,
+        yaVoto: yaVoto,
+        isDark: isDark,
+        theme: theme,
+        primary: primary,
       );
     }
 
-    return InkWell(
-      onTap: () => onSelect(opcion.id),
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : theme.dividerColor.withValues(alpha: 0.2),
-            width: isSelected ? 2.5 : 1.5,
-          ),
-          color: isSelected ? AppColors.primaryBlue.withValues(alpha: 0.08) : theme.cardColor,
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primaryBlue.withValues(alpha: 0.15),
-              blurRadius: 10,
-              spreadRadius: 1,
-            )
-          ] : [],
+    return _SelectableOption(
+      opcion: opcion,
+      isSelected: isSelected,
+      isDark: isDark,
+      theme: theme,
+      primary: primary,
+      onSelect: onSelect,
+    );
+  }
+}
+
+class _ResultBar extends StatelessWidget {
+  final EncuestaOpcion opcion;
+  final double porcentaje;
+  final bool yaVoto;
+  final bool isDark;
+  final ThemeData theme;
+  final Color primary;
+
+  const _ResultBar({
+    required this.opcion,
+    required this.porcentaje,
+    required this.yaVoto,
+    required this.isDark,
+    required this.theme,
+    required this.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final barColor = yaVoto ? primary : AppColors.lightTextSecondary;
+
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.black.withValues(alpha: 0.03),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.black.withValues(alpha: 0.06),
+          width: 1,
         ),
-        child: Row(
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
           children: [
-            Expanded(
-              child: Text(
-                opcion.texto,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                  color: isSelected ? AppColors.primaryBlue : null,
-                  letterSpacing: -0.3,
-                ),
-              ),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: porcentaje),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, _) {
+                return FractionallySizedBox(
+                  widthFactor: value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          barColor.withValues(alpha: yaVoto ? 0.18 : 0.10),
+                          barColor.withValues(alpha: yaVoto ? 0.08 : 0.04),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? AppColors.primaryBlue : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryBlue : theme.dividerColor.withValues(alpha: 0.4),
-                  width: isSelected ? 0 : 2,
-                ),
-                boxShadow: isSelected ? [
-                  BoxShadow(
-                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ] : [],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      opcion.texto,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TweenAnimationBuilder<double>(
+                    tween:
+                    Tween<double>(begin: 0, end: porcentaje * 100),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) {
+                      return Text(
+                        '${value.toStringAsFixed(1)}%',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: yaVoto ? primary : null,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-              child: isSelected
-                  ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
-                  : null,
             ),
           ],
         ),
@@ -365,29 +506,182 @@ class _OpcionItem extends StatelessWidget {
   }
 }
 
-class _VotacionesSkeleton extends StatelessWidget {
-  const _VotacionesSkeleton();
+class _SelectableOption extends StatefulWidget {
+  final EncuestaOpcion opcion;
+  final bool isSelected;
+  final bool isDark;
+  final ThemeData theme;
+  final Color primary;
+  final Function(String) onSelect;
+
+  const _SelectableOption({
+    required this.opcion,
+    required this.isSelected,
+    required this.isDark,
+    required this.theme,
+    required this.primary,
+    required this.onSelect,
+  });
+
+  @override
+  State<_SelectableOption> createState() => _SelectableOptionState();
+}
+
+class _SelectableOptionState extends State<_SelectableOption> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final selected = widget.isSelected;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => widget.onSelect(widget.opcion.id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: selected
+                ? widget.primary.withValues(alpha: 0.08)
+                : (_hovered
+                ? (widget.isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.black.withValues(alpha: 0.02))
+                : (widget.isDark
+                ? Colors.white.withValues(alpha: 0.03)
+                : Colors.black.withValues(alpha: 0.02))),
+            border: Border.all(
+              color: selected
+                  ? widget.primary.withValues(alpha: 0.50)
+                  : (widget.isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.07)),
+              width: selected ? 2.0 : 1.5,
+            ),
+            boxShadow: selected
+                ? [
+              BoxShadow(
+                color: widget.primary.withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              )
+            ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.opcion.texto,
+                  style: widget.theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight:
+                    selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? widget.primary : null,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected
+                      ? widget.primary
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: selected
+                        ? Colors.transparent
+                        : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.20)
+                        : Colors.black.withValues(alpha: 0.15)),
+                    width: 2,
+                  ),
+                  boxShadow: selected
+                      ? [
+                    BoxShadow(
+                      color: widget.primary.withValues(alpha: 0.30),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                      : null,
+                ),
+                child: selected
+                    ? const Icon(
+                  Icons.check_rounded,
+                  size: 15,
+                  color: Colors.white,
+                )
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SKELETON
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _VotacionesSkeleton extends StatelessWidget {
+  final bool isWeb;
+  const _VotacionesSkeleton({required this.isWeb});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(20, isWeb ? 16 : 4, 20, 20),
+      padding:
+      EdgeInsets.fromLTRB(20, isWeb ? 8 : 4, 20, 48),
       itemCount: 3,
-      itemBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: RvSurfaceCard(
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(AppRadii.l),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.05),
+              width: 1.5,
+            ),
+            boxShadow: AppShadows.soft(context),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const RvSkeleton(width: 200, height: 24),
-              const SizedBox(height: 12),
-              const RvSkeleton(width: double.infinity, height: 16),
-              const SizedBox(height: 24),
-              ...List.generate(3, (index) => const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: RvSkeleton(width: double.infinity, height: 52, borderRadius: 12),
-              )),
+              const RvSkeleton(width: 180, height: 22, borderRadius: 6),
+              const SizedBox(height: 10),
+              const RvSkeleton(
+                  width: double.infinity, height: 14, borderRadius: 4),
+              const SizedBox(height: 6),
+              const RvSkeleton(width: 220, height: 14, borderRadius: 4),
+              const SizedBox(height: 20),
+              const RvSkeleton(width: 36, height: 2, borderRadius: 2),
+              const SizedBox(height: 16),
+              ...List.generate(
+                3,
+                    (_) => const Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: RvSkeleton(
+                      width: double.infinity,
+                      height: 52,
+                      borderRadius: 14),
+                ),
+              ),
             ],
           ),
         ),
