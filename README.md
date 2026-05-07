@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="metadata/logo_luis_vives.png" width="180" alt="Reservives Logo" />
-  <h1>RESERVIVES</h1>
+  <img src="metadata/logo_luis_vives.png" width="180" alt="IES Luis Vives Logo" />
+  <h1>IES Luis Vives App</h1>
   <p><strong>Plataforma integral de gestión de reservas y recursos para el IES Luis Vives.</strong></p>
 
   <p>
