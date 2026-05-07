@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
@@ -26,7 +27,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    Future.microtask(() => ref.invalidate(unreadNotificationsCountProvider));
+    Future.microtask(() {
+      if (!ref.read(authProvider).isGuest) {
+        ref.invalidate(unreadNotificationsCountProvider);
+      }
+    });
   }
 
   @override
@@ -38,7 +43,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      ref.invalidate(unreadNotificationsCountProvider);
+      if (!ref.read(authProvider).isGuest) {
+        ref.invalidate(unreadNotificationsCountProvider);
+      }
     }
   }
 
@@ -54,7 +61,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Image.asset(
-                'assets/images/logo_luis_vives.png',
+                AppAssets.logoPathForTheme(Theme.of(context).brightness),
                 width: 140,
                 fit: BoxFit.contain,
               ),
@@ -79,21 +86,28 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     }
 
     final items = [
-      (context.tr('shell.nav.home'), Icons.home_filled, Icons.home_outlined),
+      (context.tr('shell.nav.home'), Icons.home, Icons.home_outlined),
       (context.tr('shell.nav.bookings'), Icons.edit_calendar, Icons.calendar_month_outlined),
       ('Vivi', Icons.wechat_outlined, Icons.wechat_outlined),
-      (context.tr('shell.nav.cafeteria'), Icons.food_bank_rounded, Icons.local_cafe_outlined),
+      (context.tr('shell.nav.cafeteria'), Icons.restaurant_menu, Icons.local_cafe_outlined),
       (context.tr('shell.nav.profile'), Icons.person_rounded, Icons.person_outline_rounded),
     ];
 
     final activeIndex = selectedIndex();
+    final isGuest = authState.isGuest;
 
     void navigate(int index) {
       HapticFeedback.selectionClick();
       switch (index) {
         case 0: context.goNamed('home'); break;
         case 1: context.goNamed('servicios'); break;
-        case 2: context.goNamed('ai_chat'); break;
+        case 2:
+          if (isGuest) {
+            context.pushNamed('restricted');
+          } else {
+            context.goNamed('ai_chat');
+          }
+          break;
         case 3: context.goNamed('cafeteria'); break;
         case 4: context.goNamed('perfil'); break;
       }
@@ -150,93 +164,52 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final user = ref.watch(authProvider).user;
+    final isGuest = ref.watch(authProvider).isGuest;
     final unreadCount = ref.watch(unreadNotificationsCountProvider).value ?? 0;
 
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () => context.goNamed('home'),
-                    child: Image.asset('assets/images/logo_luis_vives.png', height: 60),
-                  ),
-                ),
-                const SizedBox(width: 40),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 80,
+          decoration: BoxDecoration(
+            color: (isDarkMode ? AppColors.darkSurface : Colors.white).withValues(alpha: 0.8),
+            border: Border(
+              bottom: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    // Logo con efecto Hover simple
+                    _HeaderLogo(onTap: () => context.goNamed('home')),
 
-                // Items de Navegación Centrales
-                ...List.generate(items.length, (index) {
-                  final isSelected = activeIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: TextButton.icon(
-                      onPressed: () => onTap(index),
-                      style: TextButton.styleFrom(
-                        foregroundColor: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).textTheme.bodyLarge?.color,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      icon: Icon(isSelected ? items[index].$2 : items[index].$3, size: 20),
-                      label: Text(
-                        items[index].$1,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 15,
-                        ),
+                    const SizedBox(width: 48),
+
+                    // Items de Navegación con indicador inferior animado
+                    Expanded(
+                      child: Row(
+                        children: List.generate(items.length, (index) {
+                          final isSelected = activeIndex == index;
+                          return _navItem(context, index, isSelected);
+                        }),
                       ),
                     ),
-                  );
-                }),
 
-                const Spacer(),
-                IconButton(
-                  icon: Badge(
-                    isLabelVisible: unreadCount > 0,
-                    label: Text('$unreadCount'),
-                    child: const Icon(Icons.notifications_none_rounded),
-                  ),
-                  onPressed: () => context.pushNamed('notificaciones'),
-                  tooltip: context.tr('notifications.title'),
+                    // Acciones Derecha
+                    _actionButtons(context, unreadCount, isGuest, user),
+                  ],
                 ),
-
-                const SizedBox(width: 12),
-
-                if (user != null)
-                  GestureDetector(
-                    onTap: () => context.pushNamed('perfil'),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Tooltip(
-                        message: context.tr('shell.nav.profile'),
-
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          backgroundImage: user.fullAvatarUrl != null
-                              ? NetworkImage(user.fullAvatarUrl!)
-                              : null,
-                          child: user.fullAvatarUrl == null
-                              ? Text(user.nombre[0].toUpperCase())
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
@@ -244,8 +217,126 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
+  Widget _navItem(BuildContext context, int index, bool isSelected) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? items[index].$2 : items[index].$3,
+                size: 20,
+                color: isSelected ? theme.colorScheme.primary : theme.hintColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                items[index].$1,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? theme.colorScheme.primary : theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _actionButtons(BuildContext context, int unreadCount, bool isGuest, dynamic user) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        IconButton(
+          icon: Badge(
+            isLabelVisible: unreadCount > 0 && !isGuest,
+            backgroundColor: theme.colorScheme.error,
+            label: Text('$unreadCount', style: const TextStyle(fontSize: 10, color: Colors.white)),
+            child: Icon(Icons.notifications_none_rounded, color: theme.hintColor),
+          ),
+          onPressed: () => context.pushNamed(isGuest ? 'restricted' : 'notificaciones'),
+          tooltip: context.tr('notifications.title'),
+        ),
+        const SizedBox(width: 16),
+        if (user != null)
+          _ProfileAvatar(
+            url: user.fullAvatarUrl,
+            initial: user.nombre[0],
+            onTap: () => context.pushNamed('perfil'),
+          ),
+      ],
+    );
+  }
+
   @override
   Size get preferredSize => const Size.fromHeight(80);
+}
+
+class _HeaderLogo extends StatelessWidget {
+  final VoidCallback onTap;
+  const _HeaderLogo({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Hero(
+          tag: 'app_logo',
+          child: Image.asset(
+            AppAssets.logoPathForTheme(Theme.of(context).brightness),
+            height: 50,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  final String? url;
+  final String initial;
+  final VoidCallback onTap;
+
+  const _ProfileAvatar({this.url, required this.initial, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(99),
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+        ),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: theme.colorScheme.primary,
+          backgroundImage: url != null ? NetworkImage(url!) : null,
+          child: url == null
+              ? Text(initial.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+              : null,
+        ),
+      ),
+    );
+  }
 }
 
 class _WebFooter extends StatelessWidget {
@@ -270,7 +361,7 @@ class _WebFooter extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
           child: Column(
             children: [
               Row(
@@ -284,7 +375,7 @@ class _WebFooter extends StatelessWidget {
                         Row(
                           children: [
                             Image.asset(
-                              'assets/images/logo_luis_vives.png',
+                              AppAssets.logoPathForTheme(Theme.of(context).brightness),
                               width: 54,
                               height: 54,
                             ),
@@ -484,7 +575,7 @@ class _SocialImageButton extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         child: Image.asset(
           imagePath,
-          width: 28,  // Ajusta el tamaño según necesites
+          width: 28,
           height: 28,
           fit: BoxFit.contain,
         ),
@@ -590,3 +681,4 @@ class _MobileBottomNavBar extends StatelessWidget {
     );
   }
 }
+

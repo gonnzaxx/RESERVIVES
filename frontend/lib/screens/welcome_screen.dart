@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reservives/config/constants.dart';
 import 'package:reservives/providers/auth_provider.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -48,7 +49,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             Hero(
               tag: 'ies-logo-hero',
               child: Image.asset(
-                'assets/images/logo_luis_vives.png',
+                AppAssets.logoPathForTheme(Theme.of(context).brightness),
                 width: 180,
                 fit: BoxFit.contain,
               ),
