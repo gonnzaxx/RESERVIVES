@@ -358,8 +358,8 @@ SMTP_PASSWORD=...
 
 ```bash
 # Clona el repositorio
-git clone https://github.com/tu-usuario/reservives-app.git
-cd reservives-app
+git clone https://github.com/tu-usuario/reservives.git
+cd reservives
 
 # Copia y rellena el .env
 cp backend/.env.example backend/.env
@@ -369,9 +369,6 @@ docker-compose up -d --build
 ```
 
 El frontend estará disponible en `http://localhost:2121` y la API en `http://localhost:1212/api/docs`.
-
-> **Nota:** Para el flujo de autenticación con Microsoft EntraID es necesario acceder mediante HTTPS. En local puedes usar el modo de desarrollo del backend (`auth_dev_bypass_enabled=true` en la tabla de configuración) para omitir el login de Microsoft.
-
 ---
 
 ## Estructura del Repositorio
