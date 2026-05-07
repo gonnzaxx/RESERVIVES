@@ -157,7 +157,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
 
           return Padding(
             padding: EdgeInsets.fromLTRB(
-              16, 0, 16,
+              16, MediaQuery.of(ctx).padding.top + 60, 16,
               MediaQuery.of(ctx).viewInsets.bottom + 24,
             ),
             child: Container(
@@ -465,7 +465,9 @@ class AdminCafeteriaScreen extends ConsumerWidget {
 
     return showModalBottomSheet<bool>(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(builder: (context, setState) => Container(
+      builder: (context) => StatefulBuilder(builder: (context, setState) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
+        child: Container(
         decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
         padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -516,6 +518,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
             Expanded(child: RvPrimaryButton(onTap: () => Navigator.pop(context, true), label: context.tr('generic.save'))),
           ]),
         ])),
+      ),
       )),
     );
   }

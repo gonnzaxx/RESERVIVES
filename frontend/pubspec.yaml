@@ -47,6 +47,7 @@ dependencies:
   # Utilidades
   url_launcher: ^6.2.2
   smooth_page_indicator: ^2.0.1
+  flutter_markdown: ^0.7.4
 
 
 dev_dependencies:
@@ -85,3 +86,4 @@ flutter:
     - assets/lang/
     - assets/images/
     - assets/icons/
+    - assets/legal/

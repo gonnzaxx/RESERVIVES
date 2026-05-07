@@ -232,7 +232,9 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Container(
+        builder: (context, setState) => Padding(
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
+          child: Container(
           decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
           padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
           child: SingleChildScrollView(
@@ -292,6 +294,7 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

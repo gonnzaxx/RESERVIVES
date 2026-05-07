@@ -306,6 +306,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -402,6 +403,7 @@ class _EditPollSheetState extends ConsumerState<_EditPollSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
       decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
       padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(

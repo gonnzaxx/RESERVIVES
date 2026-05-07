@@ -197,7 +197,9 @@ class AdminServicesScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(ctx).padding.top + 60),
+        child: Container(
         decoration: BoxDecoration(color: Theme.of(ctx).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
         padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
         child: Column(
@@ -228,6 +230,7 @@ class AdminServicesScreen extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -242,6 +245,7 @@ class AdminServicesScreen extends ConsumerWidget {
     return showModalBottomSheet<bool>(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(builder: (context, setState) => Container(
+        margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
         decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
         padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -261,7 +261,9 @@ class AdminSpacesScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(ctx).padding.top + 60),
+        child: Container(
         decoration: BoxDecoration(
           color: Theme.of(ctx).scaffoldBackgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -294,6 +296,7 @@ class AdminSpacesScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 

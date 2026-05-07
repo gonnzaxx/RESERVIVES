@@ -261,7 +261,9 @@ class _IncidentDetailState extends ConsumerState<_IncidentDetail> {
     final inc = widget.incidencia;
     final width = MediaQuery.of(context).size.width;
 
-    return Container(
+    return Padding(
+      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
+      child: Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
@@ -416,6 +418,7 @@ class _IncidentDetailState extends ConsumerState<_IncidentDetail> {
             ],
           ],
         ),
+      ),
       ),
     );
   }

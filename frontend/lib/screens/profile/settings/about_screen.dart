@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/config/constants.dart';
@@ -10,11 +12,153 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
+  // Devuelve la ruta del asset legal según tipo e idioma.
+  String _legalAssetPath(String type, String langCode) {
+    final lang = ['es', 'en', 'fr'].contains(langCode) ? langCode : 'es';
+    return 'assets/legal/${type}_$lang.md';
+  }
+
+  Future<void> _showPolicy(
+    BuildContext context,
+    String title,
+    String assetPath,
+    bool isDark,
+    bool isWeb,
+  ) async {
+    String body;
+    try {
+      body = await rootBundle.loadString(assetPath);
+    } catch (_) {
+      // Fallback al español si el idioma no tiene traducción
+      final fallback = assetPath.replaceAll(RegExp(r'_(en|fr)\.md$'), '_es.md');
+      body = await rootBundle.loadString(fallback);
+    }
+
+    if (!context.mounted) return;
+
+    if (isWeb) {
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: 640, maxHeight: 820),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                              ),
+                        ),
+                      ),
+                      RvGhostIconButton(
+                        icon: Icons.close_rounded,
+                        onTap: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(
+                    color: Theme.of(context)
+                        .dividerColor
+                        .withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: _MarkdownContent(body: body, isDark: isDark),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => DraggableScrollableSheet(
+          initialChildSize: 0.88,
+          minChildSize: 0.5,
+          maxChildSize: 0.96,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    style: Theme.of(ctx)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Divider(
+                    color: Theme.of(ctx)
+                        .dividerColor
+                        .withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: _MarkdownContent(
+                      body: body,
+                      isDark: isDark,
+                      scrollController: scrollController,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isWeb = MediaQuery.of(context).size.width > 750;
+    final langCode = AppLocalizations.of(context).locale.languageCode;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -22,13 +166,12 @@ class AboutScreen extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints:
-            const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
+                const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding:
-                  EdgeInsets.fromLTRB(8, 12, 20, isWeb ? 20 : 8),
+                  padding: EdgeInsets.fromLTRB(8, 12, 20, isWeb ? 20 : 8),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -42,7 +185,9 @@ class AboutScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              context.tr('profile.accountEyebrow').toUpperCase(),
+                              context
+                                  .tr('profile.accountEyebrow')
+                                  .toUpperCase(),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 letterSpacing: 0.9,
                                 fontWeight: FontWeight.w700,
@@ -65,30 +210,31 @@ class AboutScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                        20, isWeb ? 8 : 4, 20, 48),
+                    padding:
+                        EdgeInsets.fromLTRB(20, isWeb ? 8 : 4, 20, 48),
                     children: [
                       _AppCard(isDark: isDark, theme: theme, isWeb: isWeb)
                           .animate()
                           .fadeIn(delay: 80.ms, duration: 350.ms)
                           .slideY(
-                        begin: 0.04,
-                        delay: 80.ms,
-                        duration: 350.ms,
-                        curve: Curves.easeOutCubic,
-                      ),
+                            begin: 0.04,
+                            delay: 80.ms,
+                            duration: 350.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
 
                       const SizedBox(height: 20),
 
-                      _DevelopersCard(isDark: isDark, theme: theme, isWeb: isWeb)
+                      _DevelopersCard(
+                              isDark: isDark, theme: theme, isWeb: isWeb)
                           .animate()
                           .fadeIn(delay: 140.ms, duration: 350.ms)
                           .slideY(
-                        begin: 0.04,
-                        delay: 140.ms,
-                        duration: 350.ms,
-                        curve: Curves.easeOutCubic,
-                      ),
+                            begin: 0.04,
+                            delay: 140.ms,
+                            duration: 350.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
 
                       const SizedBox(height: 20),
 
@@ -96,17 +242,25 @@ class AboutScreen extends StatelessWidget {
                         isDark: isDark,
                         theme: theme,
                         isWeb: isWeb,
-                        onShowPolicy: (title, body) =>
-                            _showPolicy(context, title, body, isDark, isWeb),
+                        onShowPolicy: (title, assetPath) => _showPolicy(
+                          context,
+                          title,
+                          assetPath,
+                          isDark,
+                          isWeb,
+                        ),
+                        privacyAsset:
+                            _legalAssetPath('privacy_policy', langCode),
+                        termsAsset: _legalAssetPath('terms', langCode),
                       )
                           .animate()
                           .fadeIn(delay: 200.ms, duration: 350.ms)
                           .slideY(
-                        begin: 0.04,
-                        delay: 200.ms,
-                        duration: 350.ms,
-                        curve: Curves.easeOutCubic,
-                      ),
+                            begin: 0.04,
+                            delay: 200.ms,
+                            duration: 350.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
                     ],
                   ),
                 ),
@@ -117,129 +271,100 @@ class AboutScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _showPolicy(BuildContext context, String title, String body,
-      bool isDark, bool isWeb) {
-    if (isWeb) {
-      showDialog(
-        context: context,
-        builder: (_) => Dialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24)),
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(maxWidth: 600, maxHeight: 800),
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4),
-                        ),
-                      ),
-                      RvGhostIconButton(
-                        icon: Icons.close_rounded,
-                        onTap: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Divider(
-                      color: Theme.of(context)
-                          .dividerColor
-                          .withValues(alpha: 0.4)),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        body,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(height: 1.6),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+// Widget que renderiza el contenido markdown con estilos coherentes al tema.
+class _MarkdownContent extends StatelessWidget {
+  final String body;
+  final bool isDark;
+  final ScrollController? scrollController;
+
+  const _MarkdownContent({
+    required this.body,
+    required this.isDark,
+    this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseColor =
+        isDark ? AppColors.darkText : AppColors.lightText;
+    final secondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final dividerColor = theme.dividerColor.withValues(alpha: 0.4);
+
+    return Markdown(
+      controller: scrollController,
+      data: body,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        h1: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: baseColor,
+          letterSpacing: -0.4,
+          height: 1.3,
+        ),
+        h2: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: baseColor,
+          letterSpacing: -0.2,
+          height: 1.3,
+        ),
+        h3: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: baseColor,
+        ),
+        p: theme.textTheme.bodyMedium?.copyWith(
+          color: secondaryColor,
+          height: 1.7,
+        ),
+        strong: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: baseColor,
+        ),
+        tableHead: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: baseColor,
+        ),
+        tableBody: theme.textTheme.bodySmall?.copyWith(
+          color: secondaryColor,
+          height: 1.5,
+        ),
+        tableBorder: TableBorder.all(color: dividerColor, width: 1),
+        tableColumnWidth: const FlexColumnWidth(),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              width: 3,
             ),
           ),
         ),
-      );
-    } else {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(28)),
-              ),
-              padding:
-              const EdgeInsets.fromLTRB(24, 14, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      child: Text(
-                        body,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(height: 1.6),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        horizontalRuleDecoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: dividerColor, width: 1),
+          ),
         ),
-      );
-    }
+        listBullet: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+        a: TextStyle(
+          color: theme.colorScheme.primary,
+          decoration: TextDecoration.underline,
+          decorationColor: theme.colorScheme.primary.withValues(alpha: 0.5),
+        ),
+        h1Padding: const EdgeInsets.only(top: 20, bottom: 6),
+        h2Padding: const EdgeInsets.only(top: 16, bottom: 4),
+        h3Padding: const EdgeInsets.only(top: 12, bottom: 4),
+        pPadding: const EdgeInsets.only(bottom: 4),
+        blockSpacing: 10,
+      ),
+      onTapLink: (text, href, title) {
+        if (href != null) launchUrl(Uri.parse(href));
+      },
+      padding: const EdgeInsets.only(bottom: 16),
+    );
   }
 }
 
@@ -287,7 +412,8 @@ class _AppCard extends StatelessWidget {
           const SizedBox(height: 6),
 
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(100),
@@ -338,16 +464,16 @@ class _DevelopersCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final devs = [
       (
-      name: context.tr('about.developers.dev1'),
-      url: 'https://www.linkedin.com/in/gonzalo-santiago-ariza/',
+        name: context.tr('about.developers.dev1'),
+        url: 'https://www.linkedin.com/in/gonzalo-santiago-ariza/',
       ),
       (
-      name: context.tr('about.developers.dev2'),
-      url: 'https://www.linkedin.com/in/jorge-sepulveda-martin/',
+        name: context.tr('about.developers.dev2'),
+        url: 'https://www.linkedin.com/in/jorge-sepulveda-martin/',
       ),
       (
-      name: context.tr('about.developers.dev3'),
-      url: 'https://www.linkedin.com/in/alvaro-lorenzo301/',
+        name: context.tr('about.developers.dev3'),
+        url: 'https://www.linkedin.com/in/alvaro-lorenzo301/',
       ),
     ];
 
@@ -427,11 +553,13 @@ class _DevelopersCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: _DevList(devs: devs, isDark: isDark, theme: theme),
+                    child: _DevList(
+                        devs: devs, isDark: isDark, theme: theme),
                   ),
                   const SizedBox(width: 32),
                   Expanded(
-                    child: _InfoList(infos: infos, isDark: isDark, theme: theme),
+                    child: _InfoList(
+                        infos: infos, isDark: isDark, theme: theme),
                   ),
                 ],
               )
@@ -481,10 +609,13 @@ class _DevList extends StatelessWidget {
     return Column(
       children: devs
           .map((d) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: _LinkedInButton(
-            name: d.name, url: d.url, isDark: isDark, theme: theme),
-      ))
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _LinkedInButton(
+                    name: d.name,
+                    url: d.url,
+                    isDark: isDark,
+                    theme: theme),
+              ))
           .toList(),
     );
   }
@@ -506,10 +637,10 @@ class _InfoList extends StatelessWidget {
     return Column(
       children: infos
           .map((info) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: _InfoSection(
-            info: info, isDark: isDark, theme: theme),
-      ))
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _InfoSection(
+                    info: info, isDark: isDark, theme: theme),
+              ))
           .toList(),
     );
   }
@@ -519,13 +650,17 @@ class _FooterSection extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
   final bool isWeb;
-  final void Function(String title, String body) onShowPolicy;
+  final void Function(String title, String assetPath) onShowPolicy;
+  final String privacyAsset;
+  final String termsAsset;
 
   const _FooterSection({
     required this.isDark,
     required this.theme,
     required this.isWeb,
     required this.onShowPolicy,
+    required this.privacyAsset,
+    required this.termsAsset,
   });
 
   @override
@@ -538,7 +673,7 @@ class _FooterSection extends StatelessWidget {
         subtitle: context.tr('about.privacy.subtitle'),
         onTap: () => onShowPolicy(
           context.tr('about.privacy.title'),
-          context.tr('about.privacy.body'),
+          privacyAsset,
         ),
       ),
       _FooterItem(
@@ -548,7 +683,7 @@ class _FooterSection extends StatelessWidget {
         subtitle: context.tr('about.terms.subtitle'),
         onTap: () => onShowPolicy(
           context.tr('about.terms.title'),
-          context.tr('about.terms.body'),
+          termsAsset,
         ),
       ),
       _FooterItem(
@@ -644,10 +779,11 @@ class _AboutTileState extends State<_AboutTile> {
           duration: const Duration(milliseconds: 150),
           color: _hovered
               ? (widget.isDark
-              ? Colors.white.withValues(alpha: 0.03)
-              : Colors.black.withValues(alpha: 0.02))
+                  ? Colors.white.withValues(alpha: 0.03)
+                  : Colors.black.withValues(alpha: 0.02))
               : Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           child: Row(
             children: [
               Container(
@@ -731,7 +867,8 @@ class _LinkedInButtonState extends State<_LinkedInButton> {
         onTap: () => launchUrl(Uri.parse(widget.url)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             color: _hovered
                 ? primary.withValues(alpha: 0.08)
@@ -764,7 +901,8 @@ class _LinkedInButtonState extends State<_LinkedInButton> {
               Icon(
                 Icons.open_in_new_rounded,
                 size: 14,
-                color: primary.withValues(alpha: _hovered ? 0.8 : 0.4),
+                color:
+                    primary.withValues(alpha: _hovered ? 0.8 : 0.4),
               ),
             ],
           ),

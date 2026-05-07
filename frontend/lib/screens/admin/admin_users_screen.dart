@@ -174,7 +174,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
           builder: (context, setStateModal) {
-            return Container(
+            return Padding(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
+              child: Container(
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -250,6 +252,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                   ),
                 ],
               ),
+            ),
             );
           }
       ),

@@ -226,7 +226,7 @@ class _AdminFilterPanel extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(ctx).padding.top + 60, 16, 32),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
@@ -247,6 +247,7 @@ class _AdminFilterPanel extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Drag handle
                   Container(
                     width: 36,
                     height: 4,
@@ -309,8 +310,8 @@ class _AdminFilterPanel extends ConsumerWidget {
                                   vertical: 14, horizontal: 18),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? theme.colorScheme.primary.withOpacity(
-                                    isDark ? 0.18 : 0.08)
+                                    ? theme.colorScheme.primary.withValues(
+                                    alpha: isDark ? 0.18 : 0.08)
                                     : (isDark
                                     ? Colors.white.withValues(alpha: 0.04)
                                     : Colors.black.withValues(alpha: 0.02)),

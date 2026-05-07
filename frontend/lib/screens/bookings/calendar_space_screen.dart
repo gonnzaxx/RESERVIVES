@@ -200,30 +200,6 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
   }
 }
 
-class _BackButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _BackButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Theme.of(context).cardColor,
-          border: Border.all(
-            color: Theme.of(context).dividerColor,
-            width: 0.5,
-          ),
-        ),
-        child: const Icon(Icons.arrow_back_rounded, size: 18),
-      ),
-    );
-  }
-}
 
 class _WeekNavigator extends StatelessWidget {
   final DateTime semanaInicio;
@@ -706,7 +682,6 @@ class _SlotCell extends StatelessWidget {
     final Color bg;
     final Color textColor;
     final Border? border;
-    final BorderStyle borderStyle;
 
     switch (state) {
       case _SlotState.free:
@@ -716,7 +691,6 @@ class _SlotCell extends StatelessWidget {
           color: isSelected ? _kTeal : _kTeal.withValues(alpha: 0.3),
           width: isSelected ? 1.5 : 0.5,
         );
-        borderStyle = BorderStyle.solid;
         break;
       case _SlotState.busy:
         bg = AppColors.error.withValues(alpha: 0.07);
@@ -725,7 +699,6 @@ class _SlotCell extends StatelessWidget {
           color: AppColors.error.withValues(alpha: 0.2),
           width: 0.5,
         );
-        borderStyle = BorderStyle.solid;
         break;
       case _SlotState.past:
         bg = Theme.of(context).dividerColor.withValues(alpha: 0.06);
@@ -734,7 +707,6 @@ class _SlotCell extends StatelessWidget {
           color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
           width: 0.5,
         );
-        borderStyle = BorderStyle.solid;
         break;
       case _SlotState.blocked:
         bg = Colors.transparent;
@@ -743,7 +715,6 @@ class _SlotCell extends StatelessWidget {
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           width: 0.5,
         );
-        borderStyle = BorderStyle.solid;
         break;
     }
 
