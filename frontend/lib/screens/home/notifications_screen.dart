@@ -9,6 +9,7 @@ import 'package:reservives/models/notificacion.dart';
 import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
+import 'package:reservives/config/constants.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -38,7 +39,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
+            constraints: const BoxConstraints(maxWidth: AppConstants.webMaxWidth),
             child: Column(
               children: [
                 Padding(
@@ -206,6 +207,10 @@ class _NotificationCard extends ConsumerWidget {
         context.pushNamed('admin_reservas');
         break;
 
+      case TipoNotificacion.nuevaIncidencia:
+        context.pushNamed('admin_incidencias');
+        break;
+
       case TipoNotificacion.nuevoAnuncio:
         if (item.referenciaId != null) {
           context.pushNamed('anuncio_detalle', pathParameters: {
@@ -230,7 +235,6 @@ class _NotificationCard extends ConsumerWidget {
         context.pushNamed('votaciones');
         break;
 
-      case TipoNotificacion.nuevaIncidencia:
       case TipoNotificacion.incidenciaResueltas:
         context.pop();
         context.goNamed('perfil');
