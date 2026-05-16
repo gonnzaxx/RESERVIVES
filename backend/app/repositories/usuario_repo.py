@@ -1,7 +1,5 @@
 """
-Repositorio de Usuarios.
-
-Aquuí se encuentran las operaciones de acceso a datos para la entidad Usuario.
+Repositorio de usuarios. Operaciones de acceso a datos para la entidad Usuario.
 """
 
 from sqlalchemy import select
@@ -9,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.usuario import Usuario, RolUsuario
 from app.repositories.base import BaseRepository
+from app.utils.role_access import _UNLIMITED_TOKEN_ROLES
 
 
 class UsuarioRepository(BaseRepository[Usuario]):
@@ -52,19 +51,10 @@ class UsuarioRepository(BaseRepository[Usuario]):
         return list(result.scalars().all())
 
     async def get_active_users_for_monthly_tokens(self) -> list[Usuario]:
-        """Obtiene usuarios activos con roles que usan tokens."""
+        """Obtiene usuarios activos que usan tokens (todos excepto ADMINISTRADOR y JEFATURA)."""
         result = await self.session.execute(
             select(Usuario)
-            .where(
-                Usuario.rol.in_(
-                    [
-                        RolUsuario.ALUMNO,
-                        RolUsuario.PROFESOR,
-                        RolUsuario.SECRETARIA,
-                        RolUsuario.PROFESOR_SERVICIO,
-                    ]
-                )
-            )
+            .where(Usuario.rol.not_in(list(_UNLIMITED_TOKEN_ROLES)))
             .where(Usuario.activo == True)
         )
         return list(result.scalars().all())

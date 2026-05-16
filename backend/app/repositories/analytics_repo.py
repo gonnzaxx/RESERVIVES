@@ -1,16 +1,16 @@
-"""Clase Anallytics Repository
-
-Gestiona las métricas de datos en relacion a los espacios,
-servicios y anuncios.
+"""
+Repositorio de analytics. Métricas de reservas de espacios, servicios y visualizaciones de anuncios.
 """
 
 import uuid
+
 from sqlalchemy import select, func, desc
-from app.models.reserva_espacio import ReservaEspacio, EstadoReserva
-from app.models.espacio import Espacio, TipoEspacio
-from app.models.servicio import Servicio
-from app.models.reserva_servicio import ReservaServicio
+
 from app.models.anuncio import Anuncio, AnuncioVisualizacion
+from app.models.espacio import Espacio, TipoEspacio
+from app.models.reserva_espacio import ReservaEspacio, EstadoReserva
+from app.models.reserva_servicio import ReservaServicio
+from app.models.servicio import Servicio
 
 class AnalyticsRepository:
     def __init__(self, db):
@@ -58,6 +58,7 @@ class AnalyticsRepository:
         )
         return [{"nombre": row[0], "valor": row[1]} for row in result.all()]
 
+    # Registra una visualización de un anuncio por parte de un usuario.
     async def register_view(self, anuncio_id: uuid.UUID, usuario_id: uuid.UUID = None):
         view = AnuncioVisualizacion(anuncio_id=anuncio_id, usuario_id=usuario_id)
         self.db.add(view)

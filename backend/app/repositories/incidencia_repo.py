@@ -1,4 +1,6 @@
-"""Repositorio para operaciones con el modelo Incidencia."""
+"""
+Repositorio de incidencias.
+"""
 
 import uuid
 from typing import Sequence

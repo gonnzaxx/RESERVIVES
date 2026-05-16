@@ -100,6 +100,26 @@ class ReservaServicioRepository(BaseRepository[ReservaServicio]):
         )
         return list(result.scalars().all())
 
+    # Verifica si el usuario ya tiene otra reserva de servicio en el mismo intervalo.
+    # Devuelve True si hay solapamiento.
+    async def check_solapamiento_usuario(
+        self,
+        usuario_id: uuid.UUID,
+        fecha_inicio: datetime,
+        fecha_fin: datetime,
+    ) -> bool:
+        result = await self.session.execute(
+            select(ReservaServicio.id).where(
+                and_(
+                    ReservaServicio.usuario_id == usuario_id,
+                    ReservaServicio.estado.in_([EstadoReserva.PENDIENTE, EstadoReserva.APROBADA]),
+                    ReservaServicio.fecha_inicio < fecha_fin,
+                    ReservaServicio.fecha_fin > fecha_inicio,
+                )
+            ).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def get_activas_usuario(self, usuario_id: uuid.UUID) -> int:
         """Cuenta las reservas de servicio activas (pendientes o aprobadas) de un usuario."""
         result = await self.session.execute(

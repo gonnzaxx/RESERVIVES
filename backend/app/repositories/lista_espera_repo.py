@@ -18,6 +18,7 @@ class ListaEsperaRepository(BaseRepository[ListaEspera]):
     def __init__(self, session: AsyncSession):
         super().__init__(ListaEspera, session)
 
+    # Obtiene una entrada de lista de espera con usuario, espacio y tramo cargados.
     async def get_by_id(self, id: uuid.UUID) -> ListaEspera | None:
         result = await self.session.execute(
             select(ListaEspera)
@@ -30,6 +31,7 @@ class ListaEsperaRepository(BaseRepository[ListaEspera]):
         )
         return result.scalar_one_or_none()
 
+    # Devuelve las entradas activas del usuario en la lista de espera.
     async def get_by_usuario(
         self, usuario_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> list[ListaEspera]:
@@ -122,6 +124,7 @@ class ListaEsperaRepository(BaseRepository[ListaEspera]):
         max_pos = result.scalar_one_or_none()
         return (max_pos or 0) + 1
 
+    # Cuenta cuántas personas están en la cola activa para un slot concreto.
     async def count_activos(
         self,
         espacio_id: uuid.UUID,

@@ -1,1 +1,1 @@
-"""RESERVIVES - Paquete de repositorios."""
+"""IES LUIS VIVES APP - Paquete de repositorios."""

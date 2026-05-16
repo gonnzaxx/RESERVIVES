@@ -1,13 +1,10 @@
 """
-Repositorio de Espacios.
-
-Esta clase tiene las operaciones de acceso a datos para la entidad Espacio.
+Repositorio de espacios. Operaciones de acceso a datos para la entidad Espacio.
 """
 
 import uuid
 
-from sqlalchemy import select
-from sqlalchemy import delete
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -68,7 +65,7 @@ class EspacioRepository(BaseRepository[Espacio]):
     ) -> None:
         """Actualiza los roles permitidos de un espacio."""
 
-        # eliminar roles existentes
+        # borra los roles actuales del espacio
         await self.session.execute(
             delete(EspacioRolPermitido).where(
                 EspacioRolPermitido.espacio_id == espacio_id
@@ -77,7 +74,7 @@ class EspacioRepository(BaseRepository[Espacio]):
 
         await self.session.flush()
 
-        # crear nuevos roles
+        # inserta los nuevos roles uno a uno
         for rol in roles:
             new_role = EspacioRolPermitido(espacio_id=espacio_id, rol=rol)
             self.session.add(new_role)

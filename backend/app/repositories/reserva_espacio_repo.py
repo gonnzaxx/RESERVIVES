@@ -87,6 +87,26 @@ class ReservaEspacioRepository(BaseRepository[ReservaEspacio]):
         result = await self.session.execute(query.limit(1))
         return result.scalar_one_or_none() is not None
 
+    # Verifica si el usuario ya tiene otra reserva de espacio en el mismo intervalo.
+    # Devuelve True si hay solapamiento.
+    async def check_solapamiento_usuario(
+        self,
+        usuario_id: uuid.UUID,
+        fecha_inicio: datetime,
+        fecha_fin: datetime,
+    ) -> bool:
+        result = await self.session.execute(
+            select(ReservaEspacio.id).where(
+                and_(
+                    ReservaEspacio.usuario_id == usuario_id,
+                    ReservaEspacio.estado.in_([EstadoReserva.PENDIENTE, EstadoReserva.APROBADA]),
+                    ReservaEspacio.fecha_inicio < fecha_fin,
+                    ReservaEspacio.fecha_fin > fecha_inicio,
+                )
+            ).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def get_activas_usuario(self, usuario_id: uuid.UUID) -> int:
         """Cuenta las reservas activas (pendientes o aprobadas) de un usuario."""
         result = await self.session.execute(

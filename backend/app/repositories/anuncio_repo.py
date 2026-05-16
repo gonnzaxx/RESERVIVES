@@ -1,12 +1,12 @@
-"""Repositorio de anuncios
-
-Gestiona los anuncios tanto activos como pasados. 
 """
+Repositorio de anuncios. Gestiona anuncios activos y pasados.
+"""
+
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from datetime import datetime
 
 from app.models.anuncio import Anuncio
 from app.repositories.base import BaseRepository

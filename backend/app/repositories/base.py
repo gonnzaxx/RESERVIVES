@@ -1,7 +1,5 @@
 """
-Repositorio base genérico.
-
-Proporciona operaciones CRUD comunes para todos los modelos.
+Repositorio base genérico con operaciones CRUD comunes para todos los modelos.
 """
 
 import uuid
