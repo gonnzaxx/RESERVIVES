@@ -1,5 +1,5 @@
 """
-Logging estructurado para RESERVIVES.
+IES LUIS VIVES APP - Logging estructurado.
 """
 
 from __future__ import annotations
