@@ -41,13 +41,31 @@ class _AdminIncidentsScreenState extends ConsumerState<AdminIncidentsScreen> wit
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: RvPageHeader(
-                      title: context.tr('incidents.admin.title'),
-                      eyebrow: 'Reportes',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Reportes'.toUpperCase(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0.9,
+                            fontWeight: FontWeight.w700,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('incidents.admin.title'),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   RvGhostIconButton(
@@ -269,23 +287,13 @@ class _IncidentDetailState extends ConsumerState<_IncidentDetail> {
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: theme.dividerColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            RvSheetHeader(onClose: () => Navigator.pop(context)),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

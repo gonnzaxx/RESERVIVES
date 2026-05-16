@@ -27,28 +27,41 @@ class AdminPollsScreen extends ConsumerWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: RvPageHeader(
-                      title: context.tr('admin.polls.title'),
-                      eyebrow: context.tr('admin.polls.eyebrow'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('admin.polls.eyebrow').toUpperCase(),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0.9,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('admin.polls.title'),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RvGhostIconButton(
-                        icon: Icons.add_circle_outline_rounded,
-                        onTap: () => _showCreateDialog(context, ref),
-                      ),
-                      const SizedBox(width: 4),
-                      RvGhostIconButton(
-                        icon: Icons.refresh_rounded,
-                        onTap: () => ref.read(adminEncuestasProvider.notifier).refresh(),
-                      ),
-                    ],
+                  RvGhostIconButton(
+                    icon: Icons.add_circle_outline_rounded,
+                    onTap: () => _showCreateDialog(context, ref),
+                  ),
+                  const SizedBox(width: 4),
+                  RvGhostIconButton(
+                    icon: Icons.refresh_rounded,
+                    onTap: () => ref.read(adminEncuestasProvider.notifier).refresh(),
                   ),
                 ],
               ),
@@ -311,12 +324,11 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: theme.dividerColor.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 24),
+          RvSheetHeader(onClose: () => Navigator.pop(context)),
           Text(context.tr('admin.polls.create'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 20),
           TextField(
@@ -405,11 +417,11 @@ class _EditPollSheetState extends ConsumerState<_EditPollSheet> {
     return Container(
       margin: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
       decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
-      padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 24),
+          RvSheetHeader(onClose: () => Navigator.pop(context)),
           Text(context.tr('admin.polls.editTitle'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 20),
           TextField(controller: _titleController, decoration: const InputDecoration(labelText: 'Pregunta')),

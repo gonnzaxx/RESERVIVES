@@ -37,6 +37,7 @@ class AdminTramosSection extends ConsumerWidget {
     );
   }
 
+  // Cabecera de la sección con título, botón de refresco y botón de añadir
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
@@ -60,6 +61,7 @@ class AdminTramosSection extends ConsumerWidget {
     );
   }
 
+  // Divide los tramos en mañana y tarde y los muestra en columnas (o una columna en móvil)
   Widget _buildLista(BuildContext context, WidgetRef ref, List<TramoHorario> tramos) {
     final manana = tramos.where((t) => t.turno == 'MAÑANA').toList();
     final tarde = tramos.where((t) => t.turno == 'TARDE').toList();
@@ -85,6 +87,7 @@ class AdminTramosSection extends ConsumerWidget {
     );
   }
 
+  // Columna con cabecera de turno y lista de tramos
   Widget _buildColumna(BuildContext context, WidgetRef ref, String label, IconData icon, List<TramoHorario> tramos) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,6 +125,7 @@ class AdminTramosSection extends ConsumerWidget {
     );
   }
 
+  // Fila de tramo con acciones de editar, eliminar y activar/desactivar
   Widget _buildTramoTile(BuildContext context, WidgetRef ref, TramoHorario tramo) {
     final inactivo = !tramo.activo;
     return Opacity(
@@ -180,6 +184,7 @@ class AdminTramosSection extends ConsumerWidget {
     );
   }
 
+  // Pide confirmación y elimina el tramo si el usuario acepta
   Future<void> _confirmarEliminar(BuildContext context, WidgetRef ref, TramoHorario tramo) async {
     final ok = await RvAlerts.confirm(
       context,
@@ -196,6 +201,7 @@ class AdminTramosSection extends ConsumerWidget {
     }
   }
 
+  // Pide confirmación y alterna el estado activo/inactivo del tramo
   Future<void> _confirmarDesactivar(BuildContext context, WidgetRef ref, TramoHorario tramo) async {
     final accion = tramo.activo ? context.tr('admin.configuration.slots.deactivate') : context.tr('admin.configuration.slots.activate');
     final estado = tramo.activo ? context.tr('admin.configuration.slots.inactive').toLowerCase() : context.tr('admin.configuration.slots.activate').toLowerCase();
@@ -210,6 +216,7 @@ class AdminTramosSection extends ConsumerWidget {
     await ref.read(adminTramosProvider.notifier).editarTramo(tramo.id, {'activo': !tramo.activo});
   }
 
+  // Abre el diálogo para crear o editar un tramo horario
   void _showTramoDialog(BuildContext context, WidgetRef ref, TramoHorario? tramo) {
     showGeneralDialog(
       context: context,
@@ -249,6 +256,7 @@ class _TramosSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Turno header skeleton
         Padding(
           padding: const EdgeInsets.only(bottom: 12, top: 8),
           child: Row(
@@ -261,6 +269,7 @@ class _TramosSkeleton extends StatelessWidget {
             ],
           ),
         ),
+        // Tramo tiles skeleton
         for (int i = 0; i < 4; i++) ...[
           Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -445,6 +454,7 @@ class _TramoDialogState extends State<_TramoDialog> {
     );
   }
 
+  // Label de sección del formulario en mayúsculas con estilo secundario
   Widget _buildFieldLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
@@ -458,12 +468,14 @@ class _TramoDialogState extends State<_TramoDialog> {
     );
   }
 
+  // Valida que la hora tenga formato HH:MM correcto
   String? _validarHora(String? v) {
     if (v == null || v.isEmpty) return context.tr('admin.configuration.slots.dialog.required');
     if (!RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$').hasMatch(v)) return context.tr('admin.configuration.slots.dialog.invalidTime');
     return null;
   }
 
+  // Valida y envía el formulario para crear o actualizar el tramo
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);

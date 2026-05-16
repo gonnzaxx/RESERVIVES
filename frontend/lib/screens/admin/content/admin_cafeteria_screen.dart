@@ -1,5 +1,6 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reservives/config/app_theme.dart';
@@ -18,44 +19,115 @@ final adminCafeteriaProvider = FutureProvider.autoDispose<List<CategoriaCafeteri
       .toList();
 });
 
-class AdminCafeteriaScreen extends ConsumerWidget {
+class AdminCafeteriaScreen extends ConsumerStatefulWidget {
   const AdminCafeteriaScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminCafeteriaScreen> createState() => _AdminCafeteriaScreenState();
+}
+
+class _AdminCafeteriaScreenState extends ConsumerState<AdminCafeteriaScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<CategoriaCafeteria> _filtered(List<CategoriaCafeteria> all) {
+    if (_query.isEmpty) return all;
+    final q = _query;
+    return all
+        .map((cat) {
+      if (cat.nombre.toLowerCase().contains(q)) return cat;
+      final matchingProducts = cat.productos.where((p) => p.nombre.toLowerCase().contains(q)).toList();
+      if (matchingProducts.isEmpty) return null;
+      return CategoriaCafeteria(
+        id: cat.id,
+        nombre: cat.nombre,
+        descripcion: cat.descripcion,
+        orden: cat.orden,
+        activa: cat.activa,
+        productos: matchingProducts,
+      );
+    })
+        .whereType<CategoriaCafeteria>()
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cafeteriaAsync = ref.watch(adminCafeteriaProvider);
     final width = MediaQuery.of(context).size.width;
     final isWeb = width > 800;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
-              child: RvPageHeader(
-                title: context.tr('cafeteria.admin.title'),
-                eyebrow: context.tr('cafeteria.admin.eyebrow'),
-                trailing: Row(
-                  children: [
-                    RvGhostIconButton(
-                      icon: Icons.add_circle_outline_rounded,
-                      onTap: () => _showSelectionSheet(context, ref),
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('cafeteria.admin.eyebrow').toUpperCase(),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0.9,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('cafeteria.admin.title'),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    RvGhostIconButton(
-                      icon: Icons.refresh_rounded,
-                      onTap: () => ref.invalidate(adminCafeteriaProvider),
-                    ),
-                  ],
-                ),
+                  ),
+                  _HeaderBtn(
+                    icon: Icons.add_rounded,
+                    color: theme.colorScheme.primary,
+                    isDark: isDark,
+                    onTap: () => _showSelectionSheet(context, ref),
+                  ),
+                  const SizedBox(width: 8), // Separación de 8 como en la anterior
+                  _HeaderBtn(
+                    icon: Icons.refresh_rounded,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    isDark: isDark,
+                    onTap: () => ref.invalidate(adminCafeteriaProvider),
+                  ),
+                ],
               ),
             ),
-
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: RvSearchBar(
+                controller: _searchCtrl,
+                hintText: context.tr('cafeteria.admin.search'),
+                onChanged: (v) => setState(() => _query = v.toLowerCase()),
+                onClear: _query.isNotEmpty ? () { _searchCtrl.clear(); setState(() => _query = ''); } : null,
+              ),
+            ),
             Expanded(
               child: cafeteriaAsync.when(
-                data: (categorias) {
-                  if (categorias.isEmpty) {
+                data: (allCategorias) {
+                  if (allCategorias.isEmpty) {
                     return RvEmptyState(
                       icon: Icons.local_cafe_outlined,
                       title: context.tr('home.board.emptyTitle'),
@@ -63,8 +135,25 @@ class AdminCafeteriaScreen extends ConsumerWidget {
                     );
                   }
 
+                  final categorias = _filtered(allCategorias);
+
+                  if (categorias.isEmpty) {
+                    return RvEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: context.tr('common.noResults'),
+                      subtitle: context.tr('common.tryOtherSearch'),
+                    );
+                  }
+
                   if (isWeb) {
-                    return _AdminCafeteriaWebGrid(categorias: categorias, ref: ref);
+                    return _AdminCafeteriaWebGrid(
+                      categorias: categorias,
+                      allCategorias: allCategorias,
+                      onEditCategoria: (cat) => _showCategoriaForm(context: context, ref: ref, categoria: cat),
+                      onDeleteCategoria: (cat) => _deleteCategoria(context, ref, cat),
+                      onEditProducto: (cats, p) => _editProducto(context, ref, cats, p),
+                      onDeleteProducto: (p) => _deleteProducto(context, ref, p),
+                    );
                   }
 
                   return ListView.builder(
@@ -72,7 +161,11 @@ class AdminCafeteriaScreen extends ConsumerWidget {
                     itemCount: categorias.length,
                     itemBuilder: (context, index) => _CategoriaExpansionTile(
                       categoria: categorias[index],
-                      allCategorias: categorias,
+                      allCategorias: allCategorias,
+                      onEdit: () => _showCategoriaForm(context: context, ref: ref, categoria: categorias[index]),
+                      onDelete: () => _deleteCategoria(context, ref, categorias[index]),
+                      onEditProducto: (p) => _editProducto(context, ref, allCategorias, p),
+                      onDeleteProducto: (p) => _deleteProducto(context, ref, p),
                     ),
                   );
                 },
@@ -99,8 +192,7 @@ class AdminCafeteriaScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 24),
+            RvSheetHeader(onClose: () => Navigator.pop(context)),
             Text(context.tr('admin.common.new'), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             _ActionTile(
@@ -169,21 +261,12 @@ class AdminCafeteriaScreen extends ConsumerWidget {
                   width: 1,
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 36, height: 4,
-                      decoration: BoxDecoration(
-                        color: theme.hintColor.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  RvSheetHeader(onClose: () => Navigator.pop(ctx, false)),
 
                   Row(
                     children: [
@@ -394,17 +477,19 @@ class AdminCafeteriaScreen extends ConsumerWidget {
     final descCtrl = TextEditingController();
     String? categoriaId = categorias.first.id;
     bool disponible = true;
+    bool destacado = false;
     Uint8List? imageBytes;
     String? imageName;
 
     final result = await _showProductoForm(
       context: context, title: context.tr('cafeteria.admin.productLabel'), categorias: categorias, nombreCtrl: nombreCtrl, precioCtrl: precioCtrl, descCtrl: descCtrl,
       initialCategoriaId: categoriaId, onCategoriaChanged: (val) => categoriaId = val, onDisponibleChanged: (val) => disponible = val,
+      onDestacadoChanged: (val) => destacado = val,
       onImageSelected: (bytes, name) { imageBytes = bytes; imageName = name; },
     );
 
     if (result != true) return;
-    _saveProducto(context, ref, null, nombreCtrl.text, descCtrl.text, precioCtrl.text, categoriaId!, disponible, imageBytes, imageName);
+    _saveProducto(context, ref, null, nombreCtrl.text, descCtrl.text, precioCtrl.text, categoriaId!, disponible, imageBytes, imageName, destacado: destacado);
   }
 
   Future<void> _editProducto(BuildContext context, WidgetRef ref, List<CategoriaCafeteria> categorias, ProductoCafeteria producto) async {
@@ -413,18 +498,20 @@ class AdminCafeteriaScreen extends ConsumerWidget {
     final descCtrl = TextEditingController(text: producto.descripcion ?? '');
     String? categoriaId = producto.categoriaId;
     bool disponible = producto.disponible;
+    bool destacado = producto.destacado;
     Uint8List? imageBytes;
     String? imageName;
 
     final result = await _showProductoForm(
       context: context, title: context.tr('cafeteria.admin.productLabel'), categorias: categorias, nombreCtrl: nombreCtrl, precioCtrl: precioCtrl, descCtrl: descCtrl,
-      initialCategoriaId: categoriaId, initialDisponible: disponible, currentImageUrl: producto.imagenUrl,
+      initialCategoriaId: categoriaId, initialDisponible: disponible, initialDestacado: producto.destacado, currentImageUrl: producto.imagenUrl,
       onCategoriaChanged: (val) => categoriaId = val, onDisponibleChanged: (val) => disponible = val,
+      onDestacadoChanged: (val) => destacado = val,
       onImageSelected: (bytes, name) { imageBytes = bytes; imageName = name; },
     );
 
     if (result != true) return;
-    _saveProducto(context, ref, producto.id, nombreCtrl.text, descCtrl.text, precioCtrl.text, categoriaId!, disponible, imageBytes, imageName, currentUrl: producto.imagenUrl, destacado: producto.destacado);
+    _saveProducto(context, ref, producto.id, nombreCtrl.text, descCtrl.text, precioCtrl.text, categoriaId!, disponible, imageBytes, imageName, currentUrl: producto.imagenUrl, destacado: destacado);
   }
 
   Future<void> _saveProducto(BuildContext context, WidgetRef ref, String? id, String nombre, String desc, String precioText, String catId, bool disp, Uint8List? bytes, String? name, {String? currentUrl, bool destacado = false}) async {
@@ -450,17 +537,18 @@ class AdminCafeteriaScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         RvAlerts.error(context, toFriendlyErrorMessage(e));
-        }
+      }
     }
   }
 
   Future<bool?> _showProductoForm({
     required BuildContext context, required String title, required List<CategoriaCafeteria> categorias, required TextEditingController nombreCtrl,
     required TextEditingController precioCtrl, required TextEditingController descCtrl, required Function(String?) onCategoriaChanged,
-    required Function(bool) onDisponibleChanged, required Function(Uint8List?, String?) onImageSelected,
-    String? initialCategoriaId, bool initialDisponible = true, String? currentImageUrl,
+    required Function(bool) onDisponibleChanged, required Function(bool) onDestacadoChanged, required Function(Uint8List?, String?) onImageSelected,
+    String? initialCategoriaId, bool initialDisponible = true, bool initialDestacado = false, String? currentImageUrl,
   }) {
     bool disponible = initialDisponible;
+    bool destacado = initialDestacado;
     Uint8List? imageBytes;
 
     return showModalBottomSheet<bool>(
@@ -468,57 +556,62 @@ class AdminCafeteriaScreen extends ConsumerWidget {
       builder: (context) => StatefulBuilder(builder: (context, setState) => Padding(
         padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 60),
         child: Container(
-        decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
-        padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-        child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+          decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+          padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            RvSheetHeader(onClose: () => Navigator.pop(context, false)),
+            Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
-
-          DropdownButtonFormField<String>(
-            initialValue: initialCategoriaId,
-            decoration: InputDecoration(
-                labelText: context.tr('cafeteria.admin.categoriaLabel'),
-                prefixIcon: Icon(Icons.category_outlined)
+            DropdownButtonFormField<String>(
+              initialValue: initialCategoriaId,
+              decoration: InputDecoration(
+                  labelText: context.tr('cafeteria.admin.categoriaLabel'),
+                  prefixIcon: Icon(Icons.category_outlined)
+              ),
+              items: categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre))).toList(),
+              onChanged: (v) { onCategoriaChanged(v); },
             ),
-            items: categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre))).toList(),
-            onChanged: (v) { onCategoriaChanged(v); },
-          ),
 
-          const SizedBox(height: 16),
-          TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: context.tr('admin.spaces.form.name'), prefixIcon: const Icon(Icons.drive_file_rename_outline))),
-          const SizedBox(height: 16),
-          TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('cafeteria.admin.descriptionLabel'), prefixIcon: const Icon(Icons.description_outlined))),
-          const SizedBox(height: 16),
-          TextField(controller: precioCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('cafeteria.admin.priceLabel'), prefixIcon: const Icon(Icons.euro_symbol), suffixText: '€')),
-          const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            TextField(controller: nombreCtrl, decoration: InputDecoration(labelText: context.tr('admin.spaces.form.name'), prefixIcon: const Icon(Icons.drive_file_rename_outline))),
+            const SizedBox(height: 16),
+            TextField(controller: descCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('cafeteria.admin.descriptionLabel'), prefixIcon: const Icon(Icons.description_outlined))),
+            const SizedBox(height: 16),
+            TextField(controller: precioCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('cafeteria.admin.priceLabel'), prefixIcon: const Icon(Icons.euro_symbol), suffixText: '€')),
+            const SizedBox(height: 24),
 
-          GestureDetector(
-            onTap: () async {
-              final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-              if (img == null) return;
-              final bytes = await img.readAsBytes();
-              setState(() => imageBytes = bytes);
-              onImageSelected(bytes, img.name);
-            },
-            child: Container(
-              height: 140, width: double.infinity,
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor)),
-              child: ClipRRect(borderRadius: BorderRadius.circular(23), child: imageBytes != null ? Image.memory(imageBytes!, fit: BoxFit.cover) : (currentImageUrl != null ? RvImage(imageUrl: currentImageUrl, fit: BoxFit.cover) : Icon(Icons.add_a_photo_outlined, color: Theme.of(context).primaryColor, size: 32))),
+            GestureDetector(
+              onTap: () async {
+                final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+                if (img == null) return;
+                final bytes = await img.readAsBytes();
+                setState(() => imageBytes = bytes);
+                onImageSelected(bytes, img.name);
+              },
+              child: Container(
+                height: 140, width: double.infinity,
+                decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor)),
+                child: ClipRRect(borderRadius: BorderRadius.circular(23), child: imageBytes != null ? Image.memory(imageBytes!, fit: BoxFit.cover) : (currentImageUrl != null ? RvImage(imageUrl: currentImageUrl, fit: BoxFit.cover) : Icon(Icons.add_a_photo_outlined, color: Theme.of(context).primaryColor, size: 32))),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SwitchListTile(title: Text(context.tr('cafeteria.admin.availableForSale')), value: disponible, onChanged: (v) { setState(() => disponible = v); onDisponibleChanged(v); }, contentPadding: EdgeInsets.zero),
-          const SizedBox(height: 32),
-          Row(children: [
-            Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel')))),
-            const SizedBox(width: 16),
-            Expanded(child: RvPrimaryButton(onTap: () => Navigator.pop(context, true), label: context.tr('generic.save'))),
-          ]),
-        ])),
-      ),
+            const SizedBox(height: 16),
+            SwitchListTile(title: Text(context.tr('cafeteria.admin.availableForSale')), value: disponible, onChanged: (v) { setState(() => disponible = v); onDisponibleChanged(v); }, contentPadding: EdgeInsets.zero),
+            SwitchListTile(
+              title: Text(context.tr('cafeteria.admin.featured')),
+              secondary: const Icon(Icons.star_rounded, color: Color(0xFFFFB800)),
+              value: destacado,
+              onChanged: (v) { setState(() => destacado = v); onDestacadoChanged(v); },
+              contentPadding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: 32),
+            Row(children: [
+              Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('generic.cancel')))),
+              const SizedBox(width: 16),
+              Expanded(child: RvPrimaryButton(onTap: () => Navigator.pop(context, true), label: context.tr('generic.save'))),
+            ]),
+          ])),
+        ),
       )),
     );
   }
@@ -547,13 +640,25 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-class _CategoriaExpansionTile extends ConsumerWidget {
+class _CategoriaExpansionTile extends StatelessWidget {
   final CategoriaCafeteria categoria;
   final List<CategoriaCafeteria> allCategorias;
-  const _CategoriaExpansionTile({required this.categoria, required this.allCategorias});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final Function(ProductoCafeteria) onEditProducto;
+  final Function(ProductoCafeteria) onDeleteProducto;
+
+  const _CategoriaExpansionTile({
+    required this.categoria,
+    required this.allCategorias,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onEditProducto,
+    required this.onDeleteProducto,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -565,25 +670,35 @@ class _CategoriaExpansionTile extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RvGhostIconButton(icon: Icons.edit_outlined, onTap: () => const AdminCafeteriaScreen()._showCategoriaForm(context: context, ref: ref, categoria: categoria)),
+            RvGhostIconButton(icon: Icons.edit_outlined, onTap: onEdit),
             const SizedBox(width: 12),
-            RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: () => const AdminCafeteriaScreen()._deleteCategoria(context, ref, categoria)),
+            RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: onDelete),
           ],
         ),
         childrenPadding: const EdgeInsets.all(12),
-        children: categoria.productos.map((p) => _ProductoAdminListTile(producto: p, allCats: allCategorias)).toList(),
+        children: categoria.productos.map((p) => _ProductoAdminListTile(
+          producto: p,
+          onEdit: () => onEditProducto(p),
+          onDelete: () => onDeleteProducto(p),
+        )).toList(),
       ),
     );
   }
 }
 
-class _ProductoAdminListTile extends ConsumerWidget {
+class _ProductoAdminListTile extends StatelessWidget {
   final ProductoCafeteria producto;
-  final List<CategoriaCafeteria> allCats;
-  const _ProductoAdminListTile({required this.producto, required this.allCats});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductoAdminListTile({
+    required this.producto,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: RvSurfaceCard(
@@ -612,9 +727,9 @@ class _ProductoAdminListTile extends ConsumerWidget {
             ),
             if (!producto.disponible) RvBadge(label: context.tr('cafeteria.admin.outOfStock'), color: Colors.grey),
             const SizedBox(width: 8),
-            RvGhostIconButton(icon: Icons.edit_outlined, onTap: () => const AdminCafeteriaScreen()._editProducto(context, ref, allCats, producto)),
+            RvGhostIconButton(icon: Icons.edit_outlined, onTap: onEdit),
             const SizedBox(width: 12),
-            RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: () => const AdminCafeteriaScreen()._deleteProducto(context, ref, producto)),
+            RvGhostIconButton(icon: Icons.delete_outline_rounded, onTap: onDelete),
           ],
         ),
       ),
@@ -624,8 +739,20 @@ class _ProductoAdminListTile extends ConsumerWidget {
 
 class _AdminCafeteriaWebGrid extends StatelessWidget {
   final List<CategoriaCafeteria> categorias;
-  final WidgetRef ref;
-  const _AdminCafeteriaWebGrid({required this.categorias, required this.ref});
+  final List<CategoriaCafeteria> allCategorias;
+  final Function(CategoriaCafeteria) onEditCategoria;
+  final Function(CategoriaCafeteria) onDeleteCategoria;
+  final Function(List<CategoriaCafeteria>, ProductoCafeteria) onEditProducto;
+  final Function(ProductoCafeteria) onDeleteProducto;
+
+  const _AdminCafeteriaWebGrid({
+    required this.categorias,
+    required this.allCategorias,
+    required this.onEditCategoria,
+    required this.onDeleteCategoria,
+    required this.onEditProducto,
+    required this.onDeleteProducto,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -651,12 +778,12 @@ class _AdminCafeteriaWebGrid extends StatelessWidget {
                   Expanded(child: Text(cat.nombre, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
                   RvGhostIconButton(
                     icon: Icons.edit_outlined,
-                    onTap: () => const AdminCafeteriaScreen()._showCategoriaForm(context: context, ref: ref, categoria: cat),
+                    onTap: () => onEditCategoria(cat),
                   ),
                   const SizedBox(width: 12),
                   RvGhostIconButton(
                     icon: Icons.delete_outline_rounded,
-                    onTap: () => const AdminCafeteriaScreen()._deleteCategoria(context, ref, cat),
+                    onTap: () => onDeleteCategoria(cat),
                   ),
                 ]),
               ),
@@ -665,7 +792,11 @@ class _AdminCafeteriaWebGrid extends StatelessWidget {
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: cat.productos.length,
-                  itemBuilder: (context, i) => _ProductoAdminListTile(producto: cat.productos[i], allCats: categorias),
+                  itemBuilder: (context, i) => _ProductoAdminListTile(
+                    producto: cat.productos[i],
+                    onEdit: () => onEditProducto(allCategorias, cat.productos[i]),
+                    onDelete: () => onDeleteProducto(cat.productos[i]),
+                  ),
                 ),
               ),
             ],
@@ -686,6 +817,51 @@ class _AdminCafeteriaSkeleton extends StatelessWidget {
       itemBuilder: (_, __) => const Padding(
         padding: EdgeInsets.only(bottom: 16),
         child: RvSkeleton(height: 100, borderRadius: 28),
+      ),
+    );
+  }
+}
+
+class _HeaderBtn extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _HeaderBtn({
+    required this.icon,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  State<_HeaderBtn> createState() => _HeaderBtnState();
+}
+
+class _HeaderBtnState extends State<_HeaderBtn> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: _hovered
+                ? widget.color.withValues(alpha: 0.12)
+                : widget.color.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(widget.icon, size: 20, color: widget.color),
+        ),
       ),
     );
   }

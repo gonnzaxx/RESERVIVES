@@ -8,6 +8,7 @@ import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/providers/admin_live_updates_provider.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/roles_provider.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 
@@ -19,22 +20,25 @@ final adminUsersProvider = FutureProvider.autoDispose<List<Usuario>>((ref) async
       .toList();
 });
 
+// Devuelve el label traducido para un rol dado
 String _roleLabelFromValue(BuildContext context, String role) {
   switch (role) {
     case 'ALUMNO':
       return context.tr('admin.users.role.student');
     case 'PROFESOR':
       return context.tr('admin.users.role.teacher');
-    case 'ADMIN':
-      return context.tr('admin.users.role.admin');
+    case 'ADMINISTRADOR':
+      return context.tr('admin.users.role.administrador');
     case 'CAFETERIA':
       return context.tr('admin.users.role.cafeteria');
-    case 'JEFE_ESTUDIOS':
-      return context.tr('admin.users.role.jefeEstudios');
+    case 'JEFATURA':
+      return context.tr('admin.users.role.jefatura');
     case 'SECRETARIA':
       return context.tr('admin.users.role.secretaria');
-    case 'PROFESOR_SERVICIO':
-      return context.tr('admin.users.role.profesorServicio');
+    case 'GESTOR_SERVICIO':
+      return context.tr('admin.users.role.gestorServicio');
+    case 'CONTROL':
+      return context.tr('admin.users.role.control');
     default:
       return role;
   }
@@ -49,6 +53,18 @@ class AdminUsersScreen extends ConsumerStatefulWidget {
 
 class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   String _selectedRole = 'TODOS';
+
+  static const _baseRoles = [
+    'ALUMNO', 'PROFESOR', 'ADMINISTRADOR', 'CAFETERIA',
+    'JEFATURA', 'SECRETARIA', 'GESTOR_SERVICIO', 'CONTROL',
+  ];
+
+  // Combina los roles base con los roles configurados dinámicamente
+  List<String> _mergedRoles() {
+    final configured = ref.read(rolesProvider).mappings.map((m) => m.roleName).toList();
+    final merged = {..._baseRoles, ...configured}.toList()..sort();
+    return merged;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,18 +87,43 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 10),
-              child: RvPageHeader(
-                title: context.tr('admin.users.title'),
-                eyebrow: context.tr('admin.users.eyebrow'),
-                trailing: Row(
-                  children: [
-                    RvGhostIconButton(
-                      icon: Icons.refresh_rounded,
-                      onTap: () => ref.invalidate(adminUsersProvider),
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('admin.users.eyebrow').toUpperCase(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0.9,
+                            fontWeight: FontWeight.w700,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('admin.users.title'),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  RvGhostIconButton(
+                    icon: Icons.add_card_rounded,
+                    onTap: () => _bulkAdjustTokens(context),
+                  ),
+                  const SizedBox(width: 4),
+                  RvGhostIconButton(
+                    icon: Icons.refresh_rounded,
+                    onTap: () => ref.invalidate(adminUsersProvider),
+                  ),
+                ],
               ),
             ),
 
@@ -129,6 +170,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
   }
 
+  // Barra de filtro para seleccionar el rol a mostrar
   Widget _buildFilterBar(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
@@ -148,8 +190,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
         items: [
-          'TODOS', 'ALUMNO', 'PROFESOR', 'ADMIN', 'CAFETERIA',
-          'JEFE_ESTUDIOS', 'SECRETARIA', 'PROFESOR_SERVICIO'
+          'TODOS', ..._mergedRoles(),
         ].map((role) {
           return DropdownMenuItem(
             value: role,
@@ -163,6 +204,100 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
   }
 
+  // Ajuste masivo de tokens para todos los usuarios de un rol
+  Future<void> _bulkAdjustTokens(BuildContext context) async {
+    final tokenController = TextEditingController();
+    final theme = Theme.of(context);
+    String selectedRole = _selectedRole;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(context.tr('admin.users.bulkTokens.title'), style: const TextStyle(fontWeight: FontWeight.w900)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.tr('admin.users.bulkTokens.subtitle'), style: theme.textTheme.bodySmall),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedRole,
+                dropdownColor: theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                decoration: InputDecoration(
+                  labelText: context.tr('admin.users.filterByRole'),
+                  prefixIcon: const Icon(Icons.group_rounded),
+                  filled: true,
+                  fillColor: theme.dividerColor.withValues(alpha: 0.05),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                ),
+                items: [
+                  'TODOS', ..._mergedRoles(),
+                ].map((role) => DropdownMenuItem(
+                  value: role,
+                  child: Text(role == 'TODOS' ? context.tr('admin.users.role.all') : _roleLabelFromValue(context, role)),
+                )).toList(),
+                onChanged: (v) { if (v != null) setStateDialog(() => selectedRole = v); },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: tokenController,
+                keyboardType: const TextInputType.numberWithOptions(signed: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
+                decoration: InputDecoration(
+                  labelText: context.tr('admin.users.bulkTokens.amount'),
+                  prefixIcon: const Icon(Icons.stars_rounded),
+                  suffixText: 'Tokens',
+                  filled: true,
+                  fillColor: theme.dividerColor.withValues(alpha: 0.05),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr('generic.cancel'))),
+            FilledButton(
+              onPressed: () {
+                final amount = int.tryParse(tokenController.text);
+                if (amount == null || amount == 0) return;
+                Navigator.pop(ctx, {'role': selectedRole, 'amount': amount});
+              },
+              child: Text(context.tr('admin.users.save')),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == null) return;
+
+    try {
+      final amount = result['amount'] as int;
+      final role = result['role'] as String;
+      final apiClient = ref.read(apiClientProvider);
+      final rolParam = (role == 'TODOS') ? '' : '&rol=$role';
+      final response = await apiClient.post(
+        '/usuarios/tokens/bulk?cantidad=$amount$rolParam',
+      ) as Map<String, dynamic>;
+      final count = response['count'] ?? 0;
+      ref.invalidate(adminUsersProvider);
+      if (context.mounted) {
+        RvAlerts.success(
+          context,
+          context.tr('admin.users.bulkTokens.success').replaceAll('{count}', '$count'),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) RvAlerts.error(context, context.tr('admin.users.bulkTokens.error'));
+    }
+  }
+
+  // Abre el formulario de edición de usuario (rol y tokens)
   Future<void> _editarUsuario(BuildContext context, Usuario user) async {
     final tokenController = TextEditingController();
     final theme = Theme.of(context);
@@ -189,8 +324,8 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: theme.dividerColor, borderRadius: BorderRadius.circular(2)))),
-                  const SizedBox(height: 24),
+                  RvSheetHeader(onClose: () => Navigator.pop(context)),
+                  const SizedBox(height: 8),
                   Text(context.tr('admin.user.editUser.text'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
                   Text(user.nombreCompleto, style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 24),
@@ -208,10 +343,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     ),
-                    items: [
-                      'ALUMNO', 'PROFESOR', 'ADMIN', 'CAFETERIA',
-                      'JEFE_ESTUDIOS', 'SECRETARIA', 'PROFESOR_SERVICIO'
-                    ].map((role) {
+                    items: _mergedRoles().map((role) {
                       return DropdownMenuItem(
                         value: role,
                         child: Text(_roleLabelFromValue(context, role)),
@@ -264,7 +396,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       final apiClient = ref.read(apiClientProvider);
       bool changed = false;
 
-      if (result['rol'] != user.rol.value) {
+      if (result['rol'] != user.rolRaw) {
         await apiClient.put('/usuarios/${user.id}', body: {'rol': result['rol']});
         changed = true;
         final currentUser = ref.read(authProvider).user;
@@ -359,8 +491,8 @@ class _UserAdminCard extends StatelessWidget {
                         runSpacing: 4,
                         children: [
                           RvBadge(
-                            label: _roleLabelFromValue(context, user.rol.value),
-                            color: user.isAdmin ? AppColors.accentPurple : AppColors.primaryBlue,
+                            label: _roleLabelFromValue(context, user.rolRaw),
+                            color: user.isAdministrador ? AppColors.accentPurple : AppColors.primaryBlue,
                           ),
                           RvBadge(
                             label: '${user.tokens} ${context.tr('admin.users.tokens')}',

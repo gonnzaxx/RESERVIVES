@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/models/admin_history_item.dart';
+import 'package:reservives/models/usuario.dart';
+import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/admin_history_provider.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
@@ -23,23 +25,43 @@ class AdminHistorialScreen extends ConsumerWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
-              child: RvPageHeader(
-                title: context.tr('admin.record.title'),
-                eyebrow: context.tr('admin.record.eyebrow'),
-                trailing: Row(
-                  children: [
-                    _HeaderAction(
-                      icon: Icons.refresh_rounded,
-                      onTap: () => ref.invalidate(adminHistoryProvider),
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.tr('admin.record.eyebrow').toUpperCase(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0.9,
+                            fontWeight: FontWeight.w700,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('admin.record.title'),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    _HeaderAction(
-                      icon: Icons.filter_list_off_rounded,
-                      onTap: () => ref.read(adminHistoryFiltersProvider.notifier).clear(),
-                    ),
-                  ],
-                ),
+                  ),
+                  _HeaderAction(
+                    icon: Icons.refresh_rounded,
+                    onTap: () => ref.invalidate(adminHistoryProvider),
+                  ),
+                  const SizedBox(width: 4),
+                  _HeaderAction(
+                    icon: Icons.filter_list_off_rounded,
+                    onTap: () => ref.read(adminHistoryFiltersProvider.notifier).clear(),
+                  ),
+                ],
               ),
             ),
             const _AdminFilterPanel(),
@@ -247,20 +269,13 @@ class _AdminFilterPanel extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
-                  Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: 16, bottom: 8),
-                    decoration: BoxDecoration(
-                      color: theme.hintColor.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: RvSheetHeader(onClose: () => Navigator.pop(ctx)),
                   ),
 
-                  // Título de sección
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: Row(
                       children: [
                         Text(
@@ -388,7 +403,9 @@ class _AdminHistoryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final statusColor = _getStatusColor(item.estado);
-    final isCancelable = item.estado != 'CANCELADA' && item.estado != 'RECHAZADA';
+    final currentUser = ref.watch(authProvider).user;
+    final isCancelable = item.estado != 'CANCELADA' && item.estado != 'RECHAZADA'
+        && currentUser?.rol != RolUsuario.control;
 
     return _LiquidContainer(
       padding: EdgeInsets.zero,
@@ -707,10 +724,9 @@ class _TypeBadge extends StatelessWidget {
 class _LiquidContainer extends StatelessWidget {
   final Widget child;
   final double borderRadius;
-  final Color? color;
   final EdgeInsetsGeometry? padding;
 
-  const _LiquidContainer({required this.child, this.borderRadius = 24, this.color, this.padding});
+  const _LiquidContainer({required this.child, this.borderRadius = 24, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -722,7 +738,7 @@ class _LiquidContainer extends StatelessWidget {
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color ?? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
               color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.4),
