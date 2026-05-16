@@ -1,10 +1,3 @@
-"""
-RESERVIVES - Router de Reservas Recurrentes.
-
-Endpoints para crear, consultar y gestionar reservas periódicas.
-La aprobación es exclusiva del rol ADMIN / JEFE_ESTUDIOS.
-"""
-
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,10 +23,12 @@ from app.utils.role_access import BackofficeSection, can_access_backoffice_secti
 router = APIRouter(prefix="/reservas-recurrentes", tags=["Reservas Recurrentes"])
 
 
+# Convierte un modelo ReservaRecurrente a su schema de respuesta con datos de usuario, espacio y tramo aplanados.
 def _to_response(rec) -> ReservaRecurrenteResponse:
     resp = ReservaRecurrenteResponse.model_validate(rec)
     if rec.usuario:
         resp.nombre_usuario = f"{rec.usuario.nombre} {rec.usuario.apellidos}"
+        resp.email_usuario = rec.usuario.email
     if rec.espacio:
         resp.nombre_espacio = rec.espacio.nombre
     if rec.tramo:
@@ -41,6 +36,8 @@ def _to_response(rec) -> ReservaRecurrenteResponse:
     return resp
 
 
+# Lista las reservas recurrentes.
+# Admin: todas, con filtro opcional por estado. Usuario: solo las propias.
 @router.get("/", response_model=list[ReservaRecurrenteResponse], summary="Listar reservas recurrentes")
 async def listar_reservas_recurrentes(
     estado: EstadoReservaRecurrente | None = None,
@@ -49,11 +46,6 @@ async def listar_reservas_recurrentes(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Lista reservas recurrentes.
-    - Admin: todas.
-    - Usuario: solo las propias.
-    """
     repo = ReservaRecurrenteRepository(db)
     if can_access_backoffice_section(current_user.rol, BackofficeSection.BOOKINGS):
         if estado:
@@ -68,6 +60,8 @@ async def listar_reservas_recurrentes(
     return [_to_response(r) for r in reservas]
 
 
+# Devuelve los datos de una reserva recurrente concreta.
+# Los usuarios sin permisos de backoffice solo pueden ver sus propias reservas.
 @router.get("/{reserva_id}", response_model=ReservaRecurrenteResponse)
 async def obtener_reserva_recurrente(
     reserva_id: uuid.UUID,
@@ -86,6 +80,9 @@ async def obtener_reserva_recurrente(
     return _to_response(reserva)
 
 
+# Crea una solicitud de reserva recurrente (semanal, quincenal, etc.).
+# Queda en estado PENDIENTE_APROBACION hasta que un administrador la revise.
+# Notifica a los admins por app y email con el detalle de la solicitud.
 @router.post("/", response_model=ReservaRecurrenteResponse, status_code=201,
              summary="Solicitar reserva recurrente")
 async def crear_reserva_recurrente(
@@ -93,10 +90,6 @@ async def crear_reserva_recurrente(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Crea una solicitud de reserva recurrente. Queda en estado PENDIENTE_APROBACION
-    hasta que un administrador la revise.
-    """
     try:
         service = ReservaRecurrenteService(db)
         reserva = await service.crear_reserva_recurrente(current_user, data)
@@ -131,6 +124,8 @@ async def crear_reserva_recurrente(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Aprueba la solicitud recurrente y genera las primeras instancias de reserva.
+# Notifica al usuario por app. Solo admin.
 @router.post("/{reserva_id}/aprobar", response_model=ReservaRecurrenteResponse,
              summary="Aprobar reserva recurrente")
 async def aprobar_reserva_recurrente(
@@ -138,7 +133,6 @@ async def aprobar_reserva_recurrente(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Aprueba la solicitud y genera las primeras instancias de reserva. Solo admin."""
     try:
         service = ReservaRecurrenteService(db)
         reserva = await service.aprobar_reserva_recurrente(reserva_id, admin)
@@ -165,6 +159,7 @@ async def aprobar_reserva_recurrente(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Rechaza la solicitud recurrente con motivo opcional y notifica al usuario. Solo admin.
 @router.post("/{reserva_id}/rechazar", response_model=ReservaRecurrenteResponse,
              summary="Rechazar reserva recurrente")
 async def rechazar_reserva_recurrente(
@@ -173,7 +168,6 @@ async def rechazar_reserva_recurrente(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Rechaza la solicitud con motivo opcional. Solo admin."""
     try:
         motivo = body.motivo_rechazo if body else None
         service = ReservaRecurrenteService(db)
@@ -204,6 +198,7 @@ async def rechazar_reserva_recurrente(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Cancela un patrón recurrente y todas sus instancias futuras.
 @router.post("/{reserva_id}/cancelar", response_model=ReservaRecurrenteResponse,
              summary="Cancelar reserva recurrente")
 async def cancelar_reserva_recurrente(
@@ -211,7 +206,6 @@ async def cancelar_reserva_recurrente(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Cancela un patrón recurrente y sus instancias futuras."""
     try:
         service = ReservaRecurrenteService(db)
         reserva = await service.cancelar_reserva_recurrente(reserva_id, current_user)

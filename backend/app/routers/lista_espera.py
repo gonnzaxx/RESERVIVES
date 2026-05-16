@@ -6,6 +6,7 @@ y recibir notificaciones cuando se libere.
 """
 
 import uuid
+from datetime import date as date_type
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,7 @@ from app.utils.exceptions import ReservivesException
 router = APIRouter(prefix="/lista-espera", tags=["Lista de Espera"])
 
 
+# Construye la respuesta enriquecida con nombre de usuario, espacio y tramo
 def _to_response(entrada) -> ListaEsperaResponse:
     resp = ListaEsperaResponse.model_validate(entrada)
     if entrada.usuario:
@@ -32,17 +34,18 @@ def _to_response(entrada) -> ListaEsperaResponse:
     return resp
 
 
+# Devuelve las entradas activas del usuario en listas de espera
 @router.get("/", response_model=list[ListaEsperaResponse], summary="Mi lista de espera")
 async def mi_lista_espera(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Devuelve las entradas activas del usuario en listas de espera."""
     repo = ListaEsperaRepository(db)
     entradas = await repo.get_by_usuario(current_user.id)
     return [_to_response(e) for e in entradas]
 
 
+# Apunta al usuario a la lista de espera de un tramo ocupado
 @router.post("/", response_model=ListaEsperaResponse, status_code=201,
              summary="Unirse a lista de espera")
 async def unirse_lista_espera(
@@ -64,6 +67,7 @@ async def unirse_lista_espera(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Cancela la entrada del usuario en la lista de espera
 @router.delete("/{entrada_id}", response_model=ListaEsperaResponse,
                summary="Abandonar lista de espera")
 async def abandonar_lista_espera(
@@ -71,7 +75,6 @@ async def abandonar_lista_espera(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Cancela la entrada del usuario en la lista de espera."""
     try:
         service = ListaEsperaService(db)
         entrada = await service.abandonar(entrada_id, current_user)
@@ -82,6 +85,7 @@ async def abandonar_lista_espera(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Devuelve cuántas personas esperan un slot concreto (espacio + tramo + fecha)
 @router.get("/espacio/{espacio_id}/count", summary="Personas en espera para un slot")
 async def count_lista_espera(
     espacio_id: uuid.UUID,
@@ -90,8 +94,6 @@ async def count_lista_espera(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Devuelve cuántas personas esperan un slot concreto."""
-    from datetime import date as date_type
     try:
         fecha_obj = date_type.fromisoformat(fecha)
     except ValueError:

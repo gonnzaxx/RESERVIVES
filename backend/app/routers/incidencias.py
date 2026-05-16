@@ -1,42 +1,45 @@
 import uuid
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_db
 from app.middleware.auth_middleware import get_current_user, require_backoffice_section
-from app.models.incidencia import Incidencia, EstadoIncidencia
+from app.models.incidencia import EstadoIncidencia, Incidencia
+from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
 from app.repositories.incidencia_repo import IncidenciaRepository
 from app.schemas.incidencia import IncidenciaCreate, IncidenciaResponse, IncidenciaUpdate
 from app.services.notification_service import NotificationService
-from app.services.email_service import EmailService
-from app.models.notificacion import TipoNotificacion
-from sqlalchemy import select
 from app.utils.role_access import BackofficeSection
 
 router = APIRouter(prefix="/incidencias", tags=["Incidencias"])
 
+
+# Admin: devuelve todas las incidencias del sistema con datos de usuario
 @router.get("/admin", response_model=List[IncidenciaResponse])
 async def list_all_incidencias(
     db: AsyncSession = Depends(get_db),
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.INCIDENTS))
 ):
-    """Admin: Lista todas las incidencias del sistema."""
     repo = IncidenciaRepository(db)
     return await repo.get_all_with_users()
 
+
+# Devuelve solo las incidencias del usuario autenticado, ordenadas por fecha
 @router.get("/mis-incidencias", response_model=List[IncidenciaResponse])
 async def list_user_incidencias(
     db: AsyncSession = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Usuario: Lista solo sus incidencias reportadas."""
     repo = IncidenciaRepository(db)
-    # Asumiendo que repo tiene get_by_usuario_id o similar
-    from sqlalchemy import select
     result = await db.execute(select(Incidencia).where(Incidencia.usuario_id == current_user.id).order_by(Incidencia.created_at.desc()))
     return result.scalars().all()
 
+
+# Crea una incidencia y notifica al admin por app, push y email
 @router.post("/", response_model=IncidenciaResponse, status_code=status.HTTP_201_CREATED)
 async def create_incidencia(
     incidencia_in: IncidenciaCreate,
@@ -51,11 +54,8 @@ async def create_incidencia(
         estado=EstadoIncidencia.PENDIENTE
     )
     incidencia = await repo.create(new_incidencia)
-    
-    # --- NOTIFICACIONES AL ADMIN ---
+
     notif_service = NotificationService(db)
-    
-    # Notificación centralizada (App, Push y Email)
     await notif_service.notify_admins(
         tipo=TipoNotificacion.NUEVA_INCIDENCIA,
         titulo="Nueva Incidencia Reportada",
@@ -65,13 +65,15 @@ async def create_incidencia(
             "context": {
                 "user_name": current_user.nombre,
                 "description": incidencia.descripcion,
-                "created_at": incidencia.created_at 
+                "created_at": incidencia.created_at
             }
         }
     )
 
     return incidencia
 
+
+# Admin: cambia el estado de una incidencia; si se marca como resuelta, notifica al usuario
 @router.patch("/admin/{incidencia_id}/estado", response_model=IncidenciaResponse)
 async def update_incidencia_status_admin(
     incidencia_id: uuid.UUID,
@@ -83,18 +85,17 @@ async def update_incidencia_status_admin(
     incidencia = await repo.get_by_id(incidencia_id)
     if not incidencia:
         raise HTTPException(status_code=404, detail="Incidencia no encontrada")
-    
+
     incidencia.estado = update_in.estado
     if hasattr(update_in, 'comentario_admin') and update_in.comentario_admin:
         incidencia.comentario_admin = update_in.comentario_admin
-        
+
     await db.commit()
     await db.refresh(incidencia)
-    
-    # --- NOTIFICACIÓN AL USUARIO ---
+
+    # Notificar al usuario cuando la incidencia queda resuelta
     if incidencia.estado == EstadoIncidencia.RESUELTA:
         notif_service = NotificationService(db)
-        
         await notif_service.create_for_user(
             usuario_id=incidencia.usuario_id,
             tipo=TipoNotificacion.INCIDENCIA_RESUELTA,

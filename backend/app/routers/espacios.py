@@ -1,4 +1,5 @@
 import uuid
+from datetime import date as date_type, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,12 +14,16 @@ from app.models.notificacion import TipoNotificacion
 from app.models.usuario import Usuario
 from app.repositories.espacio_repo import EspacioRepository
 from app.schemas.espacio import EspacioCreate, EspacioResponse, EspacioUpdate
+from app.schemas.reserva import CalendarioDiaResponse
 from app.services.notification_service import NotificationService
+from app.services.tramo_service import TramoService
 from app.services.websocket_manager import admin_ws_manager
 from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/espacios", tags=["Espacios"])
 
+
+# Convierte un modelo Espacio a su schema de respuesta aplanando la lista de roles.
 def map_espacio_to_response(e: Espacio) -> EspacioResponse:
     return EspacioResponse(
         id=e.id,
@@ -41,6 +46,9 @@ def map_espacio_to_response(e: Espacio) -> EspacioResponse:
         updated_at=e.updated_at,
     )
 
+
+# Lista los espacios. Admite filtros por tipo (PISTA/AULA) y por reservabilidad.
+# Para ver espacios inactivos se necesitan permisos de backoffice.
 @router.get("/", response_model=list[EspacioResponse], summary="Listar espacios")
 async def listar_espacios(
     tipo: TipoEspacio | None = None,
@@ -49,7 +57,6 @@ async def listar_espacios(
     current_user: Usuario | None = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Lista los espacios. Se puede filtrar por tipo (PISTA/AULA) y por reservabilidad."""
     repo = EspacioRepository(db)
     solo_activos = True
 
@@ -70,12 +77,12 @@ async def listar_espacios(
     return [map_espacio_to_response(e) for e in espacios]
 
 
+# Devuelve los datos completos de un espacio, incluidos los roles con acceso.
 @router.get("/{espacio_id}", response_model=EspacioResponse, summary="Obtener un espacio")
 async def obtener_espacio(
     espacio_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """Obtiene los datos completos de un espacio."""
     repo = EspacioRepository(db)
     espacio = await repo.get_by_id_with_roles(espacio_id)
     if not espacio:
@@ -84,13 +91,14 @@ async def obtener_espacio(
     return map_espacio_to_response(espacio)
 
 
+# Crea un nuevo espacio y asigna los roles permitidos.
+# Notifica a todos los usuarios del nuevo espacio disponible. Solo admin.
 @router.post("/", response_model=EspacioResponse, status_code=201, summary="Crear un espacio")
 async def crear_espacio(
     data: EspacioCreate,
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Crea un nuevo espacio. Solo admin."""
     repo = EspacioRepository(db)
 
     espacio = Espacio(
@@ -123,7 +131,7 @@ async def crear_espacio(
     return map_espacio_to_response(espacio)
 
 
-
+# Actualiza los datos de un espacio. Si se pasan roles_permitidos, los reemplaza por completo. Solo admin.
 @router.put("/{espacio_id}", response_model=EspacioResponse, summary="Actualizar un espacio")
 async def actualizar_espacio(
     espacio_id: uuid.UUID,
@@ -131,7 +139,6 @@ async def actualizar_espacio(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Actualiza un espacio existente. Solo admin."""
     repo = EspacioRepository(db)
     espacio = await repo.get_by_id_with_roles(espacio_id)
     if not espacio:
@@ -150,6 +157,8 @@ async def actualizar_espacio(
     return map_espacio_to_response(espacio)
 
 
+# Devuelve la disponibilidad de tramos día a día para un espacio entre dos fechas.
+# Máximo 14 días por petición.
 @router.get("/{espacio_id}/calendario", summary="Disponibilidad semanal de un espacio")
 async def calendario_disponibilidad(
     espacio_id: uuid.UUID,
@@ -158,14 +167,6 @@ async def calendario_disponibilidad(
     current_user: Usuario | None = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Devuelve la disponibilidad de tramos día a día entre dos fechas (máx. 14 días).
-    Útil para renderizar un calendario semanal o mensual de disponibilidad.
-    """
-    from datetime import date as date_type, timedelta
-    from app.services.tramo_service import TramoService
-    from app.schemas.reserva import CalendarioDiaResponse
-
     try:
         inicio = date_type.fromisoformat(fecha_inicio)
         fin = date_type.fromisoformat(fecha_fin)
@@ -196,13 +197,13 @@ async def calendario_disponibilidad(
     return dias
 
 
+# Elimina un espacio del sistema. Solo admin.
 @router.delete("/{espacio_id}", summary="Eliminar un espacio")
 async def eliminar_espacio(
     espacio_id: uuid.UUID,
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SPACES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Elimina un espacio. Solo admin."""
     repo = EspacioRepository(db)
     espacio = await repo.get_by_id(espacio_id)
     if not espacio:

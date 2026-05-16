@@ -1,1 +1,1 @@
-"""RESERVIVES - Paquete de routers (endpoints API)."""
+"""IES LUIS VIVES APP - Paquete de routers (endpoints API)."""

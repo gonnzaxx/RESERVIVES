@@ -2,32 +2,34 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 
-from app.database import get_db, async_session
-from app.models.usuario import Usuario
-from app.models.reserva_espacio import ReservaEspacio
-from app.models.reserva_servicio import ReservaServicio
-from app.models.espacio import Espacio
-from app.models.anuncio import Anuncio
+from app.database import async_session, get_db
 from app.middleware.auth_middleware import require_backoffice_section
+from app.models.anuncio import Anuncio
+from app.models.espacio import Espacio
+from app.models.notificacion import TipoNotificacion
+from app.models.reserva_espacio import EstadoReserva, ReservaEspacio
+from app.models.reserva_servicio import ReservaServicio
+from app.models.usuario import RolUsuario, Usuario
+from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
+from app.repositories.reserva_servicio_repo import ReservaServicioRepository
+from app.schemas.reserva import ReservaBackofficeResponse, ReservaCancelacionBackofficeBody
 from app.services.auth_service import verificar_token_jwt
 from app.services.notification_service import NotificationService
 from app.services.reserva_espacio_service import ReservaEspacioService
 from app.services.reserva_servicio_service import ReservaServicioService
 from app.services.websocket_manager import admin_ws_manager
-from app.utils.datetime_utils import format_for_humans
+from app.utils.datetime_utils import format_normalize
 from app.utils.exceptions import ReservivesException
 from app.utils.logging import get_logger
 from app.utils.role_access import BackofficeSection, has_any_backoffice_access
-from app.schemas.reserva import ReservaBackofficeResponse, ReservaCancelacionBackofficeBody
-from app.models.notificacion import TipoNotificacion
-from app.models.reserva_espacio import EstadoReserva
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 logger = get_logger("app.routers.admin")
+
 
 class AdminSummary(BaseModel):
     total_usuarios: int
@@ -36,6 +38,7 @@ class AdminSummary(BaseModel):
     anuncios_activos: int
 
 
+# Comprueba si una fecha cumple los filtros de día, mes y año
 def _matches_calendar_filters(
     target: date,
     *,
@@ -52,6 +55,7 @@ def _matches_calendar_filters(
     return True
 
 
+# Convierte una ReservaEspacio al formato unificado de backoffice
 def _to_backoffice_booking_from_space(item: ReservaEspacio) -> ReservaBackofficeResponse:
     user_name = None
     if item.usuario:
@@ -74,6 +78,7 @@ def _to_backoffice_booking_from_space(item: ReservaEspacio) -> ReservaBackoffice
     )
 
 
+# Convierte una ReservaServicio al formato unificado de backoffice
 def _to_backoffice_booking_from_service(item: ReservaServicio) -> ReservaBackofficeResponse:
     user_name = None
     if item.usuario:
@@ -95,28 +100,22 @@ def _to_backoffice_booking_from_service(item: ReservaServicio) -> ReservaBackoff
         updated_at=item.updated_at,
     )
 
+
+# Devuelve los KPIs principales (usuarios, reservas, espacios, anuncios) para el panel admin
 @router.get("/summary", response_model=AdminSummary, summary="Obtener KPIs de Admin")
 async def get_admin_summary(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.SUMMARY)),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Devuelve los KPIs principales para el dashboard de administrador.
-    Solo accesible por usuarios con rol ADMIN.
-    """
-    # Total de usuarios
     total_usuarios_result = await db.execute(select(func.count(Usuario.id)))
     total_usuarios = total_usuarios_result.scalar_one_or_none() or 0
 
-    # Reservas activas (estado == CONFIRMADA)
     reservas_activas_result = await db.execute(select(func.count(ReservaEspacio.id)))
     reservas_activas = reservas_activas_result.scalar_one_or_none() or 0
 
-    # Espacios disponibles (activo == True)
     espacios_disponibles_result = await db.execute(select(func.count(Espacio.id)).where(Espacio.activo == True))
     espacios_disponibles = espacios_disponibles_result.scalar_one_or_none() or 0
 
-    # Anuncios activos
     anuncios_activos_result = await db.execute(select(func.count(Anuncio.id)).where(Anuncio.activo == True))
     anuncios_activos = anuncios_activos_result.scalar_one_or_none() or 0
 
@@ -128,6 +127,8 @@ async def get_admin_summary(
     )
 
 
+# Histórico global de reservas con filtros de fecha, tipo, estado y usuario
+# Los gestores de servicio solo ven las reservas de sus servicios asignados
 @router.get(
     "/bookings",
     response_model=list[ReservaBackofficeResponse],
@@ -145,8 +146,7 @@ async def backoffice_bookings(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
-    from app.repositories.reserva_servicio_repo import ReservaServicioRepository
+    from app.models.servicio import Servicio
 
     espacio_repo = ReservaEspacioRepository(db)
     servicio_repo = ReservaServicioRepository(db)
@@ -158,12 +158,24 @@ async def backoffice_bookings(
         espacio_items = await espacio_repo.get_all_with_relations(skip=0, limit=limit)
         servicio_items = await servicio_repo.get_all_with_relations(skip=0, limit=limit)
 
+    is_gestor = admin.rol == RolUsuario.GESTOR_SERVICIO
+    is_control = admin.rol == RolUsuario.CONTROL
+
+    # El gestor solo ve las reservas de los servicios que tiene asignados
+    if is_gestor:
+        managed_ids_result = await db.execute(
+            select(Servicio.id).where(Servicio.gestor_usuario_id == admin.id)
+        )
+        managed_service_ids = {row[0] for row in managed_ids_result.all()}
+        servicio_items = [s for s in servicio_items if s.servicio_id in managed_service_ids]
+
     rows: list[ReservaBackofficeResponse] = []
-    if tipo_reserva in (None, "ESPACIO"):
+    if not is_gestor and tipo_reserva in (None, "ESPACIO"):
         rows.extend(_to_backoffice_booking_from_space(item) for item in espacio_items)
     if tipo_reserva in (None, "SERVICIO"):
         rows.extend(_to_backoffice_booking_from_service(item) for item in servicio_items)
 
+    # Aplicar filtros de fecha y búsqueda por usuario
     filtered: list[ReservaBackofficeResponse] = []
     for row in rows:
         start_date = row.fecha_inicio.date()
@@ -182,6 +194,8 @@ async def backoffice_bookings(
     return filtered[:limit]
 
 
+# Cancela una reserva desde el backoffice y notifica al usuario afectado
+# El rol CONTROL no puede cancelar reservas
 @router.post(
     "/bookings/{booking_id}/cancel",
     response_model=ReservaBackofficeResponse,
@@ -193,6 +207,8 @@ async def backoffice_cancel_booking(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
+    if admin.rol == RolUsuario.CONTROL:
+        raise HTTPException(status_code=403, detail="El rol CONTROL no puede anular reservas")
     notification_service = NotificationService(db)
     reason = body.motivo.strip()
     if not reason:
@@ -208,7 +224,6 @@ async def backoffice_cancel_booking(
                 f"[Cancelada por BackOffice] {reason}\n{reserva.observaciones or ''}".strip()
             )
             await db.flush()
-            from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
 
             full = await ReservaEspacioRepository(db).get_by_id(reserva.id)
             if not full:
@@ -224,7 +239,7 @@ async def backoffice_cancel_booking(
                     "context": {
                         "nombre": full.usuario.nombre if full.usuario else "usuario",
                         "recurso": full.espacio.nombre if full.espacio else "espacio",
-                        "inicio": format_for_humans(full.fecha_inicio),
+                        "inicio": format_normalize(full.fecha_inicio),
                         "motivo": reason,
                     },
                 },
@@ -241,7 +256,6 @@ async def backoffice_cancel_booking(
                 f"[Cancelada por BackOffice] {reason}\n{reserva.observaciones or ''}".strip()
             )
             await db.flush()
-            from app.repositories.reserva_servicio_repo import ReservaServicioRepository
 
             full = await ReservaServicioRepository(db).get_by_id(reserva.id)
             if not full:
@@ -257,7 +271,7 @@ async def backoffice_cancel_booking(
                     "context": {
                         "nombre": full.usuario.nombre if full.usuario else "usuario",
                         "recurso": full.servicio.nombre if full.servicio else "servicio",
-                        "inicio": format_for_humans(full.fecha_inicio),
+                        "inicio": format_normalize(full.fecha_inicio),
                         "motivo": reason,
                     },
                 },
@@ -279,19 +293,22 @@ async def backoffice_cancel_booking(
         )
         raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
+
+# WebSocket de eventos en tiempo real para el panel de backoffice
+# Valida el token JWT antes de aceptar la conexión
 @router.websocket("/ws")
 async def websocket_admin_endpoint(websocket: WebSocket, token: str = None):
     if not token:
         await websocket.close(code=1008)
         return
-        
+
     try:
         payload = verificar_token_jwt(token)
         user_id = payload.get("sub")
         if not user_id:
             await websocket.close(code=1008)
             return
-             
+
         async with async_session() as session:
             result = await session.execute(select(Usuario).where(Usuario.id == uuid.UUID(user_id)))
             usuario = result.scalar_one_or_none()
@@ -301,7 +318,7 @@ async def websocket_admin_endpoint(websocket: WebSocket, token: str = None):
     except Exception:
         await websocket.close(code=1008)
         return
-        
+
     await admin_ws_manager.connect_admin(websocket)
     try:
         while True:

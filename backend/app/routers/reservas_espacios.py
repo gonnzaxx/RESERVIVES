@@ -12,30 +12,34 @@ from app.middleware.auth_middleware import (
 )
 from app.models.notificacion import TipoNotificacion
 from app.models.reserva_espacio import EstadoReserva
-from app.models.usuario import Usuario
+from app.models.usuario import RolUsuario, Usuario
 from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
 from app.schemas.reserva import ReservaCreate, ReservaRechazarBody, ReservaResponse, ReservaUpdate
+from app.services.lista_espera_service import ListaEsperaService
 from app.services.notification_service import NotificationService
 from app.services.reserva_espacio_service import ReservaEspacioService
 from app.services.websocket_manager import admin_ws_manager
-from app.utils.datetime_utils import format_for_humans
+from app.utils.datetime_utils import format_normalize
 from app.utils.exceptions import ReservivesException
 from app.utils.role_access import BackofficeSection, can_access_backoffice_section
 
 router = APIRouter(prefix="/reservas-espacios", tags=["Reservas Espacios"])
 
 
+# Convierte un modelo ReservaEspacio a su schema de respuesta con datos de usuario y espacio aplanados.
 def _to_response(reserva) -> ReservaResponse:
-    """Convierte un modelo ReservaEspacio a su schema de respuesta con datos aplanados."""
     resp = ReservaResponse.model_validate(reserva)
     if reserva.usuario:
         resp.nombre_usuario = f"{reserva.usuario.nombre} {reserva.usuario.apellidos}"
+        resp.email_usuario = reserva.usuario.email
     if reserva.espacio:
         resp.nombre_espacio = reserva.espacio.nombre
         resp.tipo_espacio = reserva.espacio.tipo.value
     return resp
 
 
+# Lista las reservas de espacios.
+# Admin: todas (con filtro opcional por estado). Usuario: solo las suyas.
 @router.get("/", response_model=list[ReservaResponse], summary="Listar reservas")
 async def listar_reservas(
     estado: EstadoReserva | None = None,
@@ -44,11 +48,6 @@ async def listar_reservas(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Lista reservas.
-    - Admin: ve todas las reservas.
-    - Alumno/Profesor: solo ve sus propias reservas.
-    """
     repo = ReservaEspacioRepository(db)
 
     if can_access_backoffice_section(current_user.rol, BackofficeSection.BOOKINGS):
@@ -62,13 +61,14 @@ async def listar_reservas(
     return [_to_response(r) for r in reservas]
 
 
+# Devuelve los datos de una reserva concreta.
+# Los usuarios sin permisos de backoffice solo pueden ver sus propias reservas.
 @router.get("/{reserva_id}", response_model=ReservaResponse, summary="Obtener una reserva")
 async def obtener_reserva(
     reserva_id: uuid.UUID,
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Obtiene los datos de una reserva especifica."""
     repo = ReservaEspacioRepository(db)
     reserva = await repo.get_by_id(reserva_id)
     if not reserva:
@@ -81,6 +81,9 @@ async def obtener_reserva(
     return _to_response(reserva)
 
 
+# Crea una nueva reserva de espacio.
+# Valida permisos de rol, solapamiento de tramos y saldo de tokens.
+# Si el espacio requiere autorización, queda en estado PENDIENTE y avisa a jefatura.
 @router.post(
     "/",
     response_model=ReservaResponse,
@@ -93,10 +96,6 @@ async def crear_reserva(
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Crea una nueva reserva de espacio.
-    Valida permisos de rol, solapamiento temporal y tokens.
-    """
     try:
         service = ReservaEspacioService(db)
         reserva = await service.crear_reserva(current_user, data)
@@ -110,14 +109,15 @@ async def crear_reserva(
             context={
                 "nombre": current_user.nombre,
                 "recurso": reserva.espacio.nombre if reserva.espacio else "instalacion",
-                "inicio": format_for_humans(reserva.fecha_inicio),
-                "fin": format_for_humans(reserva.fecha_fin),
+                "inicio": format_normalize(reserva.fecha_inicio),
+                "fin": format_normalize(reserva.fecha_fin),
                 "estado": reserva.estado.value,
             },
         )
 
         if reserva.estado == EstadoReserva.PENDIENTE:
-            await notification_service.notify_admins(
+            await notification_service.notify_by_roles(
+                roles=[RolUsuario.JEFATURA],
                 tipo=TipoNotificacion.NUEVA_RESERVA_PENDIENTE,
                 titulo="Nueva solicitud de reserva",
                 mensaje=f'{current_user.nombre} ha solicitado reservar "{reserva.espacio.nombre if reserva.espacio else "un espacio"}". Necesita aprobacion.',
@@ -127,8 +127,8 @@ async def crear_reserva(
                     "context": {
                         "usuario": f"{current_user.nombre} {current_user.apellidos}",
                         "recurso": reserva.espacio.nombre if reserva.espacio else "espacio",
-                        "inicio": format_for_humans(reserva.fecha_inicio),
-                        "fin": format_for_humans(reserva.fecha_fin),
+                        "inicio": format_normalize(reserva.fecha_inicio),
+                        "fin": format_normalize(reserva.fecha_fin),
                     },
                 },
             )
@@ -151,13 +151,14 @@ async def crear_reserva(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Cancela una reserva y devuelve los tokens si corresponde.
+# Si el tramo tenía lista de espera, notifica al siguiente usuario en la cola.
 @router.post("/{reserva_id}/cancelar", response_model=ReservaResponse, summary="Cancelar reserva")
 async def cancelar_reserva(
     reserva_id: uuid.UUID,
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Cancela una reserva y devuelve tokens si corresponde."""
     try:
         service = ReservaEspacioService(db)
         reserva = await service.cancelar_reserva(reserva_id, current_user)
@@ -169,7 +170,7 @@ async def cancelar_reserva(
             usuario_id=reserva.usuario_id,
             tipo=TipoNotificacion.RESERVA_CANCELADA,
             titulo="Reserva cancelada",
-            mensaje=f'Confirmamos la cancelacion de "{reserva.espacio.nombre if reserva.espacio else "espacio"}" para {format_for_humans(reserva.fecha_inicio)}.',
+            mensaje=f'Confirmamos la cancelacion de "{reserva.espacio.nombre if reserva.espacio else "espacio"}" para {format_normalize(reserva.fecha_inicio)}.',
             referencia_id=str(reserva.id),
         )
         await notification_service.dispatch_email_only(
@@ -178,13 +179,12 @@ async def cancelar_reserva(
             context={
                 "nombre": current_user.nombre,
                 "recurso": reserva.espacio.nombre if reserva.espacio else "espacio",
-                "inicio": format_for_humans(reserva.fecha_inicio),
+                "inicio": format_normalize(reserva.fecha_inicio),
             },
         )
 
         # Notificar al siguiente en la lista de espera si existe
         if reserva.tramo_id:
-            from app.services.lista_espera_service import ListaEsperaService
             lista_svc = ListaEsperaService(db)
             await lista_svc.procesar_cancelacion(
                 espacio_id=reserva.espacio_id,
@@ -211,13 +211,16 @@ async def cancelar_reserva(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Aprueba una reserva pendiente y notifica al usuario.
+# El rol CONTROL no puede aprobar reservas. Solo backoffice con permisos de reservas.
 @router.post("/{reserva_id}/aprobar", response_model=ReservaResponse, summary="Aprobar reserva")
 async def aprobar_reserva(
     reserva_id: uuid.UUID,
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Aprueba una reserva pendiente. Solo admin."""
+    if admin.rol == RolUsuario.CONTROL:
+        raise HTTPException(status_code=403, detail="El rol CONTROL no puede aprobar reservas")
     try:
         service = ReservaEspacioService(db)
         reserva = await service.aprobar_reserva(reserva_id, admin)
@@ -236,15 +239,15 @@ async def aprobar_reserva(
                 if (
                     reserva.usuario
                     and reserva.espacio
-                    and reserva.usuario.rol.value == "PROFESOR"
+                    and reserva.usuario.rol == "PROFESOR"
                     and reserva.espacio.tipo.value == "AULA"
                 )
                 else "reserva_aprobada",
                 "context": {
                     "nombre": reserva.usuario.nombre if reserva.usuario else "usuario",
                     "recurso": reserva.espacio.nombre if reserva.espacio else "espacio",
-                    "inicio": format_for_humans(reserva.fecha_inicio),
-                    "fin": format_for_humans(reserva.fecha_fin),
+                    "inicio": format_normalize(reserva.fecha_inicio),
+                    "fin": format_normalize(reserva.fecha_fin),
                 },
             },
         )
@@ -266,6 +269,8 @@ async def aprobar_reserva(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Rechaza una reserva pendiente con motivo opcional y notifica al usuario.
+# El rol CONTROL no puede rechazar reservas. Solo backoffice con permisos de reservas.
 @router.post("/{reserva_id}/rechazar", response_model=ReservaResponse, summary="Rechazar reserva")
 async def rechazar_reserva(
     reserva_id: uuid.UUID,
@@ -273,7 +278,8 @@ async def rechazar_reserva(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.BOOKINGS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Rechaza una reserva pendiente y devuelve tokens. Solo admin."""
+    if admin.rol == RolUsuario.CONTROL:
+        raise HTTPException(status_code=403, detail="El rol CONTROL no puede rechazar reservas")
     try:
         service = ReservaEspacioService(db)
         reserva = await service.rechazar_reserva(reserva_id, admin)
@@ -297,15 +303,15 @@ async def rechazar_reserva(
                 if (
                     reserva.usuario
                     and reserva.espacio
-                    and reserva.usuario.rol.value == "PROFESOR"
+                    and reserva.usuario.rol == "PROFESOR"
                     and reserva.espacio.tipo.value == "AULA"
                 )
                 else "reserva_rechazada",
                 "context": {
                     "nombre": reserva.usuario.nombre if reserva.usuario else "usuario",
                     "recurso": reserva.espacio.nombre if reserva.espacio else "espacio",
-                    "inicio": format_for_humans(reserva.fecha_inicio),
-                    "fin": format_for_humans(reserva.fecha_fin),
+                    "inicio": format_normalize(reserva.fecha_inicio),
+                    "fin": format_normalize(reserva.fecha_fin),
                     "motivo": motivo,
                 },
             },
@@ -328,13 +334,13 @@ async def rechazar_reserva(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+# Devuelve todas las reservas asociadas a un espacio concreto.
 @router.get("/espacio/{espacio_id}", response_model=list[ReservaResponse], summary="Reservas de un espacio")
 async def reservas_por_espacio(
     espacio_id: uuid.UUID,
     current_user: Usuario = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Obtiene las reservas de un espacio especifico."""
     repo = ReservaEspacioRepository(db)
     reservas = await repo.get_by_espacio(espacio_id)
     return [_to_response(r) for r in reservas]

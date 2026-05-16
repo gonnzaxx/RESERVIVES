@@ -17,6 +17,7 @@ from app.services.notification_service import NotificationService
 router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
 
 
+# Devuelve las notificaciones no leídas del usuario
 @router.get("/", response_model=list[NotificacionResponse], summary="Listar no leidas")
 async def listar_no_leidas(
     current_user: Usuario = Depends(get_current_user),
@@ -27,6 +28,7 @@ async def listar_no_leidas(
     return [NotificacionResponse.model_validate(i) for i in items]
 
 
+# Devuelve el contador de notificaciones no leídas
 @router.get("/count", response_model=NotificacionesCountResponse, summary="Contador no leidas")
 async def contador_no_leidas(
     current_user: Usuario = Depends(get_current_user),
@@ -37,6 +39,7 @@ async def contador_no_leidas(
     return NotificacionesCountResponse(no_leidas=count)
 
 
+# Devuelve las no leídas y las marca como leídas en un solo paso
 @router.post(
     "/consumir",
     response_model=list[NotificacionResponse],
@@ -51,6 +54,7 @@ async def consumir_no_leidas(
     return [NotificacionResponse.model_validate(i) for i in items]
 
 
+# Borra una notificación específica del usuario
 @router.delete("/{notificacion_id}", summary="Borrar una notificación")
 async def borrar_notificacion(
     notificacion_id: str,
@@ -64,6 +68,7 @@ async def borrar_notificacion(
     return {"message": "Notificación borrada"}
 
 
+# Registra o actualiza el token de push del dispositivo del usuario
 @router.post("/push-token", summary="Registrar token push")
 async def registrar_push_token(
     payload: PushTokenCreate,
@@ -79,6 +84,7 @@ async def registrar_push_token(
     return {"message": "Token push registrado"}
 
 
+# Devuelve las preferencias de notificación del usuario; las crea si no existen
 @router.get(
     "/preferencias",
     response_model=PreferenciasNotificacionResponse,
@@ -93,6 +99,7 @@ async def obtener_preferencias(
     return PreferenciasNotificacionResponse.model_validate(preferences)
 
 
+# Actualiza las preferencias de notificación del usuario
 @router.put(
     "/preferencias",
     response_model=PreferenciasNotificacionResponse,
@@ -111,6 +118,7 @@ async def actualizar_preferencias(
     return PreferenciasNotificacionResponse.model_validate(preferences)
 
 
+# Devuelve el historial de entregas de notificaciones del usuario
 @router.get(
     "/historial",
     response_model=list[NotificacionEntregaResponse],

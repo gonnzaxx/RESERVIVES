@@ -17,15 +17,14 @@ from app.services.websocket_manager import admin_ws_manager
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
+
+# Autentica al usuario con un token de Microsoft EntraID.
+# Si es la primera vez que entra, se crea su cuenta automáticamente.
+# El rol viene determinado por los grupos de Entra ID.
 @router.post("/login", response_model=TokenResponse, summary="Login con Microsoft EntraID")
 async def login_microsoft(
     data: LoginRequest, db: AsyncSession = Depends(get_db)
 ):
-    """
-    Autenticación mediante token de Microsoft EntraID.
-    El usuario se crea automáticamente en la BD si es su primer login.
-    El rol se determina por grupos de Microsoft Entra ID.
-    """
     repo = UsuarioRepository(db)
     token, usuario, is_new_user, detected_roles = await login_con_microsoft(
         data.microsoft_token, repo
@@ -40,6 +39,8 @@ async def login_microsoft(
     )
 
 
+# Login para desarrollo local sin pasar por OAuth.
+# Permite simular cualquier rol sin necesitar cuenta de Microsoft.
 @router.post(
     "/login-dev",
     response_model=TokenResponse,
@@ -58,6 +59,8 @@ async def login_dev(
     )
 
 
+# Genera un token de acceso limitado para usuarios sin cuenta.
+# Útil para mostrar la app en modo demo o consulta pública.
 @router.post(
     "/guest",
     response_model=GuestTokenResponse,
@@ -68,7 +71,7 @@ async def guest_access():
     return GuestTokenResponse(access_token=token)
 
 
+# Devuelve los datos del usuario autenticado a partir del token JWT.
 @router.get("/me", response_model=UsuarioResponse, summary="Obtener usuario actual")
 async def get_me(usuario: Usuario = Depends(get_current_user)):
-    """Devuelve los datos del usuario autenticado."""
     return UsuarioResponse.model_validate(usuario)

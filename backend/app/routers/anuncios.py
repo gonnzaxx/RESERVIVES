@@ -22,13 +22,13 @@ from app.utils.role_access import BackofficeSection
 router = APIRouter(prefix="/anuncios", tags=["Anuncios"])
 
 
+# Lista anuncios activos y no expirados, con los destacados primero
 @router.get("/", response_model=list[AnuncioResponse], summary="Listar anuncios activos")
 async def listar_anuncios(
     skip: int = 0,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
 ):
-    """Lista los anuncios activos y no expirados. Destacados primero."""
     repo = AnuncioRepository(db)
     anuncios = await repo.get_activos(skip, limit)
     result = []
@@ -40,6 +40,7 @@ async def listar_anuncios(
     return result
 
 
+# Lista todos los anuncios incluyendo inactivos; solo accesible por admin
 @router.get("/todos", response_model=list[AnuncioResponse], summary="Listar todos los anuncios")
 async def listar_todos_anuncios(
     skip: int = 0,
@@ -47,7 +48,6 @@ async def listar_todos_anuncios(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Lista todos los anuncios (incluidos inactivos). Solo admin."""
     repo = AnuncioRepository(db)
     anuncios = await repo.get_all_with_autor(skip, limit)
     result = []
@@ -59,12 +59,12 @@ async def listar_todos_anuncios(
     return result
 
 
+# Devuelve un anuncio por su ID; 404 si no existe
 @router.get("/{anuncio_id}", response_model=AnuncioResponse, summary="Obtener un anuncio")
 async def obtener_anuncio(
     anuncio_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """Obtiene un anuncio especÃ­fico."""
     repo = AnuncioRepository(db)
     anuncio = await repo.get_by_id(anuncio_id)
     if not anuncio:
@@ -72,13 +72,13 @@ async def obtener_anuncio(
     return AnuncioResponse.model_validate(anuncio)
 
 
+# Crea un anuncio, notifica a todos los usuarios y avisa al panel admin por WebSocket
 @router.post("/", response_model=AnuncioResponse, status_code=201, summary="Crear un anuncio")
 async def crear_anuncio(
     data: AnuncioCreate,
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Crea un nuevo anuncio. Solo admin."""
     repo = AnuncioRepository(db)
     anuncio = Anuncio(
         autor_id=admin.id,
@@ -100,6 +100,7 @@ async def crear_anuncio(
     return AnuncioResponse.model_validate(anuncio)
 
 
+# Actualiza campos de un anuncio existente y notifica al panel admin
 @router.put("/{anuncio_id}", response_model=AnuncioResponse, summary="Actualizar un anuncio")
 async def actualizar_anuncio(
     anuncio_id: uuid.UUID,
@@ -107,7 +108,6 @@ async def actualizar_anuncio(
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Actualiza un anuncio existente. Solo admin."""
     repo = AnuncioRepository(db)
     anuncio = await repo.get_by_id(anuncio_id)
     if not anuncio:
@@ -119,13 +119,13 @@ async def actualizar_anuncio(
     return AnuncioResponse.model_validate(anuncio)
 
 
+# Elimina el anuncio y notifica al panel admin
 @router.delete("/{anuncio_id}", summary="Eliminar un anuncio")
 async def eliminar_anuncio(
     anuncio_id: uuid.UUID,
     admin: Usuario = Depends(require_backoffice_section(BackofficeSection.ANNOUNCEMENTS)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Elimina un anuncio. Solo admin."""
     repo = AnuncioRepository(db)
     anuncio = await repo.get_by_id(anuncio_id)
     if not anuncio:
@@ -135,13 +135,13 @@ async def eliminar_anuncio(
     return {"message": f"Anuncio '{anuncio.titulo}' eliminado correctamente"}
 
 
+# Registra una visualización de anuncio; solo si hay usuario autenticado
 @router.post("/{anuncio_id}/view", status_code=204, summary="Registrar visualización")
 async def registrar_vista(
     anuncio_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: Usuario | None = Depends(get_optional_current_user),
 ):
-    """Registra que un usuario ha visto un anuncio."""
     if not current_user:
         return
     repo = AnalyticsRepository(db)
