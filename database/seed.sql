@@ -1,22 +1,8 @@
+-- ============================================================
 -- RESERVIVES - Datos de prueba (Seed Data)
-
+-- IES Luis Vives - TFG DAM
 -- ============================================================
--- USUARIOS DE PRUEBA
--- ============================================================
-
-INSERT INTO usuarios (id, nombre, apellidos, email, microsoft_id, rol, tokens, activo) VALUES
-    -- Administrador
-    ('a0000000-0000-0000-0000-000000000001', 'Admin', 'RESERVIVES', 'admin@iesluisvives.org', 'ms-admin-001', 'ADMIN', 0, TRUE),
-    -- Profesores
-    ('b0000000-0000-0000-0000-000000000001', 'María', 'García López', 'maria.garcia@profesor.iesluisvives.org', 'ms-prof-001', 'PROFESOR', 0, TRUE),
-    ('b0000000-0000-0000-0000-000000000002', 'Carlos', 'Martínez Ruiz', 'carlos.martinez@profesor.iesluisvives.org', 'ms-prof-002', 'PROFESOR', 0, TRUE),
-    ('b0000000-0000-0000-0000-000000000003', 'Ana', 'Fernández Díaz', 'ana.fernandez@profesor.iesluisvives.org', 'ms-prof-003', 'PROFESOR', 0, TRUE),
-    -- Alumnos
-    ('c0000000-0000-0000-0000-000000000001', 'Gonzalo', 'Sánchez Moreno', 'gonzalo.sanchez@alumno.iesluisvives.org', 'ms-alum-001', 'ALUMNO', 20, TRUE),
-    ('c0000000-0000-0000-0000-000000000002', 'Laura', 'Pérez Navarro', 'laura.perez@alumno.iesluisvives.org', 'ms-alum-002', 'ALUMNO', 20, TRUE),
-    ('c0000000-0000-0000-0000-000000000003', 'Pablo', 'Rodríguez Gómez', 'pablo.rodriguez@alumno.iesluisvives.org', 'ms-alum-003', 'ALUMNO', 20, TRUE),
-    ('c0000000-0000-0000-0000-000000000004', 'Sofía', 'López Castro', 'sofia.lopez@alumno.iesluisvives.org', 'ms-alum-004', 'ALUMNO', 15, TRUE),
-    ('c0000000-0000-0000-0000-000000000005', 'Diego', 'Torres Vega', 'diego.torres@alumno.iesluisvives.org', 'ms-alum-005', 'ALUMNO', 5, TRUE);
+-- Datos de ejemplo para desarrollo y pruebas.
 
 -- ============================================================
 -- ESPACIOS: PISTAS DEPORTIVAS
@@ -28,18 +14,6 @@ INSERT INTO espacios (id, nombre, descripcion, tipo, precio_tokens, reservable, 
     ('d0000000-0000-0000-0000-000000000004', 'Pista de Tenis de Mesa', 'Dos mesas de ping-pong profesionales en sala climatizada.', 'PISTA', 1, TRUE, FALSE, 7, 'Pabellón Deportivo - Planta 1', 4, TRUE),
     ('d0000000-0000-0000-0000-000000000005', 'Pista de Bádminton', 'Pista interior de bádminton con suelo de parquet.', 'PISTA', 2, TRUE, FALSE, 7, 'Pabellón Deportivo - Planta Baja', 4, TRUE);
 
--- Roles permitidos para pistas (alumnos y profesores)
-INSERT INTO espacio_rol_permitido (espacio_id, rol) VALUES
-    ('d0000000-0000-0000-0000-000000000001', 'ALUMNO'),
-    ('d0000000-0000-0000-0000-000000000001', 'PROFESOR'),
-    ('d0000000-0000-0000-0000-000000000002', 'ALUMNO'),
-    ('d0000000-0000-0000-0000-000000000002', 'PROFESOR'),
-    ('d0000000-0000-0000-0000-000000000003', 'ALUMNO'),
-    ('d0000000-0000-0000-0000-000000000003', 'PROFESOR'),
-    ('d0000000-0000-0000-0000-000000000004', 'ALUMNO'),
-    ('d0000000-0000-0000-0000-000000000004', 'PROFESOR'),
-    ('d0000000-0000-0000-0000-000000000005', 'ALUMNO'),
-    ('d0000000-0000-0000-0000-000000000005', 'PROFESOR');
 
 -- ============================================================
 -- ESPACIOS: AULAS
@@ -51,72 +25,52 @@ INSERT INTO espacios (id, nombre, descripcion, tipo, precio_tokens, reservable, 
     ('e0000000-0000-0000-0000-000000000004', 'Salón de Actos', 'Salón de actos con sistema de sonido profesional y escenario.', 'AULA', 0, TRUE, TRUE, 21, 'Edificio Principal - Planta Baja', 200, TRUE),
     ('e0000000-0000-0000-0000-000000000005', 'Laboratorio de Electrónica', 'Laboratorio equipado con instrumental de medición y soldadura.', 'AULA', 0, TRUE, TRUE, 14, 'Edificio Talleres - Planta 1', 20, TRUE);
 
--- Roles permitidos para aulas (solo profesores)
-INSERT INTO espacio_rol_permitido (espacio_id, rol) VALUES
-    ('e0000000-0000-0000-0000-000000000001', 'PROFESOR'),
-    ('e0000000-0000-0000-0000-000000000002', 'PROFESOR'),
-    ('e0000000-0000-0000-0000-000000000003', 'PROFESOR'),
-    ('e0000000-0000-0000-0000-000000000004', 'PROFESOR'),
-    ('e0000000-0000-0000-0000-000000000005', 'PROFESOR');
 
--- ============================================================
--- ANUNCIOS
--- ============================================================
-INSERT INTO anuncios (id, autor_id, titulo, contenido, destacado, activo, fecha_publicacion) VALUES
-    ('f0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
-     '🎉 ¡Bienvenidos a RESERVIVES!',
-     'Nueva aplicación para gestionar las reservas del IES Luis Vives. Ya podéis reservar pistas deportivas y consultar los servicios disponibles. ¡Esperamos que os sea de gran utilidad!',
-     TRUE, TRUE, NOW()),
-    ('f0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001',
-     '⚽ Torneo de Fútbol Sala Inter-Ciclos',
-     'Se abre la inscripción para el Torneo de Fútbol Sala entre ciclos formativos. Equipos de 5 jugadores. Inscripciones hasta el 15 de abril. Premios para los 3 primeros clasificados.',
-     TRUE, TRUE, NOW()),
-    ('f0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001',
-     '📅 Horario especial de Semana Santa',
-     'Durante la semana de Semana Santa (14-18 de abril), las instalaciones deportivas estarán cerradas. Las reservas realizadas para esas fechas serán canceladas automáticamente.',
-     FALSE, TRUE, NOW()),
-    ('f0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000001',
-     '💇 Nuevo servicio de peluquería',
-     'Los alumnos del ciclo de peluquería ofrecen sus servicios de forma gratuita. Podéis pedir cita a través de la sección de Servicios de la app. ¡Aprovechad!',
-     FALSE, TRUE, NOW());
 
 -- ============================================================
 -- CATEGORÍAS DE CAFETERÍA
 -- ============================================================
 INSERT INTO categorias_cafeteria (id, nombre, descripcion, orden, activa) VALUES
-    ('10000000-0000-0000-0000-000000000001', 'Desayunos', 'Opciones para empezar el día con energía', 1, TRUE),
-    ('10000000-0000-0000-0000-000000000002', 'Bocadillos y Sándwiches', 'Bocadillos fríos y calientes para el recreo', 2, TRUE),
-    ('10000000-0000-0000-0000-000000000003', 'Bebidas', 'Bebidas frías y calientes', 3, TRUE),
-    ('10000000-0000-0000-0000-000000000004', 'Snacks y Bollería', 'Para picar entre horas', 4, TRUE),
-    ('10000000-0000-0000-0000-000000000005', 'Menú del Día', 'Menú completo para comer en el instituto', 5, TRUE);
+    ('10000000-0000-0000-0000-000000000001', 'Entre panes', 'Bocadillos variados fríos y calientes', 1, TRUE),
+    ('10000000-0000-0000-0000-000000000002', 'Menús', 'Platos del día y combinados', 2, TRUE),
+    ('10000000-0000-0000-0000-000000000003', 'Bebidas', 'Cafés, infusiones y zumos', 3, TRUE);
 
 -- ============================================================
 -- PRODUCTOS DE CAFETERÍA
 -- ============================================================
 INSERT INTO productos_cafeteria (categoria_id, nombre, descripcion, precio, disponible, destacado, orden) VALUES
-    -- Desayunos
-    ('10000000-0000-0000-0000-000000000001', 'Tostada con tomate', 'Tostada de pan artesano con tomate natural rallado y AOVE', 1.80, TRUE, TRUE, 1),
-    ('10000000-0000-0000-0000-000000000001', 'Tostada con mantequilla y mermelada', 'Pan tostado con mantequilla y mermelada casera', 1.50, TRUE, FALSE, 2),
-    ('10000000-0000-0000-0000-000000000001', 'Croissant plancha con jamón y queso', 'Croissant a la plancha relleno de jamón york y queso gouda', 2.20, TRUE, TRUE, 3),
-    -- Bocadillos
-    ('10000000-0000-0000-0000-000000000002', 'Bocadillo de jamón serrano', 'Bocadillo en barra de pan con jamón serrano de calidad', 3.00, TRUE, TRUE, 1),
-    ('10000000-0000-0000-0000-000000000002', 'Bocadillo de tortilla española', 'Tortilla casera de patata en pan crujiente', 2.80, TRUE, TRUE, 2),
-    ('10000000-0000-0000-0000-000000000002', 'Sándwich mixto', 'Sándwich clásico de jamón york y queso a la plancha', 2.00, TRUE, FALSE, 3),
-    ('10000000-0000-0000-0000-000000000002', 'Bocadillo vegetal', 'Lechuga, tomate, huevo duro, atún y mayonesa', 2.80, TRUE, FALSE, 4),
-    -- Bebidas
-    ('10000000-0000-0000-0000-000000000003', 'Café solo', 'Café espresso italiano', 1.10, TRUE, FALSE, 1),
-    ('10000000-0000-0000-0000-000000000003', 'Café con leche', 'Café con leche entera o de avena', 1.40, TRUE, TRUE, 2),
-    ('10000000-0000-0000-0000-000000000003', 'Zumo de naranja natural', 'Zumo recién exprimido de naranjas valencianas', 2.00, TRUE, TRUE, 3),
-    ('10000000-0000-0000-0000-000000000003', 'Agua mineral 50cl', 'Botella de agua mineral natural', 0.80, TRUE, FALSE, 4),
-    ('10000000-0000-0000-0000-000000000003', 'Refresco lata', 'Coca-Cola, Fanta, Aquarius o Nestea', 1.30, TRUE, FALSE, 5),
-    -- Snacks
-    ('10000000-0000-0000-0000-000000000004', 'Napolitana de chocolate', 'Napolitana artesanal rellena de chocolate', 1.20, TRUE, TRUE, 1),
-    ('10000000-0000-0000-0000-000000000004', 'Palmera de chocolate', 'Palmera de hojaldre bañada en chocolate negro', 1.50, TRUE, FALSE, 2),
-    ('10000000-0000-0000-0000-000000000004', 'Fruta de temporada', 'Manzana, plátano o mandarina', 0.80, TRUE, FALSE, 3),
-    -- Menú del día
-    ('10000000-0000-0000-0000-000000000005', 'Menú completo', 'Primer plato + segundo plato + postre + bebida', 6.50, TRUE, TRUE, 1),
-    ('10000000-0000-0000-0000-000000000005', 'Medio menú', 'Un plato a elegir + bebida', 4.50, TRUE, FALSE, 2);
+    -- Entre panes
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de Bacon', 'A la plancha', 2.00, TRUE, FALSE, 1),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de Lomo', 'Adobado a la plancha', 2.40, TRUE, FALSE, 2),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de tortilla de patata', 'Tortilla de patata cuajada', 2.50, TRUE, FALSE, 3),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo vegetal con pollo', 'Mayonesa, lechuga, tomate en rodajas y pollo a la plancha', 2.60, TRUE, TRUE, 4),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de Jamón serrano', 'Tomate triturado, aceite de oliva y jamón serrano', 2.50, TRUE, TRUE, 5),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de Luis Vives', 'Tortilla, bacon y mayonesa', 2.60, TRUE, TRUE, 6),
+    ('10000000-0000-0000-0000-000000000001', 'Pollo', 'A la plancha con mayonesa', 2.60, TRUE, FALSE, 7),
+    ('10000000-0000-0000-0000-000000000001', 'Vegetal bacon', 'Chistorra, salchichón, jamón york y queso', 2.60, TRUE, FALSE, 8),
+    ('10000000-0000-0000-0000-000000000001', 'Bocadillo de Vegetal lomo', 'Mayonesa, lechuga, tomate y lomo adobado', 2.60, TRUE, FALSE, 9),
 
+    -- Menús (Plato del día y Combinados)
+    ('10000000-0000-0000-0000-000000000002', 'Plato del día', 'Plato varía de lunes a viernes + pieza de pan + bebida', 5.70, TRUE, TRUE, 1),
+    ('10000000-0000-0000-0000-000000000002', 'Ensalada Mixta o César', 'Ensalada + Bebida + pieza de pan', 4.50, TRUE, FALSE, 2),
+    ('10000000-0000-0000-0000-000000000002', 'Plato Combinado Nº1: Filete de pollo', 'Filete de pollo a la plancha, bacon, queso, picatostes y salsa', 6.50, TRUE, FALSE, 3),
+    ('10000000-0000-0000-0000-000000000002', 'Plato Combinado Nº2: Lomo adobado', 'Lomo a la plancha con ensalada o patatas con huevo frito o tortilla francesa', 6.50, TRUE, FALSE, 4),
+    ('10000000-0000-0000-0000-000000000002', 'Plato Combinado Nº3: Tortilla francesa', 'Tortilla francesa con ensalada y patatas + pieza de pan + bebida', 6.50, TRUE, FALSE, 5),
+
+    -- Bebidas
+    ('10000000-0000-0000-0000-000000000003', 'Café solo', 'Bebida espresso Royal', 1.00, TRUE, FALSE, 1),
+    ('10000000-0000-0000-0000-000000000003', 'Café cortado', 'Espresso con un poco de leche', 1.10, TRUE, FALSE, 2),
+    ('10000000-0000-0000-0000-000000000003', 'Café con leche semidesnatada', 'Café clásico con leche', 1.25, TRUE, TRUE, 3),
+    ('10000000-0000-0000-0000-000000000003', 'Café con hielo', 'Espresso servido con hielo', 1.25, TRUE, FALSE, 4),
+    ('10000000-0000-0000-0000-000000000003', 'ColaCao / Nesquik', 'Leche con cacao', 1.30, TRUE, FALSE, 5),
+    ('10000000-0000-0000-0000-000000000003', 'Café con bebida vegetal', 'Opción sin lácteos', 1.35, TRUE, FALSE, 6),
+    ('10000000-0000-0000-0000-000000000003', 'Café sin lactosa', 'Para intolerantes a la lactosa', 1.35, TRUE, FALSE, 7),
+    ('10000000-0000-0000-0000-000000000003', 'Café bombón', 'Con leche condensada', 1.40, TRUE, FALSE, 8),
+    ('10000000-0000-0000-0000-000000000003', 'Café moca chocolate', 'Espresso, sirope y nata', 1.80, TRUE, FALSE, 9),
+    ('10000000-0000-0000-0000-000000000003', 'Café moca caramel', 'Espresso, caramelo y nata', 1.80, TRUE, FALSE, 10),
+    ('10000000-0000-0000-0000-000000000003', 'Zumo de naranja', 'Zumo natural refrescante', 2.20, TRUE, FALSE, 11),
+    ('10000000-0000-0000-0000-000000000003', 'Infusiones', 'Manzanilla, poleo, tila, té negro o rojo', 1.00, TRUE, FALSE, 12),
+    ('10000000-0000-0000-0000-000000000003', 'Infusiones especiales', 'Consultar variedades al personal', 1.20, TRUE, FALSE, 13);
 -- ============================================================
 -- SERVICIOS DEL INSTITUTO
 -- ============================================================
@@ -135,52 +89,11 @@ INSERT INTO servicios (id, nombre, descripcion, ubicacion, horario, precio_token
      'Laboratorio de Electrónica - Edificio Talleres', 'Viernes: 09:00 - 13:00', 1, 7, TRUE, 4);
 
 -- ============================================================
--- RESERVAS DE EJEMPLO
--- ============================================================
-INSERT INTO reservas_espacios (usuario_id, espacio_id, fecha_inicio, fecha_fin, observaciones, estado, tokens_consumidos) VALUES
-    -- Alumno reserva pista de fútbol (mañana)
-    ('c0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
-     NOW() + INTERVAL '1 day' + TIME '10:00', NOW() + INTERVAL '1 day' + TIME '11:00',
-     'Partido amistoso entre compañeros de DAM', 'APROBADA', 3),
-    -- Profesora reserva aula de informática (pasado mañana, pendiente aprobación)
-    ('b0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001',
-     NOW() + INTERVAL '2 days' + TIME '09:00', NOW() + INTERVAL '2 days' + TIME '11:00',
-     'Clase extra de programación web', 'PENDIENTE', 0),
-    -- Alumno reserva ping-pong
-    ('c0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000004',
-     NOW() + INTERVAL '1 day' + TIME '12:00', NOW() + INTERVAL '1 day' + TIME '13:00',
-     NULL, 'APROBADA', 1);
-
--- Historial de tokens para las reservas
-INSERT INTO historial_tokens (usuario_id, cantidad, tipo, motivo) VALUES
-    ('c0000000-0000-0000-0000-000000000001', -3, 'CONSUMO_RESERVA', 'Reserva Pista de Fútbol Sala'),
-    ('c0000000-0000-0000-0000-000000000002', -1, 'CONSUMO_RESERVA', 'Reserva Pista de Tenis de Mesa');
-
--- Reservas de servicios de ejemplo
-INSERT INTO reservas_servicios (usuario_id, servicio_id, fecha_inicio, fecha_fin, observaciones, estado, tokens_consumidos) VALUES
-    ('c0000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001',
-     NOW() + INTERVAL '3 days' + TIME '10:00', NOW() + INTERVAL '3 days' + TIME '10:30',
-     'Corte de pelo clásico', 'APROBADA', 0),
-    ('c0000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 
-     NOW() + INTERVAL '5 days' + TIME '11:00', NOW() + INTERVAL '5 days' + TIME '11:30',
-     'Sesión de VR - Juegos', 'PENDIENTE', 3);
-
--- ============================================================
--- FAVORITOS DE EJEMPLO
--- ============================================================
-INSERT INTO favoritos_espacios (usuario_id, espacio_id) VALUES
-    ('c0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001'), -- Gonzalo -> Fútbol Sala
-    ('c0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001'); -- Gonzalo -> Informática 1
-
-INSERT INTO favoritos_servicios (usuario_id, servicio_id) VALUES
-    ('c0000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001'); -- Gonzalo -> Peluquería
-
--- ============================================================
--- TRAMOS HORARIOS (catálogo fijo del instituto)
+-- TRAMOS HORARIOS 
 -- ============================================================
 INSERT INTO tramos_horarios (nombre, turno, numero, hora_inicio, hora_fin, es_recreo) VALUES
     -- TURNO MAÑANA
-    ('Clase 1',  'MAÑANA', 1, '08:25', '09:20', FALSE),
+    ('1a hora',  'MAÑANA', 1, '08:25', '09:20', FALSE),
     ('2a hora',  'MAÑANA', 2, '09:20', '10:15', FALSE),
     ('3a hora',  'MAÑANA', 3, '10:15', '11:10', FALSE),
     ('4a hora',  'MAÑANA', 4, '11:10', '12:05', FALSE),
@@ -198,11 +111,20 @@ INSERT INTO tramos_horarios (nombre, turno, numero, hora_inicio, hora_fin, es_re
     ('6a hora',  'TARDE',  6, '20:15', '21:10', FALSE)
 ON CONFLICT (turno, numero) DO NOTHING;
 
+
+
+
 -- ============================================================
--- CONFIGURACION PARA LOGIN DEV (sin OAuth)
+-- CONFIGURACION: SECCIONES DE BACKOFFICE POR ROL (DEFAULTS)
 -- ============================================================
+-- Permisos de acceso al backoffice para cada rol del sistema.
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('auth_dev_bypass_enabled', 'true', 'Permite login temporal sin OAuth en desarrollo')
-ON CONFLICT (clave) DO UPDATE
-SET valor = EXCLUDED.valor,
-    descripcion = EXCLUDED.descripcion;
+    ('backoffice_sections_ADMINISTRADOR', 'summary,users,bookings,history,polls,incidents,metrics,spaces,services,announcements,cafeteria,configuration', 'Secciones backoffice: ADMINISTRADOR'),
+    ('backoffice_sections_JEFATURA',      'summary,users,bookings,history,polls,incidents,metrics,spaces,services,announcements,cafeteria', 'Secciones backoffice: JEFATURA'),
+    ('backoffice_sections_SECRETARIA',    'metrics,polls,announcements,incidents', 'Secciones backoffice: SECRETARIA'),
+    ('backoffice_sections_GESTOR_SERVICIO', 'history,bookings,services,metrics', 'Secciones backoffice: GESTOR_SERVICIO'),
+    ('backoffice_sections_CONTROL',       'bookings,history', 'Secciones backoffice: CONTROL'),
+    ('backoffice_sections_CAFETERIA',     'cafeteria', 'Secciones backoffice: CAFETERIA'),
+    ('backoffice_sections_ALUMNO',        '', 'Secciones backoffice: ALUMNO'),
+    ('backoffice_sections_PROFESOR',      '', 'Secciones backoffice: PROFESOR')
+ON CONFLICT (clave) DO NOTHING;

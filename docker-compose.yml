@@ -1,98 +1,102 @@
-# ============================================================
-# RESERVIVES - Docker Compose
-# ============================================================
-# Despliega los 3 servicios: PostgreSQL, Backend (FastAPI), Frontend (Flutter Web)
-#
-# Uso:
-#   docker-compose up --build
-#
-# Acceso:
-#   - Frontend Web:  https://vms.iesluisvives.org:2121
-#   - Backend API:   https://vms.iesluisvives.org:1212/api/docs
-#   - PostgreSQL:    localhost:5432
-# ============================================================
-
 version: "3.9"
 
 services:
-  # ========================================
-  # Base de datos PostgreSQL
-  # ========================================
+
+  # =========================================
+  # PostgreSQL
+  # =========================================
   db:
     build:
       context: .
       dockerfile: database/Dockerfile
     container_name: reservives-db
     restart: unless-stopped
+
     env_file:
       - ./backend/.env
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
     networks:
       - internal
+
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ========================================
-  # Backend - Python + FastAPI
-  # ========================================
+  # =========================================
+  # FastAPI
+  # =========================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+
     container_name: reservives-backend
     restart: unless-stopped
+
     env_file:
       - ./backend/.env
+
     depends_on:
       db:
         condition: service_healthy
+
     networks:
       - internal
       - traefik
+
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
 
-      # BACKEND en puerto 1212 con HTTPS
-      - "traefik.http.routers.api.rule=Host(`vms.iesluisvives.org`)"
-      - "traefik.http.routers.api.entrypoints=api"
+      # API bajo /api — prioridad alta para que no la capture el router del front
+      - "traefik.http.routers.api.rule=Host(`vms.iesluisvives.org`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.priority=10"
 
-      # Puerto interno del contenedor
+      # Puerto interno FastAPI
       - "traefik.http.services.api.loadbalancer.server.port=8000"
+
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # ========================================
-  # Frontend - Flutter Web
-  # ========================================
+  # =========================================
+  # Flutter Web
+  # =========================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+
     container_name: reservives-frontend
     restart: unless-stopped
+
     depends_on:
       backend:
         condition: service_healthy
+
     networks:
       - traefik
+
     labels:
       - "traefik.enable=true"
 
-      # FRONT en 2121
-      - "traefik.http.routers.websecure.rule=Host(`vms.iesluisvives.org`)"
-      - "traefik.http.routers.websecure.entrypoints=websecure"
-      - "traefik.http.routers.websecure.tls=true"
+      # Todo lo que NO sea /api — prioridad menor
+      - "traefik.http.routers.front.rule=Host(`vms.iesluisvives.org`)"
+      - "traefik.http.routers.front.entrypoints=websecure"
+      - "traefik.http.routers.front.tls=true"
+      - "traefik.http.routers.front.priority=1"
 
-      # Puerto interno Apache/Nginx
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+      # Puerto interno frontend
+      - "traefik.http.services.front.loadbalancer.server.port=80"
 
 networks:
   internal:
@@ -102,4 +106,3 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
