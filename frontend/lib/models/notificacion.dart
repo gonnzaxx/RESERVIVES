@@ -17,7 +17,11 @@ enum TipoNotificacion {
   recargaTokens('RECARGA_TOKENS'),
   nuevaEncuesta('NUEVA_ENCUESTA'),
   nuevaIncidencia('NUEVA_INCIDENCIA'),
-  incidenciaResueltas('INCIDENCIA_RESUELTA');
+  incidenciaResuelta('INCIDENCIA_RESUELTA'),
+  reservaRecurrenteAprobada('RESERVA_RECURRENTE_APROBADA'),
+  reservaRecurrenteRechazada('RESERVA_RECURRENTE_RECHAZADA'),
+  nuevaReservaRecurrentePendiente('NUEVA_RESERVA_RECURRENTE_PENDIENTE'),
+  listaEsperaDisponible('LISTA_ESPERA_DISPONIBLE');
 
   final String value;
   const TipoNotificacion(this.value);

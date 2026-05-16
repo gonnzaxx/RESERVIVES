@@ -11,21 +11,29 @@ import 'package:reservives/config/constants.dart';
 enum RolUsuario {
   alumno('ALUMNO'),
   profesor('PROFESOR'),
-  admin('ADMIN'),
+  administrador('ADMINISTRADOR'),
   cafeteria('CAFETERIA'),
-  jefeEstudios('JEFE_ESTUDIOS'),
+  jefatura('JEFATURA'),
   secretaria('SECRETARIA'),
-  profesorServicio('PROFESOR_SERVICIO');
+  gestorServicio('GESTOR_SERVICIO'),
+  control('CONTROL');
 
   final String value;
   const RolUsuario(this.value);
 
-  /// Convierte una cadena del backend al enum correspondiente.
-  /// Por defecto retorna [alumno].
+  // Mapa de compatibilidad para roles renombrados en migraciones anteriores.
+  static const _legacyMap = <String, String>{
+    'ADMIN': 'ADMINISTRADOR',
+    'JEFE_ESTUDIOS': 'JEFATURA',
+    'PROFESOR_SERVICIO': 'GESTOR_SERVICIO',
+  };
+
+  /// Convierte el string del backend al enum, normalizando mayúsculas y nombres legacy.
   factory RolUsuario.fromString(String value) {
     final normalized = value.trim().toUpperCase().replaceAll(' ', '_');
+    final mapped = _legacyMap[normalized] ?? normalized;
     return RolUsuario.values.firstWhere(
-          (e) => e.value == normalized,
+      (e) => e.value == mapped,
       orElse: () => RolUsuario.alumno,
     );
   }
@@ -39,6 +47,9 @@ class Usuario {
   final String email;
   final String? avatarUrl;
   final RolUsuario rol;
+  /// String original del rol tal como lo devuelve la API. Puede ser un rol
+  /// custom no presente en [RolUsuario] (ej. "INSPECTOR").
+  final String rolRaw;
   final int tokens;
   final bool activo;
   final DateTime createdAt;
@@ -51,6 +62,7 @@ class Usuario {
     required this.email,
     this.avatarUrl,
     required this.rol,
+    required this.rolRaw,
     required this.tokens,
     required this.activo,
     required this.createdAt,
@@ -59,13 +71,15 @@ class Usuario {
 
   /// Crea un [Usuario] desde un mapa JSON.
   factory Usuario.fromJson(Map<String, dynamic> json) {
+    final rawRol = json['rol'] as String;
     return Usuario(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
       apellidos: json['apellidos'] as String,
       email: json['email'] as String,
       avatarUrl: json['avatar_url'] as String?,
-      rol: RolUsuario.fromString(json['rol'] as String),
+      rol: RolUsuario.fromString(rawRol),
+      rolRaw: rawRol.trim().toUpperCase(),
       tokens: json['tokens'] as int,
       activo: json['activo'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -81,7 +95,7 @@ class Usuario {
       'apellidos': apellidos,
       'email': email,
       'avatar_url': avatarUrl,
-      'rol': rol.value,
+      'rol': rolRaw,
       'tokens': tokens,
       'activo': activo,
       'created_at': createdAt.toIso8601String(),
@@ -89,24 +103,34 @@ class Usuario {
     };
   }
 
-  // Helpers de visualización y lógica de negocio
+  // Helpers de identidad y rol para simplificar condicionales en la UI.
   String get nombreCompleto => '$nombre $apellidos';
   bool get isAlumno => rol == RolUsuario.alumno;
   bool get isProfesor => rol == RolUsuario.profesor;
-  bool get isAdmin => rol == RolUsuario.admin;
+  bool get isAdministrador => rol == RolUsuario.administrador;
   bool get isCafeteria => rol == RolUsuario.cafeteria;
-  bool get isJefeEstudios => rol == RolUsuario.jefeEstudios;
+  bool get isJefatura => rol == RolUsuario.jefatura;
   bool get isSecretaria => rol == RolUsuario.secretaria;
-  bool get isProfesorServicio => rol == RolUsuario.profesorServicio;
+  bool get isGestorServicio => rol == RolUsuario.gestorServicio;
+  bool get isControl => rol == RolUsuario.control;
 
+  // True si el rol puede realizar reservas de espacios y servicios.
   bool get hasStudentBookingPermissions =>
       rol == RolUsuario.alumno ||
       rol == RolUsuario.profesor ||
       rol == RolUsuario.secretaria ||
-      rol == RolUsuario.profesorServicio;
+      rol == RolUsuario.gestorServicio ||
+      rol == RolUsuario.control ||
+      rol == RolUsuario.cafeteria;
 
-  bool get usesTokens => hasStudentBookingPermissions;
+  /// Todos los roles usan tokens excepto ADMINISTRADOR y JEFATURA (acceso ilimitado).
+  /// Incluye roles custom creados en producción.
+  bool get usesTokens {
+    final raw = rolRaw.toUpperCase();
+    return raw != 'ADMINISTRADOR' && raw != 'JEFATURA';
+  }
 
+  // Devuelve la URL completa del avatar o null si no tiene foto de perfil.
   String? get fullAvatarUrl {
     if (avatarUrl == null || avatarUrl!.isEmpty) return null;
     return AppConstants.resolveApiUrl(avatarUrl);
@@ -119,6 +143,7 @@ class Usuario {
     String? email,
     String? avatarUrl,
     RolUsuario? rol,
+    String? rolRaw,
     int? tokens,
     bool? activo,
     DateTime? createdAt,
@@ -131,6 +156,7 @@ class Usuario {
       email: email ?? this.email,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       rol: rol ?? this.rol,
+      rolRaw: rolRaw ?? this.rolRaw,
       tokens: tokens ?? this.tokens,
       activo: activo ?? this.activo,
       createdAt: createdAt ?? this.createdAt,

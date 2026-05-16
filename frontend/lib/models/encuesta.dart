@@ -1,4 +1,4 @@
-/// RESERVIVES - Modelos de Encuestas.
+/// IES Luis Vives App - Modelos de Encuestas.
 ///
 /// Define la estructura para el sistema de votaciones y participación del alumnado
 /// del centro. Gestiona el ciclo de vida de la encuesta, el recuento de votos

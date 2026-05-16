@@ -39,6 +39,7 @@ class Reserva {
   final String? tramoId;
   final TramoHorario? tramo;
   final String? nombreUsuario;
+  final String? emailUsuario;
   final String? nombreEspacio;
   final String? tipoEspacio;
   final DateTime createdAt;
@@ -56,11 +57,33 @@ class Reserva {
     this.tramoId,
     this.tramo,
     this.nombreUsuario,
+    this.emailUsuario,
     this.nombreEspacio,
     this.tipoEspacio,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  Reserva copyWith({EstadoReserva? estado}) {
+    return Reserva(
+      id: id,
+      usuarioId: usuarioId,
+      espacioId: espacioId,
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin,
+      observaciones: observaciones,
+      estado: estado ?? this.estado,
+      tokensConsumidos: tokensConsumidos,
+      tramoId: tramoId,
+      tramo: tramo,
+      nombreUsuario: nombreUsuario,
+      emailUsuario: emailUsuario,
+      nombreEspacio: nombreEspacio,
+      tipoEspacio: tipoEspacio,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
 
   /// Crea una [Reserva] desde un mapa JSON.
   factory Reserva.fromJson(Map<String, dynamic> json) {
@@ -82,6 +105,7 @@ class Reserva {
           ? TramoHorario.fromJson(json['tramo'] as Map<String, dynamic>)
           : null,
       nombreUsuario: json['nombre_usuario'] as String?,
+      emailUsuario: json['email_usuario'] as String?,
       nombreEspacio: nombreEspacio,
       tipoEspacio: tipoEspacio,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -104,12 +128,14 @@ class Reserva {
     };
   }
 
-  // Helpers de estado para facilitar la lógica de UI
+  // Helpers de estado para simplificar condiciones en la UI.
   bool get isPendiente => estado == EstadoReserva.pendiente;
   bool get isAprobada => estado == EstadoReserva.aprobada;
   bool get isRechazada => estado == EstadoReserva.rechazada;
   bool get isCancelada => estado == EstadoReserva.cancelada;
+  // True si la reserva ya ha finalizado (fecha de fin en el pasado).
   bool get isPasada => fechaFin.isBefore(DateTime.now());
+  // Una reserva está activa si está en curso (pendiente o aprobada) y aún no ha pasado.
   bool get isActiva => (isPendiente || isAprobada) && !isPasada;
 }
 

@@ -18,7 +18,10 @@ class ServicioInstituto {
   final bool activo;
   final int orden;
   final int antelacionDias;
+  final String? gestorUsuarioId;
+  final String? gestorNombre;
   final bool isFavorite;
+  final List<String> rolesPermitidos;
 
   const ServicioInstituto({
     required this.id,
@@ -31,7 +34,10 @@ class ServicioInstituto {
     required this.activo,
     required this.orden,
     this.antelacionDias = 7,
+    this.gestorUsuarioId,
+    this.gestorNombre,
     this.isFavorite = false,
+    this.rolesPermitidos = const [],
   });
 
   ServicioInstituto copyWith({
@@ -45,7 +51,10 @@ class ServicioInstituto {
     bool? activo,
     int? orden,
     int? antelacionDias,
+    String? gestorUsuarioId,
+    String? gestorNombre,
     bool? isFavorite,
+    List<String>? rolesPermitidos,
   }) {
     return ServicioInstituto(
       id: id ?? this.id,
@@ -58,12 +67,16 @@ class ServicioInstituto {
       activo: activo ?? this.activo,
       orden: orden ?? this.orden,
       antelacionDias: antelacionDias ?? this.antelacionDias,
+      gestorUsuarioId: gestorUsuarioId ?? this.gestorUsuarioId,
+      gestorNombre: gestorNombre ?? this.gestorNombre,
       isFavorite: isFavorite ?? this.isFavorite,
+      rolesPermitidos: rolesPermitidos ?? this.rolesPermitidos,
     );
   }
 
-  /// Construye una instancia de [ServicioInstituto] desde un mapa JSON.
+  /// Crea un [ServicioInstituto] desde el JSON de la API, resolviendo la URL de imagen y el nombre del gestor.
   factory ServicioInstituto.fromJson(Map<String, dynamic> json) {
+    final gestor = json['gestor'] as Map<String, dynamic>?;
     return ServicioInstituto(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
@@ -75,11 +88,14 @@ class ServicioInstituto {
       activo: json['activo'] as bool,
       orden: json['orden'] as int,
       antelacionDias: json['antelacion_dias'] as int? ?? 7,
+      gestorUsuarioId: json['gestor_usuario_id'] as String?,
+      gestorNombre: gestor != null ? '${gestor['nombre']} ${gestor['apellidos']}' : null,
       isFavorite: json['is_favorite'] as bool? ?? false,
+      rolesPermitidos: List<String>.from(json['roles_permitidos'] ?? []),
     );
   }
 
-  /// Convierte la instancia a un formato JSON para persistencia o envío a la API.
+  /// Serializa el objeto a JSON para enviarlo a la API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -92,6 +108,7 @@ class ServicioInstituto {
       'activo': activo,
       'orden': orden,
       'antelacion_dias': antelacionDias,
+      'gestor_usuario_id': gestorUsuarioId,
       'is_favorite': isFavorite,
     };
   }

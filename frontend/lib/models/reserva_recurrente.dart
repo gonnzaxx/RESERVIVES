@@ -4,6 +4,7 @@
 /// del administrador antes de generar instancias concretas.
 library;
 
+/// Frecuencia con la que se repite la reserva.
 enum TipoRecurrencia {
   semanal('SEMANAL'),
   quincenal('QUINCENAL'),
@@ -12,10 +13,12 @@ enum TipoRecurrencia {
   final String value;
   const TipoRecurrencia(this.value);
 
+  /// Convierte el string del backend al valor del enum; si no coincide, devuelve semanal.
   factory TipoRecurrencia.fromString(String v) =>
       TipoRecurrencia.values.firstWhere((e) => e.value == v,
           orElse: () => TipoRecurrencia.semanal);
 
+  // Etiqueta legible para mostrar en la UI.
   String get label {
     switch (this) {
       case TipoRecurrencia.semanal:
@@ -28,6 +31,7 @@ enum TipoRecurrencia {
   }
 }
 
+/// Estado administrativo de la reserva recurrente.
 enum EstadoReservaRecurrente {
   pendienteAprobacion('PENDIENTE_APROBACION'),
   aprobada('APROBADA'),
@@ -37,6 +41,7 @@ enum EstadoReservaRecurrente {
   final String value;
   const EstadoReservaRecurrente(this.value);
 
+  /// Convierte el string del backend al valor del enum; si no coincide, devuelve pendienteAprobacion.
   factory EstadoReservaRecurrente.fromString(String v) =>
       EstadoReservaRecurrente.values.firstWhere((e) => e.value == v,
           orElse: () => EstadoReservaRecurrente.pendienteAprobacion);
@@ -56,6 +61,7 @@ class ReservaRecurrente {
   final int tokensPorInstancia;
   final DateTime? ultimaInstanciaGenerada;
   final String? nombreUsuario;
+  final String? emailUsuario;
   final String? nombreEspacio;
   final String? nombreTramo;
   final DateTime createdAt;
@@ -75,12 +81,14 @@ class ReservaRecurrente {
     required this.tokensPorInstancia,
     this.ultimaInstanciaGenerada,
     this.nombreUsuario,
+    this.emailUsuario,
     this.nombreEspacio,
     this.nombreTramo,
     required this.createdAt,
     required this.updatedAt,
   });
 
+  /// Crea un [ReservaRecurrente] desde el JSON devuelto por la API.
   factory ReservaRecurrente.fromJson(Map<String, dynamic> json) {
     return ReservaRecurrente(
       id: json['id'] as String,
@@ -98,6 +106,7 @@ class ReservaRecurrente {
           ? DateTime.parse(json['ultima_instancia_generada'] as String)
           : null,
       nombreUsuario: json['nombre_usuario'] as String?,
+      emailUsuario: json['email_usuario'] as String?,
       nombreEspacio: json['nombre_espacio'] as String?,
       nombreTramo: json['nombre_tramo'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -105,9 +114,11 @@ class ReservaRecurrente {
     );
   }
 
+  // Helpers de estado para simplificar la lógica de UI.
   bool get isPendiente => estado == EstadoReservaRecurrente.pendienteAprobacion;
   bool get isAprobada => estado == EstadoReservaRecurrente.aprobada;
   bool get isRechazada => estado == EstadoReservaRecurrente.rechazada;
   bool get isCancelada => estado == EstadoReservaRecurrente.cancelada;
+  // Consideramos activa tanto si está aprobada como si aún espera revisión.
   bool get isActiva => isAprobada || isPendiente;
 }

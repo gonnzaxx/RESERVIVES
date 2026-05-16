@@ -27,8 +27,9 @@ class TramoHorario {
     required this.activo,
   });
 
-  /// Crea un [TramoHorario] desde un mapa JSON.
+  /// Crea un [TramoHorario] desde un mapa JSON, recortando la hora a formato HH:mm.
   factory TramoHorario.fromJson(Map<String, dynamic> json) {
+    // Trunca el string de hora a los primeros 5 caracteres para quedarnos solo con HH:mm.
     String parseHora(dynamic raw) {
       final s = (raw as String).substring(0, 5);
       return s;
@@ -46,8 +47,10 @@ class TramoHorario {
     );
   }
 
+  // Rango horario legible: p. ej. "08:00 – 08:55"
   String get rangoHorario => '$horaInicio – $horaFin';
 
+  // Etiqueta completa para mostrar en listas: distingue recreos de clases normales.
   String get labelCompleto => esRecreo ? 'Recreo ($rangoHorario)' : '$nombre ($rangoHorario)';
 }
 
@@ -65,6 +68,7 @@ class TramoDisponibilidad {
   final bool disponible;
   final bool permitido;
   final bool reservado;
+  final bool reservadoPorMi;
   final String? mensaje;
 
   const TramoDisponibilidad({
@@ -72,6 +76,7 @@ class TramoDisponibilidad {
     required this.disponible,
     required this.permitido,
     required this.reservado,
+    this.reservadoPorMi = false,
     this.mensaje,
   });
 
@@ -90,6 +95,7 @@ class TramoDisponibilidad {
       disponible: json['disponible'] as bool,
       permitido: json['permitido'] as bool,
       reservado: json['reservado'] as bool,
+      reservadoPorMi: json['reservado_por_mi'] as bool? ?? false,
       mensaje: json['mensaje'] as String?,
     );
   }
