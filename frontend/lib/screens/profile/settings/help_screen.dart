@@ -13,7 +13,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     final items = [
       _HelpItem(

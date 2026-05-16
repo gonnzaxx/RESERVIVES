@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/reports_provider.dart';
@@ -72,7 +73,7 @@ class _ReportIncidenciaScreenState
         uploadedImageUrl = uploadResponse['url'] as String?;
       }
 
-      final success = await ref
+      final nueva = await ref
           .read(reportarIncidenciaProvider.notifier)
           .reportar(
         _descriptionController.text.trim(),
@@ -81,9 +82,13 @@ class _ReportIncidenciaScreenState
 
       if (mounted) {
         setState(() => _isUploading = false);
-        if (success) {
-          RvAlerts.success(context, context.tr('incidents.success'));
-          Navigator.pop(context);
+        if (nueva != null) {
+          context.goNamed(
+            'incidencia_detalle',
+            pathParameters: {'incidenciaId': nueva.id},
+            queryParameters: {'from': 'submission'},
+            extra: nueva,
+          );
         } else {
           RvAlerts.error(context, context.tr('incidents.error'));
         }
@@ -100,7 +105,7 @@ class _ReportIncidenciaScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,

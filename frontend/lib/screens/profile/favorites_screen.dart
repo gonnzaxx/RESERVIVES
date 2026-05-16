@@ -18,7 +18,7 @@ class FavoritesScreen extends ConsumerWidget {
     final espaciosAsync = ref.watch(listaFavoritosEspaciosProvider);
     final serviciosAsync = ref.watch(listaFavoritosServiciosProvider);
     final width = MediaQuery.of(context).size.width;
-    final isWeb = width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -63,7 +63,7 @@ class FavoritesScreen extends ConsumerWidget {
                               Text(
                                 context.tr('favorites.title'),
                                 style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.bold,
                                   letterSpacing: -0.6,
                                 ),
                               ),
@@ -96,7 +96,7 @@ class FavoritesScreen extends ConsumerWidget {
                           emptyTitle: context.tr('favorites.emptySpaces'),
                           emptyButtonLabel:
                           context.tr('favourites.redirect.text.space'),
-                          onRedirect: () => context.goNamed('instalaciones'),
+                          onRedirect: () => context.goNamed('espacios'),
                           onToggle: (id) async {
                             await ref
                                 .read(favoritosProvider.notifier)
@@ -181,11 +181,11 @@ class _StyledTabBar extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         indicator: BoxDecoration(
-          gradient: AppColors.brandGradient,
+          color: theme.colorScheme.primary,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accentPurple.withValues(alpha: 0.30),
+              color: theme.colorScheme.primary.withValues(alpha: 0.30),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

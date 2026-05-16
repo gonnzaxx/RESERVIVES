@@ -14,7 +14,7 @@ class VotacionesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final encuestasAsync = ref.watch(todasEncuestasProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -155,11 +155,15 @@ class _EncuestaCard extends ConsumerStatefulWidget {
 class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
   String? _selectedOptionId;
   bool _isVoting = false;
+  bool _hasVotedLocally = false;
 
   @override
   Widget build(BuildContext context) {
-    final yaVoto = widget.encuesta.usuarioHaVotado;
+    final yaVoto = widget.encuesta.usuarioHaVotado || _hasVotedLocally;
     final activa = widget.encuesta.activa;
+    final localTotalVotos = _hasVotedLocally
+        ? widget.encuesta.totalVotos + 1
+        : widget.encuesta.totalVotos;
 
     return Container(
       decoration: BoxDecoration(
@@ -257,23 +261,49 @@ class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
             const SizedBox(height: 16),
 
             // ── Opciones ─────────────────────────────────────────────────────
-            ...widget.encuesta.opciones.map((opc) {
-              return Padding(
+            ...widget.encuesta.opciones.asMap().entries.map((entry) {
+              final index = entry.key;
+              final opc = entry.value;
+              final child = Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _OpcionItem(
                   opcion: opc,
-                  totalVotos: widget.encuesta.totalVotos,
+                  totalVotos: localTotalVotos,
                   yaVoto: yaVoto,
                   isSelected: _selectedOptionId == opc.id,
                   activa: activa,
                   isDark: widget.isDark,
                   theme: widget.theme,
+                  localVoto: _hasVotedLocally && _selectedOptionId == opc.id,
                   onSelect: (id) {
                     HapticFeedback.selectionClick();
                     setState(() => _selectedOptionId = id);
                   },
                 ),
               );
+
+              if (_hasVotedLocally) {
+                return child
+                    .animate()
+                    .fadeIn(
+                      delay: Duration(milliseconds: 120 * index),
+                      duration: 400.ms,
+                    )
+                    .slideY(
+                      begin: 0.15,
+                      delay: Duration(milliseconds: 120 * index),
+                      duration: 400.ms,
+                      curve: Curves.easeOutCubic,
+                    )
+                    .scaleXY(
+                      begin: 0.95,
+                      delay: Duration(milliseconds: 120 * index),
+                      duration: 400.ms,
+                      curve: Curves.easeOutCubic,
+                    );
+              }
+
+              return child;
             }),
 
             // ── Botón votar ──────────────────────────────────────────────────
@@ -309,8 +339,12 @@ class _EncuestaCardState extends ConsumerState<_EncuestaCard> {
         .votar(widget.encuesta.id, _selectedOptionId!);
 
     if (mounted) {
-      setState(() => _isVoting = false);
+      setState(() {
+        _isVoting = false;
+        if (success) _hasVotedLocally = true;
+      });
       if (success) {
+        HapticFeedback.mediumImpact();
         RvAlerts.success(context, context.tr('polls.user.success'));
       } else {
         RvAlerts.error(context, context.tr('polls.user.error'));
@@ -366,6 +400,7 @@ class _OpcionItem extends StatelessWidget {
   final bool activa;
   final bool isDark;
   final ThemeData theme;
+  final bool localVoto;
   final Function(String) onSelect;
 
   const _OpcionItem({
@@ -377,17 +412,19 @@ class _OpcionItem extends StatelessWidget {
     required this.isDark,
     required this.theme,
     required this.onSelect,
+    this.localVoto = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final porcentaje =
-    totalVotos > 0 ? (opcion.votos / totalVotos) : 0.0;
+    final votos = opcion.votos + (localVoto ? 1 : 0);
+    final porcentaje = totalVotos > 0 ? (votos / totalVotos) : 0.0;
     final primary = theme.colorScheme.primary;
 
     if (yaVoto || !activa) {
       return _ResultBar(
         opcion: opcion,
+        votos: votos,
         porcentaje: porcentaje,
         yaVoto: yaVoto,
         isDark: isDark,
@@ -409,6 +446,7 @@ class _OpcionItem extends StatelessWidget {
 
 class _ResultBar extends StatelessWidget {
   final EncuestaOpcion opcion;
+  final int votos;
   final double porcentaje;
   final bool yaVoto;
   final bool isDark;
@@ -417,6 +455,7 @@ class _ResultBar extends StatelessWidget {
 
   const _ResultBar({
     required this.opcion,
+    required this.votos,
     required this.porcentaje,
     required this.yaVoto,
     required this.isDark,
@@ -427,79 +466,135 @@ class _ResultBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final barColor = yaVoto ? primary : AppColors.lightTextSecondary;
+    final isLeading = porcentaje > 0.5;
 
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.black.withValues(alpha: 0.03),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.black.withValues(alpha: 0.06),
-          width: 1,
-        ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.95, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutBack,
+      builder: (context, scale, child) => Transform.scale(
+        scale: scale,
+        child: child,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Stack(
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: porcentaje),
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, _) {
-                return FractionallySizedBox(
-                  widthFactor: value,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          barColor.withValues(alpha: yaVoto ? 0.18 : 0.10),
-                          barColor.withValues(alpha: yaVoto ? 0.08 : 0.04),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      opcion.texto,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  TweenAnimationBuilder<double>(
-                    tween:
-                    Tween<double>(begin: 0, end: porcentaje * 100),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, _) {
-                      return Text(
-                        '${value.toStringAsFixed(1)}%',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: yaVoto ? primary : null,
-                          fontWeight: FontWeight.w800,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.02),
+          border: Border.all(
+            color: isLeading && yaVoto
+                ? primary.withValues(alpha: 0.25)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : Colors.black.withValues(alpha: 0.06)),
+            width: isLeading && yaVoto ? 1.5 : 1,
+          ),
+          boxShadow: isLeading && yaVoto
+              ? [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: porcentaje),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, _) {
+                  return FractionallySizedBox(
+                    widthFactor: value.clamp(0.0, 1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: yaVoto
+                              ? [
+                                  primary.withValues(alpha: 0.20),
+                                  primary.withValues(alpha: 0.06),
+                                ]
+                              : [
+                                  barColor.withValues(alpha: 0.10),
+                                  barColor.withValues(alpha: 0.04),
+                                ],
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        opcion.texto,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: porcentaje * 100),
+                          duration: const Duration(milliseconds: 1000),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) {
+                            return Text(
+                              '${value.toStringAsFixed(1)}%',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: yaVoto ? primary : null,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        TweenAnimationBuilder<int>(
+                          tween: IntTween(begin: 0, end: votos),
+                          duration: const Duration(milliseconds: 1000),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: (yaVoto ? primary : theme.hintColor)
+                                    .withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$value',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: yaVoto ? primary : theme.hintColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

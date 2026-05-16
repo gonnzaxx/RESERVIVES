@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
+import 'package:reservives/providers/branding_provider.dart';
+import 'package:reservives/widgets/app_logo.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   // Devuelve la ruta del asset legal según tipo e idioma.
@@ -104,22 +107,11 @@ class AboutScreen extends StatelessWidget {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  RvSheetHeader(onClose: () => Navigator.pop(ctx)),
                   Text(
                     title,
                     style: Theme.of(ctx)
@@ -154,11 +146,13 @@ class AboutScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 750;
+    final isWeb = AppConstants.isWideScreen(context);
     final langCode = AppLocalizations.of(context).locale.languageCode;
+    final branding = ref.watch(brandingProvider);
+    final appName = branding.appName ?? 'RESERVIVES';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -213,7 +207,7 @@ class AboutScreen extends StatelessWidget {
                     padding:
                         EdgeInsets.fromLTRB(20, isWeb ? 8 : 4, 20, 48),
                     children: [
-                      _AppCard(isDark: isDark, theme: theme, isWeb: isWeb)
+                      _AppCard(isDark: isDark, theme: theme, isWeb: isWeb, appName: appName)
                           .animate()
                           .fadeIn(delay: 80.ms, duration: 350.ms)
                           .slideY(
@@ -242,6 +236,7 @@ class AboutScreen extends StatelessWidget {
                         isDark: isDark,
                         theme: theme,
                         isWeb: isWeb,
+                        appName: appName,
                         onShowPolicy: (title, assetPath) => _showPolicy(
                           context,
                           title,
@@ -372,11 +367,13 @@ class _AppCard extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
   final bool isWeb;
+  final String appName;
 
   const _AppCard({
     required this.isDark,
     required this.theme,
     required this.isWeb,
+    required this.appName,
   });
 
   @override
@@ -391,18 +388,14 @@ class _AppCard extends StatelessWidget {
             height: 80,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(22),
-              child: Image.asset(
-                AppAssets.logoPathForTheme(theme.brightness),
-                width: 80,
-                fit: BoxFit.contain,
-              ),
+              child: const AppLogo(width: 80),
             ),
           ),
 
           const SizedBox(height: 18),
 
           Text(
-            'RESERVIVES',
+            appName,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: -0.8,
@@ -650,6 +643,7 @@ class _FooterSection extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
   final bool isWeb;
+  final String appName;
   final void Function(String title, String assetPath) onShowPolicy;
   final String privacyAsset;
   final String termsAsset;
@@ -658,6 +652,7 @@ class _FooterSection extends StatelessWidget {
     required this.isDark,
     required this.theme,
     required this.isWeb,
+    required this.appName,
     required this.onShowPolicy,
     required this.privacyAsset,
     required this.termsAsset,
@@ -693,7 +688,7 @@ class _FooterSection extends StatelessWidget {
         subtitle: context.tr('about.licenses.subtitle'),
         onTap: () => showLicensePage(
           context: context,
-          applicationName: 'RESERVIVES',
+          applicationName: appName,
           applicationVersion: '1.0.0',
           applicationLegalese: context.tr('about.legalese'),
         ),

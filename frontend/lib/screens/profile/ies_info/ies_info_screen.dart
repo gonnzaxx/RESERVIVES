@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
+import 'package:reservives/providers/branding_provider.dart';
+import 'package:reservives/widgets/app_logo.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class IesInfoScreen extends StatelessWidget {
+class IesInfoScreen extends ConsumerWidget {
   const IesInfoScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 800;
+    final isWeb = AppConstants.isWideScreen(context);
+    final branding = ref.watch(brandingProvider);
+
+    final appName = branding.appName ?? context.tr('iesinfo.header.name');
+    final address = branding.address ?? context.tr('iesinfo.address');
+    final contactPhone = branding.contactPhone ?? context.tr('iesinfo.contact.phone.value');
+    final contactEmail = branding.contactEmail ?? context.tr('iesinfo.contact.email.value');
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -69,8 +78,8 @@ class IesInfoScreen extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(
                         20, isWeb ? 8 : 4, 20, 48),
                     child: isWeb
-                        ? _WebLayout(isDark: isDark, theme: theme)
-                        : _MobileLayout(isDark: isDark, theme: theme),
+                        ? _WebLayout(isDark: isDark, theme: theme, appName: appName, address: address, contactPhone: contactPhone, contactEmail: contactEmail)
+                        : _MobileLayout(isDark: isDark, theme: theme, appName: appName, address: address, contactPhone: contactPhone, contactEmail: contactEmail),
                   ),
                 ),
               ],
@@ -85,22 +94,26 @@ class IesInfoScreen extends StatelessWidget {
 class _MobileLayout extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
+  final String appName;
+  final String address;
+  final String contactPhone;
+  final String contactEmail;
 
-  const _MobileLayout({required this.isDark, required this.theme});
+  const _MobileLayout({required this.isDark, required this.theme, required this.appName, required this.address, required this.contactPhone, required this.contactEmail});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _HeroCard(isDark: isDark, theme: theme)
+        _HeroCard(isDark: isDark, theme: theme, appName: appName, address: address)
             .animate()
             .fadeIn(delay: 80.ms, duration: 350.ms)
             .slideY(begin: 0.04, delay: 80.ms, duration: 350.ms, curve: Curves.easeOutCubic),
 
         const SizedBox(height: 20),
 
-        _ContactCard(isDark: isDark, theme: theme)
+        _ContactCard(isDark: isDark, theme: theme, contactPhone: contactPhone, contactEmail: contactEmail)
             .animate()
             .fadeIn(delay: 140.ms, duration: 350.ms)
             .slideY(begin: 0.04, delay: 140.ms, duration: 350.ms, curve: Curves.easeOutCubic),
@@ -118,11 +131,6 @@ class _MobileLayout extends StatelessWidget {
             .fadeIn(delay: 200.ms, duration: 350.ms)
             .slideY(begin: 0.04, delay: 200.ms, duration: 350.ms, curve: Curves.easeOutCubic),
 
-        const SizedBox(height: 32),
-
-        _Footer(theme: theme)
-            .animate()
-            .fadeIn(delay: 240.ms, duration: 300.ms),
       ],
     );
   }
@@ -131,8 +139,12 @@ class _MobileLayout extends StatelessWidget {
 class _WebLayout extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
+  final String appName;
+  final String address;
+  final String contactPhone;
+  final String contactEmail;
 
-  const _WebLayout({required this.isDark, required this.theme});
+  const _WebLayout({required this.isDark, required this.theme, required this.appName, required this.address, required this.contactPhone, required this.contactEmail});
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +156,7 @@ class _WebLayout extends StatelessWidget {
           children: [
             Expanded(
               flex: 5,
-              child: _HeroCard(isDark: isDark, theme: theme)
+              child: _HeroCard(isDark: isDark, theme: theme, appName: appName, address: address)
                   .animate()
                   .fadeIn(delay: 80.ms, duration: 350.ms)
                   .slideY(begin: 0.04, delay: 80.ms, duration: 350.ms, curve: Curves.easeOutCubic),
@@ -155,7 +167,7 @@ class _WebLayout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ContactCard(isDark: isDark, theme: theme)
+                  _ContactCard(isDark: isDark, theme: theme, contactPhone: contactPhone, contactEmail: contactEmail)
                       .animate()
                       .fadeIn(delay: 120.ms, duration: 350.ms)
                       .slideY(begin: 0.04, delay: 120.ms, duration: 350.ms, curve: Curves.easeOutCubic),
@@ -180,11 +192,6 @@ class _WebLayout extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 32),
-
-        _Footer(theme: theme)
-            .animate()
-            .fadeIn(delay: 220.ms, duration: 300.ms),
       ],
     );
   }
@@ -193,8 +200,10 @@ class _WebLayout extends StatelessWidget {
 class _HeroCard extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
+  final String appName;
+  final String address;
 
-  const _HeroCard({required this.isDark, required this.theme});
+  const _HeroCard({required this.isDark, required this.theme, required this.appName, required this.address});
 
   @override
   Widget build(BuildContext context) {
@@ -223,10 +232,7 @@ class _HeroCard extends StatelessWidget {
             child: ClipOval(
               child: Padding(
                 padding: const EdgeInsets.all(10),
-                child: Image.asset(
-                  AppAssets.logoPathForTheme(theme.brightness),
-                  fit: BoxFit.contain,
-                ),
+                child: const AppLogo(),
               ),
             ),
           ),
@@ -234,7 +240,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            context.tr('iesinfo.header.name'),
+            appName,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w900,
@@ -253,7 +259,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           Text(
-            context.tr('iesinfo.address'),
+            address,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: isDark
@@ -263,7 +269,11 @@ class _HeroCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          _WebsiteLink(isDark: isDark, theme: theme),
+
+          const SizedBox(height: 20),
 
           Divider(
             color: (isDark ? Colors.white : Colors.black)
@@ -303,11 +313,14 @@ class _HeroCard extends StatelessWidget {
 class _ContactCard extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
+  final String contactPhone;
+  final String contactEmail;
 
-  const _ContactCard({required this.isDark, required this.theme});
+  const _ContactCard({required this.isDark, required this.theme, required this.contactPhone, required this.contactEmail});
 
   @override
   Widget build(BuildContext context) {
+    final phoneDigits = contactPhone.replaceAll(RegExp(r'[^0-9+]'), '');
     final contacts = [
       _ContactData(
         icon: Icons.badge_rounded,
@@ -318,16 +331,16 @@ class _ContactCard extends StatelessWidget {
       _ContactData(
         icon: Icons.phone_rounded,
         label: context.tr('iesinfo.contact.phone.label'),
-        value: context.tr('iesinfo.contact.phone.value'),
+        value: contactPhone,
         color: AppColors.success,
-        url: 'tel:916807712',
+        url: 'tel:$phoneDigits',
       ),
       _ContactData(
         icon: Icons.email_rounded,
         label: context.tr('iesinfo.contact.email.label'),
-        value: context.tr('iesinfo.contact.email.value'),
+        value: contactEmail,
         color: AppColors.accentPurple,
-        url: 'mailto:secretaria@iesluisvives.org',
+        url: 'mailto:$contactEmail',
       ),
     ];
 
@@ -697,21 +710,20 @@ class _SectionTileState extends State<_SectionTile> {
   }
 }
 
-class _Footer extends StatefulWidget {
+class _WebsiteLink extends StatefulWidget {
+  final bool isDark;
   final ThemeData theme;
-  const _Footer({required this.theme});
+  const _WebsiteLink({required this.isDark, required this.theme});
 
   @override
-  State<_Footer> createState() => _FooterState();
+  State<_WebsiteLink> createState() => _WebsiteLinkState();
 }
 
-class _FooterState extends State<_Footer> {
+class _WebsiteLinkState extends State<_WebsiteLink> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.theme.brightness == Brightness.dark;
-
     return Center(
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -724,40 +736,25 @@ class _FooterState extends State<_Footer> {
           ),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: _hovered
                   ? AppColors.primaryBlue.withValues(alpha: 0.06)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Para más información, visita la ',
-                      style: widget.theme.textTheme.bodySmall?.copyWith(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'web oficial del instituto',
-                          style: widget.theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                            decorationColor: AppColors.primaryBlue
-                                .withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+                Icon(Icons.language_rounded, size: 14, color: AppColors.primaryBlue.withValues(alpha: _hovered ? 1.0 : 0.7)),
+                const SizedBox(width: 6),
+                Text(
+                  'www.iesluisvives.es',
+                  style: widget.theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.primaryBlue,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.primaryBlue.withValues(alpha: 0.5),
                   ),
                 ),
               ],

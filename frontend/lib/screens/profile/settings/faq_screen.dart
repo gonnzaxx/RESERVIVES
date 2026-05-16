@@ -14,10 +14,10 @@ class FaqScreen extends StatelessWidget {
     final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 850;
+    final isWeb = AppConstants.isWideScreen(context);
 
     final faqs = List.generate(
-      8,
+      14,
           (i) => _FaqData(
         question: loc.translate('faq.q${i + 1}.question'),
         answer: loc.translate('faq.q${i + 1}.answer'),

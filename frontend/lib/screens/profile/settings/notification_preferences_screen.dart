@@ -19,7 +19,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final preferencesAsync = ref.watch(notificationPreferencesProvider);
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,

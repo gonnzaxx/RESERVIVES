@@ -12,7 +12,8 @@ import 'package:reservives/services/auth_service.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/constants.dart';
 
-import '../../widgets/rv_image.dart';
+import 'package:reservives/providers/role_permissions_provider.dart';
+import 'package:reservives/widgets/rv_image.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -44,6 +45,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  // Devuelve la vista correcta según el estado de autenticación (cargando, invitado, sin usuario o autenticado)
   Widget _buildBody(
       BuildContext context,
       WidgetRef ref,
@@ -66,7 +68,6 @@ class _GuestView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     final userCard = _GuestCard(ref: ref)
         .animate()
@@ -102,6 +103,7 @@ class _GuestView extends ConsumerWidget {
     );
   }
 
+  // Devuelve las opciones disponibles para usuarios invitados (sin cuenta)
   List<_OptionsItem> _guestOptions(
       BuildContext context,
       WidgetRef ref,
@@ -203,12 +205,17 @@ class _AuthenticatedView extends ConsumerWidget {
     );
   }
 
+  // Devuelve las opciones del perfil para usuarios autenticados (según rol)
   List<_OptionsItem> _authOptions(
       BuildContext context,
       WidgetRef ref,
       ThemeData theme,
       bool isDark,
       ) {
+    final customSections = ref.watch(rolePermissionsProvider).maybeWhen(
+      data: (v) => v,
+      orElse: () => <String, List<String>>{},
+    );
     return [
       _OptionsItem.nav(
         icon: Icons.favorite_rounded,
@@ -248,7 +255,7 @@ class _AuthenticatedView extends ConsumerWidget {
         value: isDark,
         onToggle: () => ref.read(themeProvider.notifier).toggleTheme(),
       ),
-      if (hasAnyBackofficeAccess(user.rol))
+      if (hasAnyBackofficeAccessDynamic(user.rol, customSections, rolRaw: user.rolRaw))
         _OptionsItem.nav(
           icon: Icons.admin_panel_settings_rounded,
           color: AppColors.success,
@@ -259,6 +266,7 @@ class _AuthenticatedView extends ConsumerWidget {
     ];
   }
 
+  // Muestra el diálogo de confirmación de cierre de sesión
   Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
     final result = await showDialog<String>(
       context: context,
@@ -420,7 +428,6 @@ class _GuestCard extends ConsumerWidget {
       padding: const EdgeInsets.all(28),
       child: Column(
         children: [
-          // Avatar con gradiente
           Container(
             width: 80,
             height: 80,
@@ -835,7 +842,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.logout_rounded,
+                  Icons.login_rounded,
                   color: AppColors.error,
                   size: 18,
                 ),

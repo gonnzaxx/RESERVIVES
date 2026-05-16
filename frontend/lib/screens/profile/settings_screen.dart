@@ -18,7 +18,7 @@ class SettingsScreen extends ConsumerWidget {
     final loc = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
     final isGuest = ref.watch(authProvider).isGuest;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -178,7 +178,7 @@ class SettingsScreen extends ConsumerWidget {
                           section: sections[i],
                           isDark: isDark,
                           theme: theme,
-                          animDelay: Duration(milliseconds: 60 * i),
+                          animDelay: Duration(milliseconds: 60 * (i + 1)),
                         ),
                       ],
                     ],
@@ -213,6 +213,7 @@ class _ItemData {
     required this.onTap,
   });
 }
+
 
 class _SectionCard extends StatelessWidget {
   final _Section section;
@@ -525,19 +526,11 @@ class _LanguageBottomSheet extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(0, 14, 0, bottomPad + 16),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, bottomPad + 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: (isDark ? Colors.white : Colors.black)
-                  .withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          RvSheetHeader(onClose: () => Navigator.pop(context)),
           _LanguageContent(
             currentLocale: currentLocale,
             onLocaleSelected: onLocaleSelected,
