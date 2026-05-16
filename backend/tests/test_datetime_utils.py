@@ -4,7 +4,7 @@ from app.utils.datetime_utils import local_slot_to_utc_range
 
 
 def test_local_slot_to_utc_range_in_summer_dst():
-    # Europe/Madrid in July is UTC+2
+    # Madrid en julio es UTC+2
     start_utc, end_utc = local_slot_to_utc_range(
         date(2026, 7, 1),
         time(11, 10),
@@ -20,7 +20,7 @@ def test_local_slot_to_utc_range_in_summer_dst():
 
 
 def test_local_slot_to_utc_range_in_winter():
-    # Europe/Madrid in January is UTC+1
+    # Madrid en enero es UTC+1
     start_utc, end_utc = local_slot_to_utc_range(
         date(2026, 1, 15),
         time(11, 10),

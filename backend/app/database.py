@@ -1,5 +1,5 @@
 """
-RESERVIVES - Conexión a la base de datos.
+IES LUIS VIVES APP - Conexión a la base de datos.
 
 Configura SQLAlchemy async para PostgreSQL y proporciona
 la sesión de base de datos como dependencia de FastAPI.
@@ -15,10 +15,10 @@ settings = get_settings()
 # Motor async de SQLAlchemy para PostgreSQL
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.APP_DEBUG,  # Log de consultas SQL en modo debug
+    echo=settings.APP_DEBUG,  # Activa el log de consultas SQL en modo debug
     pool_size=20,
     max_overflow=10,
-    pool_pre_ping=True,       # Verifica conexión antes de usar
+    pool_pre_ping=True,       # Verifica la conexión antes de usarla
 )
 
 # Fábrica de sesiones async
@@ -34,11 +34,8 @@ class Base(DeclarativeBase):
     pass
 
 
+# Dependencia de FastAPI que abre una sesión, hace commit al finalizar y rollback en caso de error
 async def get_db() -> AsyncSession:
-    """
-    Dependencia de FastAPI que proporciona una sesión de BD.
-    Se cierra automáticamente al finalizar la petición.
-    """
     async with async_session() as session:
         try:
             yield session

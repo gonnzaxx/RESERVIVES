@@ -1,5 +1,5 @@
 """
-RESERVIVES - Configuración de la aplicación.
+IES LUIS VIVES APP - Configuración de la aplicación.
 
 Carga las variables de entorno y proporciona acceso tipado
 a la configuración mediante Pydantic Settings.
@@ -42,13 +42,8 @@ class Settings(BaseSettings):
     # Tokens
     DEFAULT_MONTHLY_TOKENS: int = 20
 
-    # SMTP (emails notificaciones)
-    SMTP_ENABLED: bool = False
-    SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USERNAME: str = "tu-email@gmail.com"
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = "tu-email@gmail.com"
+    # Microsoft Graph (emails notificaciones)
+    GRAPH_FROM_EMAIL: str = ""
 
     # Firebase Cloud Messaging
     FIREBASE_ENABLED: bool = False

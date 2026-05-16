@@ -21,7 +21,7 @@ def test_render_template_reserva_creada(monkeypatch):
         }
     )
 
-    assert subject == "RESERVIVES | Reserva registrada"
+    assert subject == "IES LUIS VIVES | Reserva registrada"
 
     assert "Hola Test User," in text
     assert "Pista de Padel" in text
@@ -41,5 +41,5 @@ def test_default_template_fallback(monkeypatch):
         context={}
     )
 
-    assert subject == "RESERVIVES | Notificacion"
+    assert subject == "IES LUIS VIVES | Notificación"
     assert "Nueva notif" in html
