@@ -1,4 +1,4 @@
-# RESERVIVES - Dependencias Backend
+# IES LUIS VIVES APP - Dependencias Backend
 
 # Framework web y Servidor
 fastapi==0.115.8
