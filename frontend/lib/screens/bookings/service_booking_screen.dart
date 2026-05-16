@@ -6,13 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/servicio.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/bookings_provider.dart';
-import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/providers/time_slots_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
@@ -36,6 +34,7 @@ class _ServiceBookingScreenState
   late ConfettiController _confettiController;
   int _shakeTrigger = 0;
 
+  // Inicializa la fecha por defecto y el controlador de confeti
   @override
   void initState() {
     super.initState();
@@ -51,9 +50,11 @@ class _ServiceBookingScreenState
     super.dispose();
   }
 
+  // Devuelve true si el día es fin de semana
   bool _isWeekend(DateTime d) =>
       d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
 
+  // Ejecuta la reserva del servicio: valida el tramo seleccionado y gestiona el resultado
   Future<void> _onBook(ServicioInstituto servicio) async {
     if (_selectedTramoId == null) {
       HapticFeedback.heavyImpact();
@@ -95,19 +96,22 @@ class _ServiceBookingScreenState
           reserva, reserva.nombreEspacio ?? servicio.nombre);
 
       if (!mounted) return;
-      ref.read(servicesTabIndexProvider.notifier).setIndex(2);
-      context.goNamed('servicios');
+      context.pushNamed(
+        'reserva_detalle',
+        pathParameters: {'reservaId': reserva.id},
+        extra: reserva,
+        queryParameters: {'tipo': 'SERVICIO'},
+      );
       return;
     }
 
     final error = ref.read(reservarServicioProvider).error;
-    RvAlerts.error(
-      context,
-      toFriendlyErrorMessage(
-          error, fallback: context.tr('services.error.booking')),
-    );
+    final raw = error?.toString() ?? '';
+    final msg = raw.replaceFirst(RegExp(r'^[A-Za-z]*Exception:\s*'), '').replaceFirst(RegExp(r'\s*\(\d+\)$'), '');
+    RvAlerts.error(context, msg.isNotEmpty ? msg : context.tr('services.error.booking'));
   }
 
+  // Muestra el bottom sheet de confirmación tras reservar el servicio
   Future<void> _showSuccessSheet(
       dynamic reserva, String nombre) async {
     final isDark =
@@ -135,8 +139,8 @@ class _ServiceBookingScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SheetHandle(isDark: isDark),
-            const SizedBox(height: 28),
+            RvSheetHeader(onClose: () => Navigator.pop(ctx)),
+            const SizedBox(height: 12),
             Container(
               width: 72,
               height: 72,
@@ -191,6 +195,7 @@ class _ServiceBookingScreenState
     );
   }
 
+  // Muestra un overlay de carga que bloquea la pantalla durante el procesamiento
   void _showLoadingOverlay() {
     showGeneralDialog(
       context: context,
@@ -276,10 +281,9 @@ class _ServiceBookingScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final servicioAsync =
     ref.watch(servicioDetalleProvider(widget.servicioId));
-    final bookingState = ref.watch(reservarServicioProvider);
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
@@ -328,7 +332,7 @@ class _ServiceBookingScreenState
                                   children: [
                                     Text(
                                       context
-                                          .tr('profile.accountEyebrow')
+                                          .tr('shell.nav.services')
                                           .toUpperCase(),
                                       style: theme.textTheme
                                           .labelSmall
@@ -536,11 +540,6 @@ class _ServiceInfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              RvBadge(
-                label: context.tr('services.eyebrow'),
-                icon: Icons.home_repair_service_rounded,
-                color: AppColors.accentPurple,
-              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -973,26 +972,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  final bool isDark;
-  const _SheetHandle({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: (isDark ? Colors.white : Colors.black)
-              .withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-}
-
 class _TramoServiceSelector extends ConsumerWidget {
   final String servicioId;
   final DateTime selectedDate;
@@ -1285,6 +1264,7 @@ class _TramoChipState extends State<_TramoChip> {
     );
   }
 
+  // Devuelve el texto secundario del chip según el estado del tramo
   Widget _subtitle(ThemeData theme) {
     final style = TextStyle(
       fontSize: 10,
@@ -1292,7 +1272,7 @@ class _TramoChipState extends State<_TramoChip> {
       color: widget.isSelected ? Colors.white70 : theme.disabledColor,
     );
     if (widget.disponibilidad.reservado) {
-      return Text('Ocupado', style: style);
+      return Text(widget.disponibilidad.reservadoPorMi ? 'Ya lo has reservado' : 'Ocupado', style: style);
     }
     if (widget.disponibilidad.estado ==
         EstadoTramo.horarioPasado) {

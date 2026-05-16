@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -29,6 +28,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     super.dispose();
   }
 
+  // Envía el mensaje del usuario al asistente IA y desplaza la lista al final
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -37,6 +37,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _scrollToBottom();
   }
 
+  // Desplaza el scroll hasta el último mensaje del chat
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
@@ -52,10 +53,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final user = auth.user;
-    final isGuest = auth.isGuest;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     final userName = (user?.nombre.trim().isNotEmpty ?? false)
         ? user!.nombre.trim()
@@ -76,7 +76,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             child: Column(
               children: [
                 _Header(
-                  isGuest: isGuest,
                   isWeb: isWeb,
                   isDark: isDark,
                   theme: theme,
@@ -109,8 +108,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 4),
-                            child: _TypingIndicator(
-                                isDark: isDark, theme: theme),
+                            child: _TypingIndicator(isDark: isDark, theme: theme),
                           ),
                         );
                       }
@@ -165,14 +163,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 }
 
 class _Header extends StatelessWidget {
-  final bool isGuest;
   final bool isWeb;
   final bool isDark;
   final ThemeData theme;
   final VoidCallback onNewChat;
 
   const _Header({
-    required this.isGuest,
     required this.isWeb,
     required this.isDark,
     required this.theme,
@@ -186,16 +182,13 @@ class _Header extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (isGuest) ...[
-            RvGhostIconButton(
-              icon: Icons.arrow_back_ios_new_rounded,
-              onTap: () => context.canPop()
-                  ? context.pop()
-                  : context.goNamed('home'),
-            ),
-            const SizedBox(width: 4),
-          ] else
-            const SizedBox(width: 12),
+          RvGhostIconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            onTap: () => context.canPop()
+                ? context.pop()
+                : context.goNamed('home'),
+          ),
+          const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,25 +323,27 @@ class _TypingIndicatorState extends State<_TypingIndicator>
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.isDark
-            ? AppColors.darkCard
-            : Colors.white,
+        color: widget.isDark ? const Color(0xFF1E2235) : Colors.white,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(18),
           topRight: Radius.circular(18),
           bottomRight: Radius.circular(18),
           bottomLeft: Radius.circular(4),
         ),
-        border: Border.all(
-          color: widget.isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.06),
-          width: 1.5,
-        ),
-        boxShadow: AppShadows.soft(context),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: widget.isDark ? 0.30 : 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: widget.isDark ? 0.12 : 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -407,8 +402,7 @@ class _ChatBubble extends StatelessWidget {
     if (isUser) {
       return Container(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        padding: const EdgeInsets.symmetric(
-            horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
           color: primary,
           borderRadius: const BorderRadius.only(
@@ -437,54 +431,41 @@ class _ChatBubble extends StatelessWidget {
       );
     }
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
-        bottomLeft: Radius.circular(4),
-        bottomRight: Radius.circular(20),
+    // AI bubble
+    final bubbleColor = isDark ? const Color(0xFF1E2235) : Colors.white;
+    final textColor = isDark ? Colors.white.withValues(alpha: 0.92) : AppColors.lightText;
+
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: bubbleColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : Colors.white.withValues(alpha: 0.80),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-              bottomLeft: Radius.circular(4),
-              bottomRight: Radius.circular(20),
-            ),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : primary.withValues(alpha: 0.10),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            message,
-            style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.90)
-                  : AppColors.lightText,
-              height: 1.6,
-              fontSize: 15,
-              letterSpacing: 0.1,
-            ),
-          ),
+      child: Text(
+        message,
+        style: TextStyle(
+          color: textColor,
+          height: 1.6,
+          fontSize: 15,
+          letterSpacing: 0.1,
         ),
       ),
     );

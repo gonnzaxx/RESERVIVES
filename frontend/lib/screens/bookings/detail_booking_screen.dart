@@ -3,11 +3,16 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/reserva.dart';
+import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/bookings_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/services/api_client.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/constants.dart';
+import 'package:reservives/core/utils/calendar_utils.dart';
 
 class ReservaDetalleScreen extends ConsumerWidget {
   const ReservaDetalleScreen({
@@ -71,6 +76,7 @@ class ReservaDetalleScreen extends ConsumerWidget {
     );
   }
 
+  // Carga los datos de la reserva desde la API según su tipo (espacio o servicio)
   Future<Reserva> _loadReserva(WidgetRef ref) async {
     final apiClient = ref.read(apiClientProvider);
 
@@ -96,7 +102,7 @@ class ReservaDetalleScreen extends ConsumerWidget {
   }
 }
 
-class _ReservaDetalleBody extends StatelessWidget {
+class _ReservaDetalleBody extends ConsumerStatefulWidget {
   const _ReservaDetalleBody({
     required this.reserva,
     required this.dateFormat,
@@ -106,10 +112,78 @@ class _ReservaDetalleBody extends StatelessWidget {
   final DateFormat dateFormat;
 
   @override
+  ConsumerState<_ReservaDetalleBody> createState() => _ReservaDetalleBodyState();
+}
+
+class _ReservaDetalleBodyState extends ConsumerState<_ReservaDetalleBody> {
+  bool _cancelling = false;
+  late Reserva _reserva;
+
+  @override
+  void initState() {
+    super.initState();
+    _reserva = widget.reserva;
+  }
+
+  // Pide confirmación y cancela la reserva si el usuario acepta
+  Future<void> _cancelar() async {
+    final confirm = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _CancelConfirmSheet(
+        title: context.tr('booking.cancel.title'),
+        message: context.tr('booking.cancel.confirm'),
+        confirmLabel: context.tr('booking.cancel.action'),
+        cancelLabel: context.tr('common.cancel'),
+        onConfirm: () => Navigator.pop(ctx, true),
+        onCancel: () => Navigator.pop(ctx, false),
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final isServicio = (_reserva.tipoEspacio ?? '').toUpperCase() == 'SERVICIO';
+      final endpoint = isServicio
+          ? '/servicios/reservas/${_reserva.id}/cancelar'
+          : '/reservas-espacios/${_reserva.id}/cancelar';
+      await apiClient.post(endpoint);
+      if (!mounted) return;
+      ref.invalidate(misReservasProvider);
+      ref.invalidate(misReservasServiciosProvider);
+      setState(() => _reserva = _reserva.copyWith(estado: EstadoReserva.cancelada));
+      RvAlerts.success(context, context.tr('booking.cancel.success'));
+    } catch (e) {
+      if (!mounted) return;
+      RvAlerts.error(context, toFriendlyErrorMessage(e, fallback: context.tr('booking.cancel.error')));
+    } finally {
+      if (mounted) setState(() => _cancelling = false);
+    }
+  }
+
+  // Abre Google Calendar con los datos de la reserva prellenados
+  void _addToCalendar() {
+    CalendarUtils.addToCalendar(
+      title: _reserva.nombreEspacio ?? 'Reserva',
+      startTime: _reserva.fechaInicio,
+      endTime: _reserva.fechaFin,
+      location: 'IES Luis Vives',
+      details: 'Reserva gestionada por RESERVIVES.',
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final estado = reserva.estado;
+    final isPast = _reserva.isPasada;
+    final estado = _reserva.estado;
+    final user = ref.watch(authProvider).user;
+    final isOwner = user?.id == _reserva.usuarioId;
+    final canCancel = isOwner && !isPast && !_reserva.isCancelada && !_reserva.isRechazada;
+    final canCalendar = _reserva.isAprobada && !isPast;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -123,7 +197,7 @@ class _ReservaDetalleBody extends StatelessWidget {
               children: [
                 _Header(
                   eyebrow: context.tr('booking.detail.eyebrow'),
-                  title: reserva.nombreEspacio ??
+                  title: _reserva.nombreEspacio ??
                       context.tr('booking.detail.defaultTitle'),
                 ),
                 Expanded(
@@ -132,8 +206,12 @@ class _ReservaDetalleBody extends StatelessWidget {
                     children: [
                       _StatusBanner(
                         estado: estado,
-                        label: _estadoLabel(context, estado),
-                        color: _estadoColor(estado),
+                        label: isPast && !_reserva.isCancelada && !_reserva.isRechazada
+                            ? context.tr('activity.status.finished')
+                            : _estadoLabel(context, estado),
+                        color: isPast && !_reserva.isCancelada && !_reserva.isRechazada
+                            ? AppColors.lightTextSecondary
+                            : _estadoColor(estado),
                       )
                           .animate()
                           .fadeIn(duration: 300.ms)
@@ -148,39 +226,39 @@ class _ReservaDetalleBody extends StatelessWidget {
                           _Item(
                             icon: Icons.category_rounded,
                             label: context.tr('booking.detail.resourceType'),
-                            value: reserva.tipoEspacio ??
+                            value: _reserva.tipoEspacio ??
                                 context.tr('admin.bookings.unknown'),
                           ),
                           _Item(
                             icon: Icons.event_available_rounded,
                             label: context.tr('booking.detail.startTime'),
-                            value: dateFormat.format(reserva.fechaInicio),
+                            value: widget.dateFormat.format(_reserva.fechaInicio),
                             accent: AppColors.success,
                           ),
                           _Item(
                             icon: Icons.event_busy_rounded,
                             label: context.tr('booking.detail.endTime'),
-                            value: dateFormat.format(reserva.fechaFin),
+                            value: widget.dateFormat.format(_reserva.fechaFin),
                             accent: AppColors.error,
                           ),
-                          if ((reserva.nombreUsuario ?? '').isNotEmpty)
+                          if ((_reserva.nombreUsuario ?? '').isNotEmpty)
                             _Item(
                               icon: Icons.person_outline_rounded,
                               label: context.tr('booking.detail.reservedBy'),
-                              value: reserva.nombreUsuario!,
+                              value: _reserva.nombreUsuario!,
                             ),
                           _Item(
                             icon: Icons.toll_rounded,
                             label: context.tr('booking.detail.cost'),
                             value:
-                            '${reserva.tokensConsumidos} ${context.tr('home.tokens')}',
+                            '${_reserva.tokensConsumidos} ${context.tr('home.tokens')}',
                             accent: AppColors.warning,
                           ),
-                          if ((reserva.observaciones ?? '').trim().isNotEmpty)
+                          if ((_reserva.observaciones ?? '').trim().isNotEmpty)
                             _Item(
                               icon: Icons.notes_rounded,
                               label: context.tr('booking.notes'),
-                              value: reserva.observaciones!,
+                              value: _reserva.observaciones!,
                               isMultiline: true,
                             ),
                         ],
@@ -192,6 +270,20 @@ class _ReservaDetalleBody extends StatelessWidget {
                         delay: 80.ms,
                         curve: Curves.easeOutCubic,
                       ),
+
+                      if (canCalendar || canCancel) ...[
+                        const SizedBox(height: 24),
+                        _ActionButtons(
+                          canCancel: canCancel,
+                          canCalendar: canCalendar,
+                          cancelling: _cancelling,
+                          onCancel: _cancelar,
+                          onCalendar: _addToCalendar,
+                        )
+                            .animate()
+                            .fadeIn(delay: 160.ms, duration: 300.ms)
+                            .slideY(begin: 0.04, delay: 160.ms, curve: Curves.easeOutCubic),
+                      ],
                     ],
                   ),
                 ),
@@ -203,6 +295,7 @@ class _ReservaDetalleBody extends StatelessWidget {
     );
   }
 
+  // Devuelve el texto localizado para el estado de la reserva
   String _estadoLabel(BuildContext context, EstadoReserva estado) {
     switch (estado) {
       case EstadoReserva.pendiente:
@@ -216,6 +309,7 @@ class _ReservaDetalleBody extends StatelessWidget {
     }
   }
 
+  // Devuelve el color asociado al estado de la reserva
   Color _estadoColor(EstadoReserva estado) {
     switch (estado) {
       case EstadoReserva.pendiente:
@@ -230,6 +324,253 @@ class _ReservaDetalleBody extends StatelessWidget {
   }
 }
 
+class _ActionButtons extends StatelessWidget {
+  final bool canCancel;
+  final bool canCalendar;
+  final bool cancelling;
+  final VoidCallback onCancel;
+  final VoidCallback onCalendar;
+
+  const _ActionButtons({
+    required this.canCancel,
+    required this.canCalendar,
+    required this.cancelling,
+    required this.onCancel,
+    required this.onCalendar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        if (canCalendar)
+          _ActionTile(
+            icon: Icons.edit_calendar_rounded,
+            label: context.tr('booking.detail.addToCalendar'),
+            iconColor: theme.colorScheme.primary,
+            isDark: isDark,
+            onTap: onCalendar,
+          ),
+        if (canCalendar && canCancel) const SizedBox(height: 10),
+        if (canCancel)
+          _ActionTile(
+            label: context.tr('booking.cancel.action'),
+            iconColor: AppColors.error,
+            isDark: isDark,
+            isDestructive: true,
+            isLoading: cancelling,
+            onTap: cancelling ? null : onCancel,
+          ),
+      ],
+    );
+  }
+}
+
+class _ActionTile extends StatefulWidget {
+  final IconData? icon;
+  final String label;
+  final Color iconColor;
+  final bool isDark;
+  final bool isDestructive;
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  const _ActionTile({
+    this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.isDark,
+    this.isDestructive = false,
+    this.isLoading = false,
+    this.onTap,
+  });
+
+  @override
+  State<_ActionTile> createState() => _ActionTileState();
+}
+
+class _ActionTileState extends State<_ActionTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = widget.isDestructive ? AppColors.error : widget.iconColor;
+
+    return GestureDetector(
+      onTapDown: widget.onTap != null ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: widget.onTap != null
+          ? (_) {
+        setState(() => _pressed = false);
+        widget.onTap!();
+      }
+          : null,
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: widget.isDark ? 0.10 : 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: color.withValues(alpha: 0.18),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.isLoading)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                )
+              else if (widget.icon != null)
+                Icon(widget.icon, size: 18, color: color),
+              const SizedBox(width: 10),
+              Text(
+                widget.label,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CancelConfirmSheet extends StatelessWidget {
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final String cancelLabel;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  const _CancelConfirmSheet({
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    required this.cancelLabel,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.dividerColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.cancel_rounded,
+              size: 32,
+              color: AppColors.error,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.hintColor,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                confirmLabel,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: onCancel,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                cancelLabel,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: theme.hintColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatusBanner extends StatelessWidget {
   final EstadoReserva estado;
   final String label;
@@ -241,6 +582,7 @@ class _StatusBanner extends StatelessWidget {
     required this.color,
   });
 
+  // Icono asociado al estado de la reserva
   IconData get _icon {
     switch (estado) {
       case EstadoReserva.pendiente:
@@ -444,7 +786,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final theme = Theme.of(context);
 
     return Padding(

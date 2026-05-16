@@ -126,14 +126,19 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
 
     final effectiveTokens =
     user?.usesTokens == true ? widget.servicio.precioTokens : 0;
+    final rolesPermitidos = widget.servicio.rolesPermitidos;
+    final isRoleBlocked = rolesPermitidos.isNotEmpty &&
+        (user == null || !rolesPermitidos.contains(user.rol.value));
+    final canBook = !isRoleBlocked;
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor: canBook ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
+        onTapDown: canBook ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: canBook
+            ? (_) {
           setState(() => _pressed = false);
           if (isGuest) {
             context.goNamed('restricted');
@@ -143,7 +148,8 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
             'reserva_servicio',
             pathParameters: {'servicioId': widget.servicio.id},
           );
-        },
+        }
+            : null,
         onTapCancel: () => setState(() => _pressed = false),
         child: AnimatedScale(
           scale: _pressed ? 0.98 : 1.0,
@@ -154,7 +160,7 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
               color: isDark ? AppColors.darkCard : Colors.white,
               borderRadius: BorderRadius.circular(AppRadii.l),
               border: Border.all(
-                color: _hovered
+                color: _hovered && canBook
                     ? theme.colorScheme.primary.withValues(alpha: 0.30)
                     : (isDark
                     ? Colors.white.withValues(alpha: 0.06)
@@ -162,17 +168,18 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
                 width: 1.5,
               ),
               boxShadow:
-              _hovered ? AppShadows.deep(context) : AppShadows.soft(context),
+              _hovered && canBook ? AppShadows.deep(context) : AppShadows.soft(context),
             ),
-            child: Padding(
+            child: Opacity(
+              opacity: canBook ? 1.0 : 0.50,
+              child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Imagen
                   _ServiceImage(
                     servicio: widget.servicio,
-                    hovered: _hovered,
+                    hovered: _hovered && canBook,
                   ),
 
                   const SizedBox(width: 14),
@@ -183,7 +190,7 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Badge
-                        _BadgeRow(servicio: widget.servicio),
+                        _BadgeRow(servicio: widget.servicio, canBook: canBook),
 
                         const SizedBox(height: 8),
                         Row(
@@ -231,6 +238,7 @@ class _ServicioCardState extends ConsumerState<_ServicioCard> {
                   ),
                 ],
               ),
+              ),
             ),
           ),
         ),
@@ -248,6 +256,7 @@ class _ServiceImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -273,7 +282,7 @@ class _ServiceImage extends StatelessWidget {
           width: 92,
           height: 92,
           fallbackIcon: Icons.build_circle_rounded,
-          fallbackIconColor: AppColors.accentPurple,
+          fallbackIconColor: primaryColor,
         ),
       ),
     );
@@ -282,8 +291,9 @@ class _ServiceImage extends StatelessWidget {
 
 class _BadgeRow extends StatelessWidget {
   final ServicioInstituto servicio;
+  final bool canBook;
 
-  const _BadgeRow({required this.servicio});
+  const _BadgeRow({required this.servicio, required this.canBook});
 
   @override
   Widget build(BuildContext context) {
@@ -292,14 +302,11 @@ class _BadgeRow extends StatelessWidget {
       runSpacing: 4,
       children: [
         RvBadge(
-          label: context.tr('services.type.service'),
-          color: AppColors.accentPurple,
-          icon: Icons.build_circle_rounded,
-        ),
-        RvBadge(
-          label: context.tr('spaces.availability'),
-          color: AppColors.success,
-          icon: Icons.check_circle_rounded,
+          label: canBook
+              ? context.tr('spaces.availability')
+              : context.tr('spaces.noAvailability'),
+          color: canBook ? AppColors.success : AppColors.error,
+          icon: canBook ? Icons.check_circle_rounded : Icons.cancel_rounded,
         ),
       ],
     );

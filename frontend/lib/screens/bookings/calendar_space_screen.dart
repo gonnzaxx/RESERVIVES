@@ -17,8 +17,7 @@ const _kSlotGap = 6.0;
 const _kDayColWidth = 88.0;
 const _kTeal = Color(0xFF2FA888);
 
-// Pantalla principal
-
+// Vista de disponibilidad semanal de un espacio en formato cuadrícula
 class CalendarSpaceScreen extends ConsumerStatefulWidget {
   final String espacioId;
 
@@ -40,6 +39,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
     _semanaInicio = _lunesDe(DateTime.now());
   }
 
+  // Calcula el lunes de la semana de la fecha dada
   DateTime _lunesDe(DateTime d) =>
       d.subtract(Duration(days: d.weekday - 1)).copyWith(
         hour: 0,
@@ -49,6 +49,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
         microsecond: 0,
       );
 
+  // True si la semana anterior sigue siendo igual o posterior a hoy
   bool get _puedeRetroceder {
     final prevLunes = _semanaInicio.subtract(const Duration(days: 7));
     final hoy = DateTime.now();
@@ -57,6 +58,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
     );
   }
 
+  // Retrocede una semana si está permitido y limpia la selección
   void _semanaAnterior() {
     if (!_puedeRetroceder) return;
     setState(() {
@@ -65,6 +67,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
     });
   }
 
+  // Avanza una semana y limpia la selección activa
   void _semanaSiguiente() {
     setState(() {
       _semanaInicio = _semanaInicio.add(const Duration(days: 7));
@@ -72,11 +75,13 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
     });
   }
 
+  // Limpia el tramo y la fecha seleccionados
   void _clearSelection() {
     _selectedTramo = null;
     _selectedFecha = null;
   }
 
+  // Selecciona o deselecciona un slot al tocarlo
   void _onSlotTap(TramoDisponibilidad t, DateTime fecha) {
     setState(() {
       if (_selectedTramo == t && _selectedFecha == fecha) {
@@ -90,7 +95,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final espacioAsync = ref.watch(espacioDetalleProvider(widget.espacioId));
     final semanaFin = _semanaInicio.add(const Duration(days: 6));
     final calendarioAsync = ref.watch(
@@ -121,7 +126,7 @@ class _CalendarSpaceScreenState extends ConsumerState<CalendarSpaceScreen> {
                           if (context.canPop()) {
                             context.pop();
                           } else {
-                            context.goNamed('servicios');
+                            context.goNamed('espacios');
                           }
                         },
                       ),
@@ -526,6 +531,7 @@ class _DayHeader extends StatelessWidget {
 
   const _DayHeader({required this.dia, required this.width, this.height = 56});
 
+  // True si el día corresponde a hoy
   bool get _isToday {
     final n = DateTime.now();
     return dia.fecha.year == n.year &&
@@ -596,6 +602,7 @@ class _DaySlots extends StatelessWidget {
     required this.onSlotTap,
   });
 
+  // True si la fecha del día ya ha pasado
   bool get _isPast {
     final hoy = DateTime.now();
     return dia.fecha.isBefore(DateTime(hoy.year, hoy.month, hoy.day));
@@ -638,8 +645,7 @@ class _DaySlots extends StatelessWidget {
   }
 }
 
-// Celda de slot
-
+// Estados visuales posibles de una celda del calendario
 enum _SlotState { free, busy, past, blocked }
 
 class _SlotCell extends StatelessWidget {
@@ -667,6 +673,7 @@ class _SlotCell extends StatelessWidget {
         onTap = null,
         _state = _SlotState.blocked;
 
+  // Calcula el estado real de la celda combinando bloqueo, pasado, ocupado y libre
   _SlotState get _resolvedState {
     if (_state == _SlotState.blocked) return _SlotState.blocked;
     if (isPast) return _SlotState.past;

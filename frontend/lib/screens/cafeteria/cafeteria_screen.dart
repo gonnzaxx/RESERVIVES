@@ -47,7 +47,7 @@ class _CafeteriaScreenState extends ConsumerState<CafeteriaScreen> {
     final menuAsync = ref.watch(menuCafeteriaProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -80,63 +80,15 @@ class _CafeteriaScreenState extends ConsumerState<CafeteriaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            20, 14, 20, isWeb ? 20 : 4),
-                        child: Row(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    context
-                                        .tr('cafeteria.eyebrow')
-                                        .toUpperCase(),
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(
-                                      letterSpacing: 0.9,
-                                      fontWeight: FontWeight.w700,
-                                      color: theme.hintColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    context.tr('cafeteria.title'),
-                                    style: theme.textTheme.headlineSmall
-                                        ?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  if (context
-                                      .tr('cafeteria.subtitle')
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      context.tr('cafeteria.subtitle'),
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                        color: isDark
-                                            ? AppColors
-                                            .darkTextSecondary
-                                            : AppColors
-                                            .lightTextSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            _InfoButton(
-                              isDark: isDark,
-                              theme: theme,
-                              onTap: () =>
-                                  _showInfo(context, isDark, isWeb),
-                            ),
-                          ],
+                        padding: EdgeInsets.fromLTRB(20, 14, 20, isWeb ? 24 : 8),
+                        child: RvPageHeader(
+                          eyebrow: context.tr('cafeteria.eyebrow'),
+                          title: context.tr('cafeteria.title'),
+                          trailing: _InfoButton(
+                            isDark: isDark,
+                            theme: theme,
+                            onTap: () => _showInfo(context, isDark, isWeb),
+                          ),
                         ).animate().fadeIn(duration: 300.ms),
                       ),
 
@@ -672,11 +624,12 @@ class _CafeteriaInfoContent extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          RvSheetHeader(onClose: () => Navigator.pop(context)),
           Text(
             context.tr('cafeteria.infoTitle'),
             style: theme.textTheme.headlineSmall?.copyWith(

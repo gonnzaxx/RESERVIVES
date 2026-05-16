@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/errors/friendly_error.dart';
+import 'package:reservives/core/utils/calendar_utils.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/reserva.dart';
-import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/bookings_provider.dart';
 import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/screens/bookings/widgets/shared.dart';
@@ -52,8 +52,7 @@ class ReservasTab extends ConsumerWidget {
                       title: context.tr('services.bookings.emptyTitle'),
                       subtitle: context.tr('services.bookings.emptySubtitle'),
                       buttonLabel: context.tr('emptyState.bookNow'),
-                      onButtonPressed: () =>
-                          ref.read(servicesTabIndexProvider.notifier).setIndex(0),
+                      onButtonPressed: () => context.goNamed('espacios'),
                     ),
                   ),
                 );
@@ -160,7 +159,7 @@ class _ReservaCardState extends ConsumerState<_ReservaCard> {
     if (!mounted) return;
 
     if (success) {
-      RvAlerts.success(context, context.tr('booking.confirm.alert'));
+      RvAlerts.success(context, context.tr('activity.cancelDialog.successMessage'));
       return;
     }
 
@@ -175,11 +174,13 @@ class _ReservaCardState extends ConsumerState<_ReservaCard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final reserva = widget.reserva;
-    final statusColor = _statusColor(reserva.estado);
-
-    final mostrarCancelar =
-        reserva.estado == EstadoReserva.pendiente ||
-        reserva.estado == EstadoReserva.aprobada;
+    final isPast = reserva.isPasada;
+    final statusColor = isPast && reserva.isActiva == false && !reserva.isCancelada && !reserva.isRechazada
+        ? AppColors.lightTextSecondary
+        : _statusColor(reserva.estado);
+    final mostrarCancelar = !isPast &&
+        (reserva.estado == EstadoReserva.pendiente ||
+        reserva.estado == EstadoReserva.aprobada);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -248,30 +249,32 @@ class _ReservaCardState extends ConsumerState<_ReservaCard> {
                       ),
                       const SizedBox(width: 10),
                       RvBadge(
-                        label: reserva.estado.value,
+                        label: isPast && !reserva.isCancelada && !reserva.isRechazada
+                            ? context.tr('activity.status.finished')
+                            : reserva.estado.value,
                         color: statusColor,
-                        icon: _statusIcon(reserva.estado),
+                        icon: isPast && !reserva.isCancelada && !reserva.isRechazada
+                            ? Icons.check_circle_outline_rounded
+                            : _statusIcon(reserva.estado),
                       ),
                     ],
                   ),
 
-                  if (mostrarCancelar) ...[
+                  if (mostrarCancelar || (!isPast && reserva.estado == EstadoReserva.aprobada)) ...[
                     const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: _cancelar,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
+                    Row(
+                      children: [
+                        if (mostrarCancelar)
+                          GestureDetector(
+                            onTap: _cancelar,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
                                 context.tr('activity.cancelBooking'),
                                 style: const TextStyle(
                                   color: AppColors.error,
@@ -279,10 +282,56 @@ class _ReservaCardState extends ConsumerState<_ReservaCard> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        const Spacer(),
+                        if (!isPast && reserva.estado == EstadoReserva.aprobada)
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              CalendarUtils.addToCalendar(
+                                title: reserva.nombreEspacio ?? 'Reserva',
+                                startTime: reserva.fechaInicio,
+                                endTime: reserva.fechaFin,
+                                location: 'IES Luis Vives',
+                                details: 'Reserva gestionada por RESERVIVES.',
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.18),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit_calendar_rounded,
+                                    size: 13,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    context.tr('activity.addToCalendar'),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ],

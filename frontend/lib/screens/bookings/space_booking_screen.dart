@@ -6,13 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/core/errors/friendly_error.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/usuario.dart';
 import 'package:reservives/models/tramo_horario.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/spaces_provider.dart';
-import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/bookings_provider.dart';
 import 'package:reservives/providers/bookings_live_updates_provider.dart';
 import 'package:reservives/providers/time_slots_provider.dart';
@@ -37,6 +35,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   late ConfettiController _confettiController;
   int _shakeTrigger = 0;
 
+  // Inicializa la fecha, el confeti y conecta el WebSocket de disponibilidad
   @override
   void initState() {
     super.initState();
@@ -54,14 +53,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     super.dispose();
   }
 
+  // Devuelve true si el día es sábado o domingo
   bool _isWeekend(DateTime d) => d.weekday == 6 || d.weekday == 7;
 
-  DateTime _maxBookingDate() => DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  ).add(const Duration(days: 30));
-
+  // Ejecuta la reserva: valida el tramo, muestra carga y gestiona éxito o error
   Future<void> _onBook() async {
     if (_selectedTramoId == null) {
       HapticFeedback.heavyImpact();
@@ -97,26 +92,29 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
       final reserva = ref.read(crearReservaProvider).value;
       if (reserva == null) {
-        context.goNamed('servicios');
+        context.goNamed('espacios');
         return;
       }
 
       await _showSuccessSheet(reserva);
 
       if (!mounted) return;
-      ref.read(servicesTabIndexProvider.notifier).setIndex(2);
-      context.goNamed('servicios');
+      context.pushNamed(
+        'reserva_detalle',
+        pathParameters: {'reservaId': reserva.id},
+        extra: reserva,
+        queryParameters: {'tipo': 'ESPACIO'},
+      );
       return;
     }
 
     final error = ref.read(crearReservaProvider).error;
-    RvAlerts.error(
-      context,
-      toFriendlyErrorMessage(
-          error, fallback: context.tr('booking.error')),
-    );
+    final raw = error?.toString() ?? '';
+    final msg = raw.replaceFirst(RegExp(r'^[A-Za-z]*Exception:\s*'), '').replaceFirst(RegExp(r'\s*\(\d+\)$'), '');
+    RvAlerts.error(context, msg.isNotEmpty ? msg : context.tr('booking.error'));
   }
 
+  // Muestra el bottom sheet de confirmación tras crear la reserva
   Future<void> _showSuccessSheet(dynamic reserva) async {
     final isDark =
         Theme.of(context).brightness == Brightness.dark;
@@ -143,8 +141,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SheetHandle(isDark: isDark),
-            const SizedBox(height: 28),
+            RvSheetHeader(onClose: () => Navigator.pop(ctx)),
+            const SizedBox(height: 12),
             Container(
               width: 72,
               height: 72,
@@ -203,6 +201,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
 
+  // Muestra un overlay de carga que bloquea la interacción mientras se procesa la reserva
   void _showLoadingOverlay() {
     showGeneralDialog(
       context: context,
@@ -288,11 +287,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final espacioAsync =
     ref.watch(espacioDetalleProvider(widget.espacioId));
     final user = ref.watch(authProvider).user;
-    final bookingState = ref.watch(crearReservaProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -312,15 +310,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     final tieneTokens = usesTokens
                         ? (user?.tokens ?? 0) >= costoEfectivo
                         : true;
-                    final maxAdvance = _maxBookingDate();
                     final effectiveLastDate = DateTime.now()
-                        .add(Duration(
-                        days: espacio.antelacionDias))
-                        .isBefore(maxAdvance)
-                        ? DateTime.now().add(
-                        Duration(
-                            days: espacio.antelacionDias))
-                        : maxAdvance;
+                        .add(Duration(days: espacio.antelacionDias));
                     final exceedsMaxWindow =
                     _selectedDate.isAfter(effectiveLastDate);
 
@@ -352,7 +343,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                                   CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      context.tr('profile.accountEyebrow')
+                                      context.tr('spaces.title')
                                           .toUpperCase(),
                                       style: theme.textTheme
                                           .labelSmall
@@ -1218,6 +1209,7 @@ class _TramoChip extends ConsumerStatefulWidget {
 class _TramoChipState extends ConsumerState<_TramoChip> {
   bool _hovered = false;
 
+  // Al tocar un tramo ocupado, muestra el sheet para unirse a la lista de espera
   void _onTapOcupado() {
     showModalBottomSheet(
       context: context,
@@ -1314,6 +1306,7 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
     );
   }
 
+  // Devuelve el texto secundario del chip según el estado del tramo (ocupado, pasado, seleccionado...)
   Widget _chipSubtitle(ThemeData theme, Color primary) {
     final baseStyle = TextStyle(
       fontSize: 10,
@@ -1324,7 +1317,7 @@ class _TramoChipState extends ConsumerState<_TramoChip> {
     );
 
     if (widget.disponibilidad.reservado) {
-      return Text('Ocupado', style: baseStyle);
+      return Text(widget.disponibilidad.reservadoPorMi ? 'Ya lo has reservado' : 'Ocupado', style: baseStyle);
     }
     if (widget.disponibilidad.estado == EstadoTramo.horarioPasado) {
       return Text('Pasado', style: baseStyle);
@@ -1435,8 +1428,8 @@ class _ListaEsperaSheet extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SheetHandle(isDark: isDark),
-          const SizedBox(height: 24),
+          RvSheetHeader(onClose: () => Navigator.pop(context)),
+          const SizedBox(height: 8),
           Container(
             width: 64,
             height: 64,
@@ -1522,26 +1515,6 @@ class _ListaEsperaSheet extends ConsumerWidget {
             icon: Icons.queue_rounded,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SheetHandle extends StatelessWidget {
-  final bool isDark;
-  const _SheetHandle({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: (isDark ? Colors.white : Colors.black)
-              .withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(2),
-        ),
       ),
     );
   }

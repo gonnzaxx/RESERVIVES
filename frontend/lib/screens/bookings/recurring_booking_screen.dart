@@ -1,7 +1,5 @@
-﻿/// Pantalla de Reserva Recurrente.
-///
-/// Permite al usuario configurar una reserva periódica para un espacio.
-/// La solicitud queda PENDIENTE_APROBACION hasta que un administrador la apruebe.
+﻿// Pantalla de reserva recurrente para un espacio.
+// La solicitud queda pendiente de aprobación hasta que un administrador la revise.
 library;
 
 import 'package:flutter/material.dart';
@@ -18,7 +16,7 @@ import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 
-import '../../models/tramo_horario.dart';
+import 'package:reservives/models/tramo_horario.dart';
 
 class RecurringBookingScreen extends ConsumerStatefulWidget {
   final String espacioId;
@@ -47,6 +45,7 @@ class _RecurringBookingScreenState
   PlanDuracion _planDuracion = PlanDuracion.trimestre3;
   final TextEditingController _obsCtrl = TextEditingController();
 
+  // Inicializa la fecha de inicio en el próximo día laborable
   @override
   void initState() {
     super.initState();
@@ -59,6 +58,7 @@ class _RecurringBookingScreenState
     super.dispose();
   }
 
+  // Devuelve el siguiente día laborable a partir de la fecha dada (salta fines de semana)
   DateTime _nextWeekday(DateTime from) {
     DateTime d = from.add(const Duration(days: 1));
     while (d.weekday >= 6) {
@@ -67,8 +67,10 @@ class _RecurringBookingScreenState
     return d;
   }
 
+  // Devuelve true si el día es fin de semana
   bool _isWeekend(DateTime d) => d.weekday == 6 || d.weekday == 7;
 
+  // Devuelve el texto explicativo del plan de duración seleccionado
   String _buildPlanExplanation(BuildContext context) {
     switch (_planDuracion) {
       case PlanDuracion.dias15:
@@ -80,6 +82,7 @@ class _RecurringBookingScreenState
     }
   }
 
+  // Valida los campos y envía la solicitud de reserva recurrente
   Future<void> _submit() async {
     if (_selectedTramoId == null) {
       HapticFeedback.heavyImpact();
@@ -110,7 +113,7 @@ class _RecurringBookingScreenState
           onClose: () => Navigator.pop(context),
         ),
       );
-      if (mounted) context.goNamed('servicios');
+      if (mounted) context.goNamed('espacios');
     } else {
       final error = ref.read(crearReservaRecurrenteProvider).error;
       RvAlerts.error(
@@ -122,7 +125,7 @@ class _RecurringBookingScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
     final espacioAsync = ref.watch(espacioDetalleProvider(widget.espacioId));
     final bookingState = ref.watch(crearReservaRecurrenteProvider);
 
@@ -143,7 +146,7 @@ class _RecurringBookingScreenState
                           icon: Icons.arrow_back_rounded,
                           onTap: () => context.canPop()
                               ? context.pop()
-                              : context.goNamed('servicios'),
+                              : context.goNamed('espacios'),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -457,7 +460,7 @@ class _TramoPickerSimple extends ConsumerWidget {
     return async.when(
       data: (tramos) {
         final disponibles =
-        tramos.where((t) => t.permitido && !t.reservado).toList()
+        tramos.where((t) => t.permitido && !t.reservado && t.estado != EstadoTramo.horarioPasado).toList()
           ..sort(
                   (a, b) => a.tramo.horaInicio.compareTo(b.tramo.horaInicio));
 
@@ -479,6 +482,7 @@ class _TramoPickerSimple extends ConsumerWidget {
   }
 }
 
+// Empty state
 
 class _EmptyState extends StatelessWidget {
   @override
@@ -531,6 +535,8 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
+
+// Loading state
 
 class _LoadingState extends StatelessWidget {
   const _LoadingState();
@@ -672,6 +678,7 @@ class _TramoCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
+              // Icono de reloj
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 width: 36,
@@ -692,6 +699,7 @@ class _TramoCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
 
+              // Horario + badge
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -729,6 +737,7 @@ class _TramoCard extends StatelessWidget {
                 ),
               ),
 
+              // Check animado al seleccionar
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: isSelected
@@ -770,19 +779,12 @@ class _SuccessSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       padding:
-          EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom + 24),
+          EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 32),
+          RvSheetHeader(onClose: onClose),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
