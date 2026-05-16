@@ -145,19 +145,16 @@ class AppShadows {
 /// Define la apariencia global de los componentes de Material 3,
 /// configurando [lightTheme] y [darkTheme].
 class AppTheme {
+  static ThemeData get lightTheme => lightThemeFor(AppColors.accentPurple);
+  static ThemeData get darkTheme => darkThemeFor(AppColors.accentPurple);
 
-  /// Configuración del Tema Claro.
-  ///
-  /// Utiliza la fuente **Inter** de Google Fonts y personaliza componentes como:
-  /// * [AppBarTheme]: Transparencia y centrado de título.
-  /// * [InputDecorationTheme]: Estilo de formularios con fondo gris claro.
-  /// * [DatePickerTheme] y [TimePickerTheme]: Adaptación estética de selectores nativos.
-  static ThemeData get lightTheme {
+  static ThemeData lightThemeFor(Color seed) {
+    final light = seed;
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.accentPurple,
+      seedColor: seed,
       brightness: Brightness.light,
-      primary: AppColors.accentPurple,
-      secondary: AppColors.primaryBlue,
+      primary: light,
+      secondary: light.withValues(alpha: 0.7),
       surface: AppColors.lightBackground,
       error: AppColors.error,
     );
@@ -268,12 +265,12 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.s),
-          borderSide: const BorderSide(color: AppColors.accentPurple, width: 1.5),
+          borderSide: BorderSide(color: light, width: 1.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accentPurple,
+          backgroundColor: light,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -288,12 +285,12 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.accentPurple,
+          foregroundColor: light,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.m),
           ),
-          side: const BorderSide(color: AppColors.accentPurple),
+          side: BorderSide(color: light),
           textStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
@@ -326,17 +323,17 @@ class AppTheme {
         // Estilo de los botones CANCELAR / ACEPTAR
         confirmButtonStyle: ButtonStyle(
           textStyle: WidgetStateProperty.all(textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          foregroundColor: WidgetStateProperty.all(AppColors.accentPurple),
+          foregroundColor: WidgetStateProperty.all(light),
         ),
         cancelButtonStyle: ButtonStyle(
           textStyle: WidgetStateProperty.all(textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
           foregroundColor: WidgetStateProperty.all(AppColors.lightTextSecondary),
         ),
         dayStyle: textTheme.bodyMedium,
-        todayForegroundColor: WidgetStateProperty.all(AppColors.accentPurple),
-        todayBackgroundColor: WidgetStateProperty.all(AppColors.accentPurple.withValues(alpha: 0.1)),
+        todayForegroundColor: WidgetStateProperty.all(light),
+        todayBackgroundColor: WidgetStateProperty.all(light.withValues(alpha: 0.1)),
         dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.accentPurple;
+          if (states.contains(WidgetState.selected)) return light;
           return null;
         }),
         dayForegroundColor: WidgetStateProperty.resolveWith((states) {
@@ -349,13 +346,13 @@ class AppTheme {
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         hourMinuteColor: AppColors.lightBackground,
-        hourMinuteTextColor: AppColors.accentPurple,
-        dialHandColor: AppColors.accentPurple,
+        hourMinuteTextColor: light,
+        dialHandColor: light,
         dialBackgroundColor: AppColors.lightBackground,
-        entryModeIconColor: AppColors.accentPurple,
+        entryModeIconColor: light,
         confirmButtonStyle: ButtonStyle(
           textStyle: WidgetStateProperty.all(textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          foregroundColor: WidgetStateProperty.all(AppColors.accentPurple),
+          foregroundColor: WidgetStateProperty.all(light),
         ),
         cancelButtonStyle: ButtonStyle(
           textStyle: WidgetStateProperty.all(textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
@@ -365,16 +362,13 @@ class AppTheme {
     );
   }
 
-  /// Configuración del Tema Oscuro.
-  ///
-  /// Ajusta los contrastes para legibilidad en entornos de poca luz,
-  /// utilizando superficies gris oscuro/negro y acentos vibrantes.
-  static ThemeData get darkTheme {
+  static ThemeData darkThemeFor(Color seed) {
+    final dark = seed;
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.accentPurple,
+      seedColor: seed,
       brightness: Brightness.dark,
-      primary: AppColors.accentPurpleLight,
-      secondary: AppColors.primaryBlueLight,
+      primary: dark,
+      secondary: dark.withValues(alpha: 0.7),
       surface: AppColors.darkBackground,
       error: AppColors.error,
     );
@@ -487,12 +481,12 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.s),
-          borderSide: const BorderSide(color: AppColors.accentPurpleLight, width: 1.5),
+          borderSide: BorderSide(color: dark, width: 1.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accentPurple,
+          backgroundColor: dark,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -507,12 +501,12 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.accentPurpleLight,
+          foregroundColor: dark,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.m),
           ),
-          side: const BorderSide(color: AppColors.accentPurpleLight),
+          side: BorderSide(color: dark),
           textStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),

@@ -6,7 +6,7 @@
     "generic.understood": "Entendido",
     "generic.confirm": "Confirmar",
     "generic.cancel": "Cancelar",
-    "generic.save": "Save",
+    "generic.save": "Guardar",
     "error.no_connection_title": "Sin conexión",
     "error.server_unavailable_title": "Servidor no disponible",
     "error.data_load_failed_title": "No se han podido cargar los datos",
@@ -26,9 +26,13 @@
     "settings.about.title": "Acerca de",
     "settings.about.subtitle": "Privacidad, condiciones y licencias",
     "settings.help.title": "Ayuda y soporte",
-    "settings.help.subtitle": "Guía rápida para usar RESERVIVES",
+    "settings.help.subtitle": "Guía rápida para usar la app del IES Luis Vives",
     "settings.incidents.title": "Reportar un problema",
     "settings.incidents.subtitle": "Informa de averías o problemas técnicos",
+    "settings.theme.title": "Apariencia",
+    "settings.theme.light": "Claro",
+    "settings.theme.dark": "Oscuro",
+    "settings.theme.system": "Sistema",
     "settings.language.title": "Idioma",
     "settings.language.dialogTitle": "Selecciona el idioma",
     "settings.language.spanish": "Español",
@@ -43,10 +47,18 @@
     "pref.newSpacesServices.subtitle": "Nuevos espacios y nuevos servicios disponibles.",
     "pref.announcements.title": "Tablón y anuncios",
     "pref.announcements.subtitle": "Publicaciones nuevas en el tablón del centro.",
+    "pref.newSurvey.title": "Nuevas encuestas",
+    "pref.newSurvey.subtitle": "Avisos cuando se publica una nueva votación.",
+    "pref.waitlist.title": "Lista de espera",
+    "pref.waitlist.subtitle": "Avisos cuando se libera un hueco en una lista de espera.",
     "pref.emailReservations.title": "Correos de reservas",
     "pref.emailReservations.subtitle": "Emails cuando se registra o resuelve una reserva.",
     "pref.emailAnnouncements.title": "Correos de anuncios",
     "pref.emailAnnouncements.subtitle": "Emails relacionados con publicaciones generales.",
+    "pref.emailIncidents.title": "Correos de incidencias",
+    "pref.emailIncidents.subtitle": "Email cuando se resuelve una incidencia que reportaste.",
+    "pref.emailTokens.title": "Correos de tokens",
+    "pref.emailTokens.subtitle": "Email cuando se recargan tus tokens mensuales.",
     "iesinfo.title": "Tu IES",
     "iesinfo.header.name": "IES Luis Vives",
     "iesinfo.badge.label": "Centro de Excelencia Europeo en FP",
@@ -87,9 +99,9 @@
     "admin.dashboard.shortcut.cafeteria.subtitle": "Actualiza productos y disponibilidad",
     "admin.dashboard.badge.admin": "ADMIN",
     "login.welcomeEyebrow": "BIENVENIDO/A A",
-    "login.title": "RESERVIVES",
+    "login.title": "IES LUIS VIVES",
     "login.subtitle": "IES Luis Vives - Leganés",
-    "login.signIn": "Iniciar sesión con Microsoft",
+    "login.signIn": "Iniciar sesión",
     "notifications.title": "Notificaciones",
     "notifications.refresh": "Actualizar",
     "notifications.emptyTitle": "Sin notificaciones",
@@ -104,10 +116,15 @@
     "admin.shell.backoffice": "BackOffice",
     "admin.shell.navigation": "Navegación admin",
     "admin.shell.configuration": "Configuración",
+    "admin.shell.azure": "Azure & Entra ID",
+    "admin.azure.eyebrow": "Integración",
+    "admin.azure.title": "Azure & Entra ID",
+    "admin.shell.personalization": "Personalización",
     "admin.shell.incidents": "Incidencias",
     "admin.shell.metrics": "Métricas",
     "admin.shell.polls": "Encuestas",
     "admin.bookings.title": "Reservas pendientes",
+    "admin.bookings.eyebrow": "Validaciones",
     "admin.bookings.approved": "Reserva aprobada",
     "admin.bookings.rejected": "Reserva rechazada",
     "admin.bookings.emptyTitle": "Nada pendiente",
@@ -120,6 +137,7 @@
     "admin.bookings.reject": "Rechazar",
     "admin.bookings.approve": "Aprobar",
     "admin.users.title": "Usuarios",
+    "admin.users.eyebrow": "Gestión",
     "admin.users.addTokensTo": "Añadir tokens a",
     "admin.users.amount": "Cantidad",
     "admin.users.amountHint": "Puede ser negativa",
@@ -132,9 +150,9 @@
     "admin.users.role.teacher": "Profesor",
     "admin.users.role.admin": "Admin",
     "admin.users.role.cafeteria": "Cafetería",
-    "admin.users.role.jefeEstudios": "Jefe de estudios",
-    "admin.users.role.secretaria": "Secretaría",
-    "admin.users.role.profesorServicio": "Profesor servicio",
+    "admin.users.role.headOfStudies": "Jefe de estudios",
+    "admin.users.role.secretary": "Secretaría",
+    "admin.users.role.serviceTeacher": "Profesor servicio",
     "admin.users.emptyTitle": "Sin resultados",
     "admin.users.emptySubtitle": "No hay usuarios con ese filtro.",
     "admin.users.tokens": "tokens",
@@ -164,7 +182,7 @@
     "booking.success": "Reserva completada",
     "booking.error": "Error al reservar",
     "booking.tokens": "tokens",
-    "booking.freeForTeachers": "Sin coste para profesorado",
+    "booking.freeForTeachers": "Sin coste para Administradores",
     "booking.flowSubtitle": "Configura tu reserva en un flujo rápido: fecha, hora y confirmación.",
     "booking.date": "Fecha",
     "booking.startTime": "Hora de inicio",
@@ -172,12 +190,13 @@
     "booking.duration": "Duración",
     "booking.minutes": "min",
     "booking.notes": "Observaciones",
-    "booking.notesHint": "Añade detalles para el administrador",
+    "booking.notesHint": "Añade observaciones para el gestor del servicio",
     "booking.notEnoughTokens": "No tienes suficientes tokens para esta reserva.",
     "booking.weekendNotAllowed": "Los fines de semana no se permiten reservas.",
     "booking.pendingApproval": "Esta reserva quedará pendiente de aprobación.",
     "booking.confirm": "Solicitar reserva",
     "favorites.removed": "Eliminado de favoritos",
+    "favorites.guest.loginRequired": "Inicia sesión para añadir favoritos",
     "activity.defaultReservation": "Reserva",
     "home.hero.staffTitle": "Gestiona tus espacios más rápido",
     "help.items.tokens.title": "Tokens",
@@ -227,7 +246,7 @@
     "activity.status.finished": "Terminada",
     "services.spaces.emptySubtitle": "No hay espacios disponibles en este momento.",
     "help.items.booking.subtitle": "Ve a Reservas, elige el espacio, selecciona fecha y hora, y confirma.",
-    "about.privacy.body": "RESERVIVES respeta tu privacidad y protege tus datos personales conforme al Reglamento General de Protección de Datos (RGPD). Se recopilan tu correo institucional, historial de reservas y preferencias de notificación. Los datos se usan exclusivamente para gestionar reservas y servicios del centro. Se conservan mientras tu cuenta institucional esté activa. Puedes ejercer tus derechos de acceso, rectificación, supresión y portabilidad contactando con el centro.",
+    "about.privacy.body": "IES Luis Vives App respeta tu privacidad y protege tus datos personales conforme al Reglamento General de Protección de Datos (RGPD). Se recopilan tu correo institucional, historial de reservas y preferencias de notificación. Los datos se usan exclusivamente para gestionar reservas y servicios del centro. Se conservan mientras tu cuenta institucional esté activa. Puedes ejercer tus derechos de acceso, rectificación, supresión y portabilidad contactando con el centro.",
     "services.spaces.noLocation": "Sin ubicación",
     "home.subtitle": "Reserva espacios y servicios desde un solo lugar.",
     "activity.emptyTitle": "Aún no hay actividad",
@@ -239,13 +258,14 @@
     "services.title": "Espacios y servicios",
     "favorites.title": "Mis favoritos",
     "shell.nav.profile": "Perfil",
-    "about.terms.body": "Al usar RESERVIVES aceptas estas condiciones: uso responsable de reservas, contenido apropiado y acceso exclusivo con cuentas del IES Luis Vives. Los tokens se renuevan mensualmente y no son transferibles. El servicio puede no estar disponible durante mantenimientos. El IES Luis Vives puede modificar estas condiciones cuando sea necesario.",
+    "about.terms.body": "Al usar IES Luis Vives App aceptas estas condiciones: uso responsable de reservas, contenido apropiado y acceso exclusivo con cuentas del IES Luis Vives. Los tokens se renuevan mensualmente y no son transferibles. El servicio puede no estar disponible durante mantenimientos. El IES Luis Vives puede modificar estas condiciones cuando sea necesario.",
     "home.tokens": "tokens",
     "help.items.tokens.subtitle": "Los alumnos usan tokens al reservar. Puedes ver el saldo en inicio y perfil.",
     "activity.emptySubtitle": "Tus reservas de espacios y servicios aparecerán aquí.",
     "favorites.emptyServices": "No tienes servicios favoritos",
     "cafeteria.eyebrow": "Menú de hoy",
     "activity.cancelBooking": "Cancelar reserva",
+    "activity.cancelBooking.text": "¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.",
     "home.board.errorTitle": "No se pudieron cargar los anuncios",
     "home.weeklyBookings.title": "Tus reservas",
     "home.weeklyBookings.empty": "No tienes reservas pendientes esta semana.",
@@ -268,6 +288,7 @@
     "cafeteria.title": "Cafetería",
     "cafeteria.emptySubtitle": "La cafetería todavía no ha publicado productos.",
     "services.bookings.emptyTitle": "Aún no tienes reservas",
+    "bookings.defaultName": "Reserva",
     "about.description": "App de reservas del IES Luis Vives",
     "about.licenses.title": "Licencias de código abierto",
     "favorites.emptySubtitle": "Añade favoritos para acceder rápido.",
@@ -308,6 +329,7 @@
     "services.application.success": "Solicitud enviada correctamente.",
     "services.error.booking": "Error al reservar",
     "services.no.cost": "Sin coste",
+    "services.type.service": "Servicio",
     "activity.cancelDialog.successMessage": "Reserva cancelada correctamente",
     "activity.addToCalendar": "Añadir al calendario",
     "admin.announcement.error.fields": "Los campos título y contenido son obligatorios",
@@ -317,15 +339,26 @@
     "admin.remove.text": "Eliminar",
     "admin.settings.refresh": "Refrescar",
     "admin.settings.title": "Configuración Global",
+    "admin.settings.eyebrow": "Configuración",
     "admin.settings.subtitle": "Ajusta reglas globales de reservas, tokens y correo activo.",
     "admin.label.initial.tokens": "Tokens iniciales para nuevos usuarios",
     "admin.label.mensual.tokens": "Tokens mensuales",
-    "admin.settings.notification.text": "Notificaciones por Email (SMTP)",
+    "admin.settings.notification.text": "Notificaciones por Email",
     "admin.settings.appBarTitle": "BackOffice",
     "admin.settings.section.tokens": "Tokens",
-    "admin.settings.email.enabled": "Activadas",
     "admin.settings.email.from": "Email de envío",
     "admin.settings.saved": "Configuración actualizada",
+    "admin.personalization.title": "Personalización",
+    "admin.personalization.eyebrow": "Marca y apariencia",
+    "admin.personalization.subtitle": "Configura el aspecto visual y la identidad de la app",
+    "admin.personalization.saved": "Personalización guardada",
+    "admin.personalization.logos.hint": "Sube los logos para los temas claro y oscuro",
+    "admin.personalization.identity.title": "Identidad",
+    "admin.users.bulkTokens.title": "Añadir tokens a todos",
+    "admin.users.bulkTokens.subtitle": "Se aplicará a todos los usuarios del rol seleccionado.",
+    "admin.users.bulkTokens.amount": "Cantidad de tokens (positivo o negativo)",
+    "admin.users.bulkTokens.success": "Tokens ajustados para {count} usuarios",
+    "admin.users.bulkTokens.error": "Error al ajustar tokens",
     "admin.settings.reserves.allowed": "Permitir reservas globales",
     "admin.settings.reserves.allowed.subtitle": "Si se desactiva, nadie podrá realizar nuevas reservas.",
     "admin.settings.announcements.expiry": "Caducidad de anuncios (días)",
@@ -388,10 +421,12 @@
     "incidents.admin.markResolved": "Marcar como resuelta",
     "incidents.admin.empty": "No hay incidencias reportadas.",
     "admin.metrics.title": "Métricas",
+    "admin.metrics.subtitle": "Analítica",
     "admin.metrics.spaces.title": "Espacios más reservados",
     "admin.metrics.services.title": "Servicios más reservados",
     "admin.metrics.announcements.views": "Visualizaciones de anuncios",
     "admin.polls.title": "Encuestas",
+    "admin.polls.eyebrow": "Participación",
     "admin.polls.create": "Crear nueva encuesta",
     "admin.polls.question": "Pregunta",
     "admin.polls.options": "Opciones",
@@ -440,6 +475,7 @@
     "cafeteria.deleteTitle": "¿Eliminar producto?",
     "cafeteria.deleteMessage": "¿Estás seguro de que quieres eliminar este producto?",
     "cafeteria.admin.title": "Cafetería IES",
+    "cafeteria.admin.eyebrow": "GESTIÓN",
     "cafeteria.admin.categoriaLabel": "Categoría",
     "cafeteria.admin.productLabel": "Nombre del producto",
     "cafeteria.admin.new.product.label": "Nuevo producto",
@@ -449,11 +485,14 @@
     "cafeteria.admin.priceLabel": "Precio",
     "cafeteria.admin.descriptionLabel": "Descripción (opcional)",
     "cafeteria.admin.imageLabel": "Imagen del producto",
+    "cafeteria.admin.availableForSale": "Disponible para vender",
+    "cafeteria.admin.featured": "Producto destacado",
     "cafeteria.admin.uploadImage": "Subir imagen",
     "cafeteria.admin.deleteCatTitle": "Eliminar categoría",
     "cafeteria.admin.deleteCatContent": "¿Seguro que quieres eliminar \"{name}\" y todos sus productos?",
     "cafeteria.admin.newCatTitle": "Nueva Categoría",
     "cafeteria.admin.editCatTitle": "Editar Categoría",
+    "cafeteria.admin.editCatSubtitle": "Edita su nombre y descripción",
     "cafeteria.admin.catSaved": "Categoría guardada",
     "cafeteria.admin.prodDeleted": "Producto eliminado",
     "cafeteria.admin.prodCreated": "Producto creado",
@@ -473,13 +512,14 @@
     "announcements.admin.deleteConfirm": "¿Seguro que quieres eliminar \"{title}\"?",
     "polls.user.voteButton": "Votar",
     "admin.services.title": "Servicios",
+    "admin.services.slots.label": "Editar",
+    "admin.services.new": "Nuevo servicio",
     "help.items.polls.title": "Encuestas",
     "help.items.polls.subtitle": "De vez en cuando podrás participar en encuestas para ayudar en decisiones del centro.",
     "help.items.reports.title": "Reportes",
-    "help.items.reports.subtitle": "En Ajustes podrás reportar cualquier problema que tengas en RESERVIVES o en el centro.",
+    "help.items.reports.subtitle": "En Ajustes podrás reportar cualquier problema que tengas en la app o en el centro.",
     "settings.faq.title": "Preguntas Frecuentes",
     "settings.faq.subtitle": "Respuesta a tus preguntas frecuentes",
-
     "faq.title": "Preguntas Frecuentes",
     "faq.q1.question": "¿Qué son los tokens y para qué sirven?",
     "faq.q1.answer": "Los tokens son la moneda virtual de la aplicación que permite a los alumnos realizar reservas. Cada espacio o servicio tiene un coste en tokens. Cada mes, se te renovarán automáticamente hasta acumular un máximo de 100 tokens.",
@@ -497,7 +537,6 @@
     "faq.q7.answer": "Actualmente, el apartado de la cafetería sirve para echarle un vistazo a los productos que ofrece. Aún no es posible tramitar o pagar por la app. Podrás realizar transacciones en persona.",
     "faq.q8.question": "Me he quedado sin tokens. ¿Qué hago?",
     "faq.q8.answer": "El saldo total se repone mes a mes automáticamente. En caso de estricta necesidad por causas docentes, podrás solicitar una recarga extraordinaria al administrador del IES Luis Vives.",
-
     "shell.footer.description": "Plataforma de gestión y reservas para el IES Luis Vives. Optimiza los recursos del centro de forma digital y eficiente, facilitando el acceso a espacios y servicios.",
     "shell.footer.nav.title": "NAVEGACIÓN",
     "shell.footer.nav.home": "Inicio",
@@ -517,9 +556,7 @@
     "onboarding.slide3.subtitle": "Revisa el menú del día, los productos disponibles, y descubre todo lo que ofrece la cafetería.",
     "onboarding.slide4.title": "Mantente Informado",
     "onboarding.slide4.subtitle": "Recibe notificaciones importantes sobre tus reservas, avisos del instituto y más.",
-
     "announcement.authorLabel": "Publicado por",
-
     "ai.header.eyebrow": "Asistente",
     "ai.header.title": "Vivi",
     "ai.actions.newChat": "Nuevo chat",
@@ -527,7 +564,6 @@
     "ai.empty.subtitle": "¿En qué puedo ayudarte hoy?\nRecuerda que soy una IA y puedo cometer errores.",
     "ai.input.placeholder": "Escribe un mensaje...",
     "common.user": "usuario",
-
     "generic.error": "Error",
     "booking.detail.eyebrow": "Detalles de la reserva",
     "booking.detail.defaultTitle": "Detalle",
@@ -536,18 +572,14 @@
     "booking.detail.endTime": "Fecha y hora de fin",
     "booking.detail.status": "Estado actual",
     "booking.detail.reservedBy": "Reservado por",
-    "booking.detail.cost": "Costo de la reserva",
-
+    "booking.detail.cost": "Coste",
     "booking.morning": "Turno Mañana",
     "booking.afternoon": "Turno Tarde",
     "booking.pastSlot": "Pasado",
     "booking.selectedSlot": "Seleccionado",
     "booking.maxDaysError": "Máximo {n} días de antelación.",
-
     "detail.booking.state.pending": "Pendiente",
-
     "about.extraInfo": "Aplicación diseñada publicada por Álvaro Lorenzo Carrillo, Jorge Sepúlveda Martín y Gonzalo Santiago Ariza. ",
-
     "about.developers.title": "Desarrollado por",
     "about.developers.dev1": "Gonzalo Santiago Ariza",
     "about.developers.dev2": "Jorge Sepúlveda Martín",
@@ -558,8 +590,971 @@
     "about.thanks.description": "Agradecimiento especial a Javier Palacios González por su guía y apoyo durante todo el proceso de desarrollo.",
     "about.legacy.title": "Créditos",
     "about.legacy.description": "Créditos a Mireya Sánchez Pinzón, Alejandro Sánchez Monzón and Rubén García-Redondo Marín, los alumnos de años anteriores que iniciaron las bases de este proyecto.",
-
-
-    "home.weeklyBookings.goToBookings":"Ir a reservas"
+    "home.weeklyBookings.goToBookings": "Ir a reservas",
+    "admin.spaces.eyebrow": "Infraestructura",
+    "admin.spaces.emptyTitle": "No hay espacios",
+    "admin.spaces.emptySubtitle": "Crea tu primer espacio para comenzar.",
+    "admin.spaces.form.newTitle": "Nuevo espacio",
+    "admin.spaces.form.editTitle": "Editar espacio",
+    "admin.spaces.form.name": "Nombre",
+    "admin.spaces.form.description": "Descripción",
+    "admin.spaces.form.type": "Tipo de espacio",
+    "admin.spaces.form.tokens": "Precio tokens",
+    "admin.spaces.form.capacity": "Capacidad",
+    "admin.spaces.form.location": "Ubicación",
+    "admin.spaces.form.advanceDays": "Antelación (dias)",
+    "admin.spaces.form.bookable": "Reservable",
+    "admin.spaces.form.requiresAuthorization": "Requiere autorización",
+    "admin.spaces.form.active": "Activo",
+    "admin.spaces.form.allowedRoles": "Roles permitidos",
+    "admin.spaces.form.saveSuccess": "Espacio guardado correctamente",
+    "admin.spaces.delete.title": "Eliminar espacio",
+    "admin.spaces.delete.content": "¿Eliminar \"{name}\"?",
+    "admin.spaces.timeSlots.title": "Tramos permitidos",
+    "admin.spaces.status.inactive": "INACTIVO",
+    "admin.spaces.status.notBookable": "NO RESERVABLE",
+    "cafeteria.detail.category": "Categoria",
+    "cafeteria.detail.status": "Estado",
+    "cafeteria.detail.featured": "Destacado",
+    "cafeteria.detail.description": "Descripción",
+    "cafeteria.detail.noDescription": "Este producto no tiene descripción adicional.",
+    "iesinfo.sections.who.title": "¿Quiénes somos?",
+    "iesinfo.sections.who.subtitle": "Misión, visión, objetivos y compromisos de calidad.",
+    "iesinfo.sections.who.description": "El IES Luis Vives es un centro público de Educación Secundaria situado al noroeste de Leganés, especializado en Formación Profesional. Se imparten enseñanzas en turno diurno y vespertino con una oferta amplia y alta empleabilidad.",
+    "iesinfo.who.mission.title": "Misión",
+    "iesinfo.who.mission.content": "Impulsar el desarrollo formativo, laboral, personal y afectivo del alumnado mediante una educación innovadora basada en valores.",
+    "iesinfo.who.mission.values": [
+        "Solidaridad",
+        "Respeto",
+        "Compromiso",
+        "Tolerancia"
+    ],
+    "iesinfo.who.vision.title": "Visión",
+    "iesinfo.who.vision.content": "Consolidar las enseñanzas actuales, explorar nuevas titulaciones de FP y ser un referente en innovación y transversalidad.",
+    "iesinfo.who.objectives.title": "Objetivos Generales",
+    "iesinfo.who.objectives.items": [
+        "Garantizar la incorporación al mercado laboral.",
+        "Potenciar esfuerzo y motivación como base del crecimiento.",
+        "Favorecer el autoaprendizaje constante.",
+        "Aplicar mejora continua en planificación y evaluación.",
+        "Mejorar la atención psicopedagógica y orientación.",
+        "Impulsar la formación continua del profesorado."
+    ],
+    "iesinfo.who.commitments.title": "Compromisos de Calidad",
+    "iesinfo.who.commitments.items": [
+        "Respuesta a quejas en menos de 48 horas lectivas.",
+        "Inventario anual de más de 300 empresas para FCT.",
+        "Comunicación de ofertas de empleo en máximo 2 días.",
+        "Jornada anual IES-EMPRESA.",
+        "Jornada de puertas abiertas para Leganés.",
+        "Talleres trimestrales de convivencia.",
+        "Fondo de libros para FP Básica.",
+        "Campaña solidaria de recogida de alimentos."
+    ],
+    "iesinfo.sections.facilities.title": "Instalaciones",
+    "iesinfo.sections.facilities.subtitle": "Edificios, espacios y galería de instalaciones.",
+    "iesinfo.facilities.intro": "Disponemos de seis edificios especializados con tecnología y equipamiento actual.",
+    "iesinfo.facilities.buildings.a.title": "Edificio A",
+    "iesinfo.facilities.buildings.a.desc": "Secretaría, jefatura, biblioteca, cafetería y aulas (3 plantas).",
+    "iesinfo.facilities.buildings.b.title": "Edificio B",
+    "iesinfo.facilities.buildings.b.desc": "Conserjería y aulas de administración e informática (2 plantas).",
+    "iesinfo.sections.services.title": "Servicios y becas",
+    "iesinfo.sections.services.subtitle": "Programas complementarios y ayudas del centro.",
+    "iesinfo.services.complementary.title": "Servicios Complementarios",
+    "iesinfo.services.complementary.items": [
+        "Orientación académico profesional",
+        "Formación en Centros de Trabajo (FCT)",
+        "Programa ERASMUS+",
+        "Bolsa de empleo",
+        "Auxiliar de conversación en inglés"
+    ],
+    "iesinfo.services.projects.title": "Proyectos y Programas",
+    "iesinfo.services.projects.items": [
+        "IT Academy Microsoft",
+        "IES on Cloud",
+        "Proyecto eDuo",
+        "Participación en SKILL"
+    ],
+    "iesinfo.sections.studies.title": "Enseñanzas",
+    "iesinfo.sections.studies.subtitle": "Oferta de grado básico, medio y superior.",
+    "iesinfo.studies.families.title": "Familias Profesionales",
+    "iesinfo.studies.families.items": [
+        "Administración y Gestión",
+        "Fabricación Mecánica",
+        "Informática y Comunicaciones",
+        "Transporte y Mantenimiento",
+        "Imagen Personal",
+        "Actividades Físicas y Deportivas"
+    ],
+    "common.yes": "Sí",
+    "common.no": "No",
+    "common.more_info": "Saber más",
+    "common.noResults": "Sin resultados",
+    "common.tryOtherSearch": "Prueba con otro término de búsqueda.",
+    "iesinfo.facilities.buildings.title": "Nuestros Edificios",
+    "iesinfo.facilities.buildings.list": [
+        {
+            "title": "Edificio A",
+            "desc": "Sede principal con 3 plantas. Alberga Secretaría, Biblioteca, Cafetería y aulas teóricas.",
+            "icon": "apartment"
+        },
+        {
+            "title": "Edificio B",
+            "desc": "Espacio de 2 plantas dedicado a Administración, Gestión e Informática.",
+            "icon": "corporate_fare"
+        }
+    ],
+    "iesinfo.facilities.gallery.title": "Explora el Campus",
+    "iesinfo.facilities.gallery.items": [
+        "Secretaría",
+        "Gimnasio",
+        "Entrada",
+        "Pista deportiva",
+        "Pista de pádel",
+        "Mesa de pingpong",
+        "Patio",
+        "Cafetería",
+        "Aulas de informática",
+        "Salón de actos",
+        "Taller de mecatrónica",
+        "Taller de renovables",
+        "Taller de mecánica",
+        "Taller de VR",
+        "Aula de emprendimiento"
+    ],
+    "iesinfo.studies.basic.title": "Ciclo Formativo de Grado Básico",
+    "iesinfo.studies.medium.title": "Ciclo Formativo de Grado Medio",
+    "iesinfo.studies.higher.title": "Ciclo Formativo de Grado Superior",
+    "iesinfo.studies.list": [
+        {
+            "id": "ELEB02",
+            "level": "basic",
+            "name": "Profesional Básico en instalaciones electrotécnicas y mecánicas",
+            "family": "Fabricación Mecánica",
+            "description": "Forma para realizar operaciones auxiliares en el montaje y mantenimiento de instalaciones electrotécnicas y de telecomunicaciones...",
+            "duration": "2.000 horas (2 cursos)",
+            "shifts": [
+                "Diurno",
+                "Vespertino"
+            ],
+            "skills": [
+                "Montaje eléctrico",
+                "Mantenimiento",
+                "Telecomunicaciones"
+            ],
+            "opportunities": [
+                "Ayudante de electricista",
+                "Auxiliar de montaje"
+            ],
+            "notes": "Ciclo orientado a tareas de apoyo; se imparte en ambos turnos."
+        },
+        {
+            "id": "ADGB01",
+            "level": "basic",
+            "name": "Servicios Administrativos",
+            "family": "Administración y Gestión",
+            "description": "Ciclo básico orientado a tareas auxiliares de gestión y tramitación administrativa (archivo, tratamiento de documentos)...",
+            "duration": "2.000 horas (2 cursos)",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Gestión documental",
+                "Atención al público",
+                "Tareas de oficina"
+            ],
+            "opportunities": [
+                "Auxiliar administrativo",
+                "Ayudante de oficina"
+            ]
+        },
+        {
+            "id": "TMVB01",
+            "level": "basic",
+            "name": "Profesional Básico de Mantenimiento de Vehículos",
+            "family": "Transporte y mantenimiento de vehículos",
+            "description": "Prepara para realizar operaciones básicas de mantenimiento electromecánico y de carrocería de vehículos...",
+            "duration": "2.000 horas (2 cursos)",
+            "shifts": [
+                "Diurno",
+                "Vespertino"
+            ],
+            "skills": [
+                "Mecánica básica",
+                "Carrocería",
+                "Electricidad de vehículos"
+            ],
+            "opportunities": [
+                "Ayudante de taller",
+                "Auxiliar de mantenimiento"
+            ]
+        },
+        {
+            "id": "IMPB01",
+            "level": "basic",
+            "name": "Profesional Básico en Peluquería y Estética",
+            "family": "Imagen Personal",
+            "description": "Ciclo de iniciación a los servicios de peluquería y estética básica para alumnado de 15–17 años.",
+            "duration": "2.000 horas (2 cursos)",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Peluquería básica",
+                "Estética",
+                "Atención al cliente"
+            ],
+            "opportunities": [
+                "Auxiliar de peluquería"
+            ]
+        },
+        {
+            "id": "MEC",
+            "level": "medium",
+            "name": "Técnico en Mecanizado",
+            "family": "Fabricación Mecánica",
+            "description": "Capacita para ejecutar procesos de mecanizado por arranque de viruta, conformado y procedimientos especiales...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Programación de máquinas",
+                "Verificación de dimensiones",
+                "Seguridad industrial"
+            ],
+            "opportunities": [
+                "Técnico de mecanizado",
+                "Operador de máquinas herramienta"
+            ]
+        },
+        {
+            "id": "GAD",
+            "level": "medium",
+            "name": "Técnico en Gestión Administrativa",
+            "family": "Administración y Gestión",
+            "description": "Realiza actividades de apoyo administrativo en ámbitos laboral, contable, comercial, financiero y fiscal...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Contabilidad básica",
+                "Gestión de tesorería",
+                "Atención al cliente"
+            ],
+            "opportunities": [
+                "Auxiliar administrativo",
+                "Administrativo comercial"
+            ]
+        },
+        {
+            "id": "SMR",
+            "level": "medium",
+            "name": "Técnico en Sistemas Microinformáticos y Redes",
+            "family": "Informática y comunicaciones",
+            "description": "Instala, configura y mantiene sistemas microinformáticos aislados o en red...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno (Ordinario/Dual)"
+            ],
+            "skills": [
+                "Sistemas operativos",
+                "Redes locales",
+                "Seguridad informática"
+            ],
+            "opportunities": [
+                "Técnico de soporte",
+                "Técnico de redes"
+            ]
+        },
+        {
+            "id": "CAR",
+            "level": "medium",
+            "name": "Técnico en Carrocería",
+            "family": "Transporte y mantenimiento de vehículos",
+            "description": "Reparación, montaje de accesorios y transformaciones en el vehículo (chapa, bastidor, cabina)...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Reparación de estructuras",
+                "Tratamiento de superficies"
+            ],
+            "opportunities": [
+                "Operario de carrocería",
+                "Chapista"
+            ]
+        },
+        {
+            "id": "ELECTRO",
+            "level": "medium",
+            "name": "Técnico en Electromecánica de Vehículos",
+            "family": "Transporte y mantenimiento de vehículos",
+            "description": "Mantenimiento y montaje de accesorios en mecánica, hidráulica, neumática y electricidad...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno (Ordinario/Dual)"
+            ],
+            "skills": [
+                "Diagnosis de averías",
+                "Sistemas electromecánicos"
+            ],
+            "opportunities": [
+                "Mecánico de automóviles"
+            ]
+        },
+        {
+            "id": "PEL",
+            "level": "medium",
+            "name": "Técnico en Peluquería y Cosmética Capilar",
+            "family": "Imagen Personal",
+            "description": "Formación en análisis capilar, estética de manos/pies, corte y coloración...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Tratamientos capilares",
+                "Marketing de imagen",
+                "Gestión de salón"
+            ],
+            "opportunities": [
+                "Peluquero/a",
+                "Técnico en manicura"
+            ]
+        },
+        {
+            "id": "DFM",
+            "level": "higher",
+            "name": "Técnico Superior en Diseño en Fabricación Mecánica",
+            "family": "Fabricación Mecánica",
+            "description": "Diseño de productos, útiles de chapa, moldes y modelos mediante herramientas CAD...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Diseño CAD",
+                "Documentación técnica",
+                "Coordinación de diseño"
+            ],
+            "opportunities": [
+                "Delineante proyectista",
+                "Técnico en CAD"
+            ]
+        },
+        {
+            "id": "PPFM",
+            "level": "higher",
+            "name": "Técnico Superior en Programación de la Producción",
+            "family": "Fabricación Mecánica",
+            "description": "Planifica, programa y controla la fabricación por mecanizado y montaje...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Gestión de planes de producción",
+                "Control de tiempos"
+            ],
+            "opportunities": [
+                "Responsable de sección",
+                "Técnico de planificación"
+            ]
+        },
+        {
+            "id": "AF",
+            "level": "higher",
+            "name": "Técnico Superior en Administración y Finanzas",
+            "family": "Administración y Gestión",
+            "description": "Organiza la administración de personal y operaciones económico-financieras...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno",
+                "Vespertino",
+                "Dual"
+            ],
+            "skills": [
+                "Gestión de tesorería",
+                "Contabilidad fiscal",
+                "Asesoría financiera"
+            ],
+            "opportunities": [
+                "Responsable de tesorería",
+                "Gestor de cobros"
+            ]
+        },
+        {
+            "id": "AD",
+            "level": "higher",
+            "name": "Técnico Superior en Asistencia a la Dirección",
+            "family": "Administración y Gestión",
+            "description": "Asistencia a dirección en organización, representación y gestión documental...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Organización de agendas",
+                "Comunicación bilingüe"
+            ],
+            "opportunities": [
+                "Secretario de dirección",
+                "Técnico de protocolo"
+            ]
+        },
+        {
+            "id": "ASIR_H",
+            "level": "higher",
+            "name": "Técnico Superior en Administración de Sistemas Informáticos en Red",
+            "family": "Informática y comunicaciones",
+            "description": "Administración y mantenimiento de servicios de red e infraestructuras de comunicaciones...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Vespertino"
+            ],
+            "skills": [
+                "Administración de servidores",
+                "Alta disponibilidad",
+                "Seguridad de red"
+            ],
+            "opportunities": [
+                "Administrador de sistemas",
+                "Supervisor de sistemas"
+            ]
+        },
+        {
+            "id": "DAM",
+            "level": "higher",
+            "name": "Técnico Superior en Desarrollo de Aplicaciones Multiplataforma",
+            "family": "Informática y comunicaciones",
+            "description": "Desarrollo de aplicaciones de escritorio, móviles y distribuidas...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Desarrollo móvil",
+                "Acceso a bases de datos",
+                "Metodologías ágiles"
+            ],
+            "opportunities": [
+                "Programador multiplataforma",
+                "Desarrollador móvil"
+            ]
+        },
+        {
+            "id": "DAW",
+            "level": "higher",
+            "name": "Técnico Superior en Desarrollo de Aplicaciones Web",
+            "family": "Informática y comunicaciones",
+            "description": "Desarrolla, implanta y mantiene aplicaciones web asegurando accesibilidad y usabilidad...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Vespertino"
+            ],
+            "skills": [
+                "Front-end",
+                "Back-end",
+                "Integración de servicios web"
+            ],
+            "opportunities": [
+                "Desarrollador Web",
+                "Full-stack junior"
+            ]
+        },
+        {
+            "id": "AUT",
+            "level": "higher",
+            "name": "Técnico Superior en Automoción",
+            "family": "Transporte y mantenimiento de vehículos",
+            "description": "Organiza, programa y supervisa operaciones de mantenimiento y logística...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno",
+                "Vespertino",
+                "Dual"
+            ],
+            "skills": [
+                "Diagnosis avanzada",
+                "Gestión de taller",
+                "Peritaje de vehículos"
+            ],
+            "opportunities": [
+                "Jefe de taller",
+                "Perito tasador"
+            ]
+        },
+        {
+            "id": "MECATRÓNICA",
+            "level": "higher",
+            "name": "Técnico Superior en Mecatrónica Industrial",
+            "family": "Mecatrónica Industrial",
+            "description": "Configura y optimiza sistemas mecatrónicos industriales, supervisando su montaje y mantenimiento...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Programación de autómatas",
+                "Configuración de sistemas"
+            ],
+            "opportunities": [
+                "Técnico en mecatrónica",
+                "Responsable de mantenimiento industrial"
+            ]
+        },
+        {
+            "id": "EST",
+            "level": "higher",
+            "name": "Técnico Superior en Estilismo y Dirección de Peluquería",
+            "family": "Imagen Personal",
+            "description": "Dirige y supervisa servicios de peluquería y planifica tratamientos capilares estéticos...",
+            "duration": "2.000 horas",
+            "shifts": [
+                "Diurno"
+            ],
+            "skills": [
+                "Dirección técnica",
+                "Asesoría de imagen capilar"
+            ],
+            "opportunities": [
+                "Director de salón",
+                "Estilista"
+            ]
+        }
+    ],
+    "iesinfo.services.sections": [
+        {
+            "title": "Orientación y formación",
+            "icon": "school",
+            "items": [
+                "Orientación académico-profesional.",
+                "Formación y Orientación Laboral (FOL) integrada en los ciclos.",
+                "Formación en Centros de Trabajo (FCT) para todos los ciclos."
+            ]
+        },
+        {
+            "title": "Internacionalización (Erasmus+)",
+            "icon": "public",
+            "items": [
+                "Programa de becas europeas ERASMUS+ para alumnado de FP.",
+                "Becas europeas específicas para ciclos de grado medio.",
+                "Movilidades de alumnado y profesorado con centros de otros países."
+            ]
+        },
+        {
+            "title": "Inserción laboral y empresas",
+            "icon": "business_center",
+            "items": [
+                "Bolsa de Empleo del centro.",
+                "Centro colaborador de prácticas para el Máster en Profesorado.",
+                "Programa y jornadas IES-Empresa (charlas, talleres y contactos).",
+                "Participación en competiciones técnicas (SKILL Jóvenes Técnicos)."
+            ]
+        },
+        {
+            "title": "Proyectos e Innovación",
+            "icon": "lightbulb",
+            "items": [
+                "Proyecto IT Academy Microsoft.",
+                "Proyecto Student Avant.",
+                "IES on Cloud (servicios en la nube).",
+                "Proyecto eDuo (Formación Dual)."
+            ]
+        },
+        {
+            "title": "Apoyo y Valores",
+            "icon": "volunteer_activism",
+            "items": [
+                "Taller de Inteligencia Emocional y Social.",
+                "Taller de orientación vocacional no sexista e igualitaria.",
+                "Programa de resolución de conflictos 'Resolver conviviendo'.",
+                "Educación vial 'Si controlas, vuelves' (DGT/AESLEME)."
+            ]
+        },
+        {
+            "title": "Comunidad y Difusión",
+            "icon": "campaign",
+            "items": [
+                "Jornadas de Puertas Abiertas anuales.",
+                "Presencia activa en redes sociales (Twitter, YouTube)."
+            ]
+        }
+    ],
+    "profile.login.text": "Iniciar Sesión",
+    "profile.continue.text": "Seguir explorando",
+    "profile.subtitle.text": "Inicia sesión para desbloquear todas las funciones y gestionar tus reservas.",
+    "profile.guestTitle": "Usuario",
+    "profile.section1": "Sistema de reservas",
+    "profile.section1.text": "Reserva espacios y servicios del instituto.",
+    "profile.section2": "Participa en encuestas",
+    "profile.section2.text": "Vota para formar parte de la toma de decisiones del instituto.",
+    "profile.section3": "Mantente al día",
+    "profile.section3.text": "No te pierdas ninguna noticia.",
+    "profile.section4": "Habla con Vivi",
+    "profile.section4.text": "Pregunta a nuestro asistente de IA cualquier duda que te surja.",
+    "bookings.time.slot.text": "Tramo Horario",
+    "bookings.morning.shift": "Turno de Mañana",
+    "bookings.afternoon.shift": "Turno de Tarde",
+    "bookings.date.text": "Fecha de reserva",
+    "favourites.redirect.text.space": "Explorar espacios",
+    "favourites.redirect.text.service": "Explorar servicios",
+    "booking.confirm.application.pending": "Solicitud enviada",
+    "booking.confirm.application": "¡Reserva confirmada!",
+    "activity.cancelDialog.text.back": "Volver",
+    "booking.confirm.alert": "Reserva confirmada correctamente",
+    "booking.canceling.alert": "Cancelando reserva...",
+    "booking.cancel.title": "Cancelar reserva",
+    "booking.cancel.confirm": "¿Estás seguro de que quieres cancelar esta reserva?",
+    "booking.cancel.action": "Cancelar reserva",
+    "booking.cancel.success": "Reserva cancelada correctamente",
+    "booking.cancel.error": "No se pudo cancelar la reserva",
+    "booking.detail.addToCalendar": "Añadir al calendario",
+    "admin.booking.approve": "Aprobar",
+    "admin.shell.record": "Historial",
+    "no_data_text": "No hay datos suficientes",
+    "admin.delete.service": "¿Eliminar servicio?",
+    "admin.service.alert.remove": "Servicio eliminado correctamente",
+    "admin.service.alert.create": "Servicio creado correctamente",
+    "admin.service.alert.update": "Servicio actualizado correctamente",
+    "generic": {
+        "cancel": "Cancelar",
+        "save": "Guardar"
+    },
+    "cafeteria": {
+        "admin": {
+            "title": "Cafetería",
+            "eyebrow": "Inventario",
+            "newCatTitle": "Nueva Categoría",
+            "editCatTitle": "Editar Categoría",
+            "deleteCatTitle": "Eliminar Categoría",
+            "deleteCatContent": "¿Estás seguro de eliminar la categoría \"{name}\"? Se perderán sus productos.",
+            "productLabel": "Producto",
+            "availableForSale": "Disponible para venta",
+            "outOfStock": "AGOTADO",
+            "new": {
+                "product": {
+                    "label": "Nuevo Producto",
+                    "text": "Añade un artículo al menú"
+                },
+                "category": {
+                    "text": "Organiza tus productos"
+                }
+            },
+            "error": {
+                "noCategory": "Crea una categoría primero"
+            }
+        },
+        "deleteTitle": "Eliminar Producto"
+    },
+    "home": {
+        "board": {
+            "emptyTitle": "No hay nada aquí",
+            "emptySubtitle": "Comienza añadiendo categorías o productos."
+        }
+    },
+    "announcements": {
+        "admin": {
+            "deleteConfirm": "¿Eliminar \"{title}\" de forma permanente?"
+        }
+    },
+    "admin": {
+        "common": {
+            "remove": "Eliminar",
+            "location": "Ubicación",
+            "tokens": "Tokens",
+            "schedule": "Horario",
+            "active": "Activo",
+            "position": "Posición",
+            "inactive": "INACTIVO",
+            "new": "Crear nuevo",
+            "name": "Nombre",
+            "description": "Descripción",
+            "category": "Categoría",
+            "price": "Precio",
+            "invalidData": "Datos inválidos"
+        },
+        "services": {
+            "title": "Servicios",
+            "eyebrow": "Mantenimiento",
+            "empty": "No hay servicios",
+            "emptySubtitle": "Comienza creando un nuevo servicio para el instituto.",
+            "new": "Nuevo servicio",
+            "edit": "Editar servicio",
+            "deleteTitle": "Eliminar servicio",
+            "deleteConfirm": "¿Seguro que quieres eliminar \"{name}\"?",
+            "noSchedule": "Sin horario",
+            "error": {
+                "nameRequired": "El nombre es obligatorio."
+            },
+            "slots": {
+                "title": "Tramos de \"{name}\"",
+                "subtitle": "Configura qué tramos horarios aplican para este servicio.",
+                "save": "Guardar tramos",
+                "success": "Configuración de tramos guardada"
+            },
+            "alert": {
+                "create": "Servicio creado correctamente",
+                "update": "Servicio actualizado correctamente",
+                "remove": "Servicio eliminado"
+            }
+        },
+        "removed": {
+            "text": "Eliminado correctamente"
+        }
+    },
+    "admin.record.title": "Historial",
+    "admin.record.eyebrow": "ADMINISTRACIÓN",
+    "admin.record.noData": "Sin registros",
+    "admin.record.noDataText": "No se encontraron reservas con estos criterios.",
+    "admin.record.searchBar.text": "Buscar por nombre o email...",
+    "admin.record.filter.day": "Cualquier día",
+    "admin.record.filter.type": "Todos los tipos",
+    "admin.record.filter.state": "Todos los estados",
+    "admin.record.cancel.booking": "Anular reserva",
+    "admin.record.cancel.booking.short": "Anular",
+    "admin.record.cancel.booking.confirm.text": "An automatic notification will be sent to the user informing them of the cancellation.",
+    "admin.record.cancel.booking.back": "Atrás",
+    "admin.record.cancel.booking.label": "Motivo de anulación",
+    "admin.record.cancel.booking.example": "Ej. Mantenimiento de sala...",
+    "admin.record.filter.state.pending": "PENDIENTE",
+    "login.without.account": "Entrar sin autenticar",
+    "admin.user.editUser.text": "Editar a",
+    "admin.user.editUser.label.rol": "Rol del usuario",
+    "admin.user.editUser.label.tokens": "Añadir o quitar tokens",
+    "admin.service.inactive": "INACTIVO",
+    "admin.service.noSchedule": "Sin horario",
+    "admin.slots.label": "Tramos",
+    "generic.edit": "Editar",
+    "generic.delete": "Eliminar",
+    "booking.processing": "Procesando tu reserva...",
+    "admin.common.name": "Nombre",
+    "admin.common.description": "Descripción",
+    "admin.common.schedule": "Horario",
+    "admin.common.active": "Activo",
+    "admin.common.position": "Orden",
+    "admin.common.tokens": "Tokens",
+    "admin.common.location": "Ubicación",
+    "admin.services.slots.subtitle": "Adds the allowed slots for this service.",
+    "admin.configuration.slots.edit": "Tramo actualizado correctamente",
+    "admin.configuration.slots.add_success": "Tramo creado correctamente",
+    "admin.configuration.slots.delete_success": "Tramo eliminado correctamente",
+    "admin.configuration.slots.emptyTitle": "Sin tramos",
+    "admin.configuration.slots.emptySubtitle": "Añade el primer tramo horario",
+    "admin.configuration.slots.title": "Tramos horarios",
+    "admin.configuration.slots.morning": "Mañana",
+    "admin.configuration.slots.afternoon": "Tarde",
+    "admin.configuration.slots.inactive": "Inactivo",
+    "admin.configuration.slots.deleteTitle": "¿Eliminar tramo?",
+    "admin.configuration.slots.deleteContent": "El tramo {nombre} será eliminado permanentemente.",
+    "admin.configuration.slots.deleteConfirm": "ELIMINAR",
+    "admin.configuration.slots.deactivateTitle": "¿{accion} tramo?",
+    "admin.configuration.slots.deactivateContent": "{nombre} quedará {estado}.",
+    "admin.configuration.slots.deactivate": "desactivar",
+    "admin.configuration.slots.activate": "activar",
+    "admin.configuration.slots.dialog.edit": "Editar Tramo",
+    "admin.configuration.slots.dialog.new": "Nuevo Tramo Horario",
+    "admin.configuration.slots.dialog.generalInfo": "Información general",
+    "admin.configuration.slots.dialog.nameLabel": "Nombre del tramo (ej: 1ª Hora)",
+    "admin.configuration.slots.dialog.turn": "Turno",
+    "admin.configuration.slots.dialog.order": "Orden",
+    "admin.configuration.slots.dialog.schedule": "Horario",
+    "admin.configuration.slots.dialog.start": "Inicio",
+    "admin.configuration.slots.dialog.end": "Fin",
+    "admin.configuration.slots.dialog.isBreak": "¿Es tiempo de recreo?",
+    "admin.configuration.slots.dialog.cancel": "Cancelar",
+    "admin.configuration.slots.dialog.save": "Guardar",
+    "admin.configuration.slots.dialog.create": "Crear",
+    "admin.configuration.slots.dialog.required": "Requerido",
+    "admin.configuration.slots.dialog.invalidTime": "HH:MM",
+    "admin.settings.tokens.students.initial": "Tokens iniciales - alumnos",
+    "admin.settings.tokens.teachers.initial": "Tokens iniciales - profesores",
+    "admin.settings.tokens.students.monthly": "Tokens renovación mensual - alumnos",
+    "admin.settings.tokens.teachers.monthly": "Tokens renovación mensual - profesores",
+    "admin.settings.tokens.role.initial": "Tokens iniciales",
+    "admin.settings.tokens.role.monthly": "Renovación mensual",
+    "profile.logout.confirm.title": "¿Cerrar sesión?",
+    "profile.logout.confirm.msg": "Si lo haces, tendrás que iniciar sesión de nuevo",
+    "tutorial.skip": "Saltar tutorial",
+    "tutorial.next": "Siguiente",
+    "tutorial.start": "¡Empezar!",
+    "tutorial.step1.title": "¡Bienvenido/a, {name}!",
+    "tutorial.step1.subtitle": "Antes de empezar, te explicamos cómo funciona la app del instituto en unos pocos pasos.",
+    "tutorial.step2.title": "Tu saldo de tokens",
+    "tutorial.step2.subtitle": "Los tokens son tu moneda virtual en el instituto. Cada espacio tiene un precio y se descuentan al confirmar.",
+    "tutorial.step2.balance": "Tu saldo actual",
+    "tutorial.step2.max": "Máximo {max} tokens por usuario",
+    "tutorial.step2.hint": "Los tokens se renuevan automáticamente al inicio de cada período.",
+    "tutorial.step3.title": "¿Cómo reservar?",
+    "tutorial.step3.subtitle": "Reservar un espacio es muy sencillo:",
+    "tutorial.step3.step1": "Elige el espacio o servicio",
+    "tutorial.step3.step2": "Selecciona fecha y franja horaria",
+    "tutorial.step3.step3": "Confirma y ¡listo!",
+    "tutorial.step4.title": "Reglas importantes",
+    "tutorial.step4.subtitle": "Ten en cuenta lo siguiente al reservar:",
+    "tutorial.step4.rule1": "Cancela antes de que empiece para recuperar tus tokens",
+    "tutorial.step4.rule2": "Sin tokens suficientes no podrás confirmar la reserva",
+    "tutorial.step4.rule3": "Cada espacio muestra su precio antes de confirmar",
+    "tutorial.step4.rule4": "Respeta las franjas horarias permitidas para tu turno",
+    "tutorial.step5.title": "¡Ya estás listo/a!",
+    "tutorial.step5.subtitle": "Explora los espacios disponibles y realiza tu primera reserva.",
+    "recurring.title": "Reserva recurrente",
+    "recurring.plan.title": "Duración del plan",
+    "recurring.plan.dias15": "15 días",
+    "recurring.plan.mes1": "1 mes",
+    "recurring.plan.trimestre3": "3 meses",
+    "recurring.plan.explanation.dias15": "Se repetirá semanalmente el mismo tramo durante 15 días desde la fecha de inicio.",
+    "recurring.plan.explanation.mes1": "Se repetirá semanalmente el mismo tramo durante 1 mes desde la fecha de inicio.",
+    "recurring.plan.explanation.trimestre3": "Se repetirá semanalmente el mismo tramo durante 3 meses (trimestre) desde la fecha de inicio.",
+    "recurring.firstBooking.title": "Primera reserva",
+    "recurring.startDate.label": "Fecha de inicio",
+    "recurring.startDate.placeholder": "Seleccionar fecha",
+    "recurring.timeSlot.title": "Tramo horario",
+    "recurring.observations.title": "Observaciones (opcional)",
+    "recurring.observations.hint": "Motivo o información adicional para el admin…",
+    "recurring.pendingWarning": "La solicitud quedará pendiente de aprobación. Recibirás una notificación cuando el administrador la revise.",
+    "recurring.submit": "ENVIAR SOLICITUD",
+    "recurring.submitting": "Enviando solicitud…",
+    "recurring.error.selectSlot": "Selecciona un tramo",
+    "recurring.error.createFailed": "Error al crear la reserva recurrente",
+    "recurring.noAvailability.title": "Sin disponibilidad",
+    "recurring.noAvailability.subtitle": "No hay tramos libres para esta fecha.\nPrueba con otro día.",
+    "recurring.slot.available": "Disponible",
+    "recurring.success.title": "Solicitud enviada",
+    "recurring.success.body": "Tu solicitud está pendiente de aprobación. El administrador la revisará y recibirás una notificación con la decisión.",
+    "calendar.fallbackTitle": "Calendario",
+    "calendar.legend.available": "Disponible",
+    "calendar.legend.busy": "Ocupado",
+    "calendar.legend.notAllowed": "No permitido",
+    "calendar.noWorkdays": "No hay días laborables en este rango",
+    "calendar.selection.label": "Seleccionado",
+    "calendar.selection.book": "Reservar",
+    "admin.users.role.administrador": "Administrador",
+    "admin.users.role.jefatura": "Jefatura",
+    "admin.users.role.gestorServicio": "Gestor de Servicio",
+    "admin.users.role.control": "Control",
+    "generic.close": "Cerrar",
+    "login.or": "o",
+    "iesinfo.sections.title": "Para tu interés",
+    "pref.section.push": "Notificaciones in-app",
+    "pref.section.email": "Notificaciones por email",
+    "faq.eyebrow": "Mi cuenta",
+    "settings.language.french": "Francés",
+    "cafeteria.detail.price": "Precio",
+    "cafeteria.detail.title": "Detalle del producto",
+    "admin.services.eyebrow": "Gestión",
+    "admin.services.search": "Buscar servicios...",
+    "admin.announcements.eyebrow": "Comunicación",
+    "admin.announcements.search": "Buscar anuncios...",
+    "admin.spaces.search": "Buscar espacios...",
+    "cafeteria.admin.search": "Buscar categorías y productos...",
+    "admin.services.edit": "Editar servicio",
+    "admin.services.gestor": "Gestor del servicio",
+    "admin.services.noGestor": "Sin gestor asignado",
+    "admin.polls.active": "Activa",
+    "restricted.title": "Acceso\nrestringido",
+    "restricted.description": "Esta funcionalidad está disponible únicamente para usuarios con cuenta del instituto.",
+    "restricted.chip": "Autenticación requerida",
+    "restricted.divider": "Inicia sesión para continuar",
+    "restricted.loginButton": "Iniciar sesión",
+    "restricted.helpText": "Usa las credenciales de tu centro educativo",
+    "shell.nav.spaces": "Espacios",
+    "shell.nav.services": "Servicios",
+    "spaces.eyebrow": "Reservas",
+    "spaces.title": "Espacios",
+    "services.screen.eyebrow": "RESERVAS",
+    "services.screen.title": "Servicios",
+    "admin.shell.section.overview": "Vista general",
+    "admin.shell.section.management": "Gestión",
+    "admin.shell.section.content": "Contenido",
+    "admin.shell.section.system": "Sistema",
+    "admin.settings.section.branding": "Marca e identidad",
+    "admin.settings.logo.light": "Logo claro",
+    "admin.settings.logo.dark": "Logo oscuro",
+    "admin.settings.logo.uploaded": "Logo actualizado correctamente",
+    "admin.settings.logo.uploadError": "Error al subir el logo",
+    "admin.settings.branding.appName": "Nombre de la aplicación",
+    "admin.settings.branding.contactEmail": "Email de contacto",
+    "admin.settings.branding.contactPhone": "Teléfono de contacto",
+    "admin.settings.branding.address": "Dirección",
+    "admin.settings.branding.antelacionDias": "Días de antelación mínima para reservar",
+    "admin.settings.section.appearance": "Apariencia",
+    "admin.settings.appearance.color": "Color principal",
+    "admin.settings.appearance.theme": "Tema por defecto",
+    "admin.settings.appearance.theme.light": "Claro",
+    "admin.settings.appearance.theme.dark": "Oscuro",
+    "admin.settings.appearance.theme.system": "Sistema",
+    "admin.dashboard.shortcut.incidents.subtitle": "Reportes, averías y problemas técnicos",
+    "cafeteroa.admin.new.product.text": "Añade un nuevo producto al menú",
+    "home.chat.ai.question": "Preguntar a Vivi",
+    "admin.settings.roles.title": "Roles de Azure AD",
+    "admin.settings.roles.subtitle": "Gestiona la asignación de grupos de Microsoft Entra ID a roles del sistema",
+    "admin.settings.roles.add": "Añadir rol",
+    "admin.settings.roles.empty": "No hay roles configurados",
+    "admin.settings.roles.createTitle": "Nuevo rol",
+    "admin.settings.roles.editTitle": "Editar rol",
+    "admin.settings.roles.deleteTitle": "Eliminar rol",
+    "admin.settings.roles.deleteContent": "¿Eliminar el mapping del rol {role}? Esta acción no se puede deshacer.",
+    "admin.settings.roles.field.roleName": "Nombre del rol",
+    "admin.settings.roles.field.groupId": "Azure Group ID",
+    "admin.settings.roles.create": "Crear",
+    "admin.settings.roles.createSuccess": "Rol creado correctamente",
+    "admin.settings.roles.updateSuccess": "Rol actualizado correctamente",
+    "admin.settings.roles.deleteSuccess": "Rol eliminado correctamente",
+    "admin.settings.roles.deleteError": "Error al eliminar el rol",
+    "admin.settings.roles.saveError": "Error al guardar el rol",
+    "admin.settings.section.system": "Sistema",
+    "admin.settings.ia.enabled": "Chat de IA habilitado",
+    "admin.settings.ia.enabled.subtitle": "Si se desactiva, el botón de Vivi no aparece (salvo administradores).",
+    "admin.settings.nonWorkingDays.title": "Días no laborables",
+    "admin.settings.nonWorkingDays.subtitle": "Los días bloqueados no admitirán reservas de espacios ni servicios.",
+    "admin.settings.nonWorkingDays.specificDates": "Fechas concretas",
+    "admin.settings.nonWorkingDays.addDate": "Añadir fecha",
+    "admin.settings.nonWorkingDays.noDates": "Sin fechas bloqueadas",
+    "admin.settings.nonWorkingDays.fullMonths": "Meses completos",
+    "admin.users.role.secretaria": "Secretaría",
+    "admin.bookings.text.puntual": "Reservas puntuales pendientes",
+    "admin.bookings.text.recurrent": "Reservas recurrentes pendientes",
+    "admin.recurrent.booking.reject": "Rechazar reserva recurrente",
+    "admin.recurrent.booking.aprove": "Reserva recurrente aprobada",
+    "admin.recurrent.booking.error": "No se puedo aprobar la reserva recurrente",
+    "admin.settings.section.general": "General",
+    "admin.settings.section.reservas": "Reservas",
+    "admin.settings.section.azure": "Azure & Entra ID",
+    "admin.settings.section.vivi": "Vivi · IA",
+    "admin.settings.section.graph": "Microsoft Graph",
+    "admin.settings.section.firebase": "Firebase",
+    "admin.settings.azure.clientId": "Client ID",
+    "admin.settings.azure.tenantId": "Tenant ID",
+    "admin.settings.azure.clientSecret": "Client Secret",
+    "admin.settings.azure.authority": "Authority URL",
+    "admin.settings.azure.note": "Los cambios en estas credenciales requieren reiniciar el backend para surtir efecto.",
+    "admin.settings.vivi.apiKey": "Gemini API Key",
+    "admin.settings.vivi.model": "Modelo de IA",
+    "admin.settings.graph.emailEnabled": "Envío de emails habilitado",
+    "admin.settings.graph.emailEnabled.subtitle": "Notificaciones por correo: reservas, anuncios e incidencias.",
+    "admin.settings.graph.fromEmail": "Correo remitente",
+    "admin.settings.firebase.enabled": "Notificaciones push habilitadas",
+    "admin.settings.firebase.enabled.subtitle": "Envía notificaciones push a dispositivos móviles vía Firebase.",
+    "mis.reservas.title": "Mis Reservas",
+    "mis.reservas.eyebrow": "Mi cuenta",
+    "faq.q9.question": "¿Cómo funciona la lista de espera?",
+    "faq.q9.answer": "Cuando un espacio está ocupado en el tramo que quieres, puedes apuntarte a la lista de espera. Si se libera una plaza (por cancelación o rechazo), recibirás una notificación automática para que puedas reservarlo.",
+    "faq.q10.question": "¿Qué son las reservas recurrentes?",
+    "faq.q10.answer": "Las reservas recurrentes te permiten solicitar un espacio de forma periódica (por ejemplo, todos los martes). Requieren aprobación del administrador y generan reservas automáticas según el patrón configurado.",
+    "faq.q11.question": "¿Cómo reporto una incidencia o avería?",
+    "faq.q11.answer": "En la sección de 'Ajustes' encontrarás la opción 'Reportar un problema'. Rellena el formulario con una descripción y, si es posible, una foto. El personal del centro recibirá el aviso y lo gestionará.",
+    "faq.q12.question": "¿Para qué sirven los favoritos?",
+    "faq.q12.answer": "Los favoritos te permiten guardar los espacios y servicios que usas con más frecuencia. Así puedes acceder a ellos rápidamente desde tu perfil sin tener que buscarlos cada vez.",
+    "faq.q13.question": "¿Cómo funcionan las encuestas?",
+    "faq.q13.answer": "El centro publica encuestas ocasionalmente para recoger la opinión de alumnos y profesores. Cuando haya una activa recibirás una notificación y podrás votar desde la sección 'Encuestas' de tu perfil.",
+    "faq.q14.question": "¿Puedo cambiar mi foto de perfil?",
+    "faq.q14.answer": "Tu foto de perfil se sincroniza automáticamente con tu cuenta de Microsoft. Cámbiala desde el portal de Microsoft 365 de tu centro y la próxima vez que inicies sesión se actualizará en la app.",
+    "admin.services.slots.success": "Tramos horarios actualizados correctamente",
+    "admin.settings.section.roles": "Roles",
+    "common.cancel": "Cancelar",
+    "admin.services.inactive": "Inactivo"
 }
-

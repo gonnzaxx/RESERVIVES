@@ -9,21 +9,28 @@ import 'package:go_router/go_router.dart';
 import 'package:reservives/core/utils/role_access.dart';
 import 'package:reservives/models/reserva.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/role_permissions_provider.dart';
 import 'package:reservives/screens/chat/chat_screen.dart';
-import 'package:reservives/screens/admin/admin_announcements_screen.dart';
-import 'package:reservives/screens/admin/admin_bookings_screen.dart';
-import 'package:reservives/screens/admin/admin_historial_screen.dart';
-import 'package:reservives/screens/admin/admin_cafeteria_screen.dart';
-import 'package:reservives/screens/admin/admin_dashboard.dart';
-import 'package:reservives/screens/admin/admin_services_screen.dart';
+import 'package:reservives/screens/admin/content/admin_announcements_screen.dart';
+import 'package:reservives/screens/admin/management/admin_bookings_screen.dart';
+import 'package:reservives/screens/admin/management/admin_historial_screen.dart';
+import 'package:reservives/screens/admin/content/admin_cafeteria_screen.dart';
+import 'package:reservives/screens/admin/general/admin_dashboard.dart';
+import 'package:reservives/screens/admin/content/admin_services_screen.dart';
 import 'package:reservives/screens/admin/admin_shell_screen.dart';
-import 'package:reservives/screens/admin/admin_spaces_screen.dart';
-import 'package:reservives/screens/admin/admin_users_screen.dart';
-import 'package:reservives/screens/admin/admin_settings_screen.dart';
-import 'package:reservives/screens/admin/admin_reports_screen.dart';
-import 'package:reservives/screens/admin/admin_metrics_screen.dart';
-import 'package:reservives/screens/admin/admin_polls_screen.dart';
+import 'package:reservives/screens/admin/content/admin_spaces_screen.dart';
+import 'package:reservives/screens/admin/management/admin_users_screen.dart';
+import 'package:reservives/screens/admin/system/admin_settings_screen.dart';
+import 'package:reservives/screens/admin/system/admin_personalization_screen.dart';
+import 'package:reservives/screens/admin/system/admin_azure_screen.dart';
+import 'package:reservives/screens/admin/management/admin_reports_screen.dart';
+import 'package:reservives/screens/admin/general/admin_metrics_screen.dart';
+import 'package:reservives/screens/admin/management/admin_polls_screen.dart';
 import 'package:reservives/screens/profile/settings/reports_screen.dart';
+import 'package:reservives/screens/profile/settings/report_detail_screen.dart';
+import 'package:reservives/screens/tokens_recharge_screen.dart';
+import 'package:reservives/models/incidencia.dart';
+import 'package:reservives/models/notificacion.dart';
 import 'package:reservives/screens/home/detail_announcement_screen.dart';
 import 'package:reservives/screens/bookings/space_booking_screen.dart';
 import 'package:reservives/screens/bookings/detail_booking_screen.dart';
@@ -32,7 +39,7 @@ import 'package:reservives/screens/home/home_screen.dart';
 import 'package:reservives/screens/login_screen.dart';
 import 'package:reservives/screens/home/notifications_screen.dart';
 import 'package:reservives/screens/profile/settings/about_screen.dart';
-import 'package:reservives/screens/profile/activity_history_screen.dart';
+import 'package:reservives/screens/profile/mis_reservas_screen.dart';
 import 'package:reservives/screens/profile/favorites_screen.dart';
 import 'package:reservives/screens/profile/settings/help_screen.dart';
 import 'package:reservives/screens/profile/settings/faq_screen.dart';
@@ -43,7 +50,8 @@ import 'package:reservives/screens/profile/ies_info/ies_who_we_are_screen.dart';
 import 'package:reservives/screens/profile/settings/notification_preferences_screen.dart';
 import 'package:reservives/screens/profile/profile_screen.dart';
 import 'package:reservives/screens/profile/settings_screen.dart';
-import 'package:reservives/screens/bookings/bookings_screen.dart';
+import 'package:reservives/screens/bookings/spaces_screen.dart';
+import 'package:reservives/screens/bookings/services_screen.dart';
 import 'package:reservives/screens/shell_screen.dart';
 import 'package:reservives/screens/profile/polls_screen.dart';
 import 'package:reservives/screens/restricted_feature_screen.dart';
@@ -63,6 +71,10 @@ import '../screens/profile/ies_info/ies_info_screen.dart';
 class _RouterRefreshNotifier extends ChangeNotifier {
   _RouterRefreshNotifier(this.ref) {
     ref.listen<AuthState>(authProvider, (_, _) {
+      if (_disposed) return;
+      notifyListeners();
+    });
+    ref.listen<AsyncValue<Map<String, List<String>>>>(rolePermissionsProvider, (_, _) {
       if (_disposed) return;
       notifyListeners();
     });
@@ -109,6 +121,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Si la app está cargando el estado de sesión, no redirigir todavía.
       if (authState.isLoading) return null;
 
+      // Permisos dinámicos de backoffice (si no están cargados aún, mapa vacío → usa reglas hardcoded)
+      final customSections = ref.read(rolePermissionsProvider).maybeWhen(
+        data: (v) => v,
+        orElse: () => <String, List<String>>{},
+      );
+
       final isAuthenticated = authState.isAuthenticated;
       final isAuthRoute = location == '/' ||
           location == '/login' ||
@@ -120,7 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && isAuthRoute) {
         if (isGuest) return '/home';
         if (user == null) return '/home';
-        return defaultAuthenticatedRoute(user);
+        return defaultAuthenticatedRouteDynamic(user, customSections);
       }
 
       if (!isAuthenticated) return null;
@@ -135,16 +153,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // --- FLUJO DE ADMINISTRACIÓN ---
       if (user != null && location.startsWith('/admin')) {
-        // Valida si el rol del usuario permite entrar en la ruta admin específica.
-        if (!canAccessAdminLocation(user, location)) {
-          final fallback = firstAllowedAdminRoute(user) ??
+        if (!canAccessAdminLocationDynamic(user, location, customSections)) {
+          final fallback = firstAllowedAdminRouteDynamic(user, customSections) ??
               (canAccessMainApp(user.rol) ? '/home' : '/login');
           return fallback;
         }
 
-        // Si intenta entrar a /admin a secas, redirigir a su panel preferido.
         if (location == '/admin') {
-          final preferred = firstAllowedAdminRoute(user);
+          final preferred = firstAllowedAdminRouteDynamic(user, customSections);
           if (preferred != null && preferred != '/admin') {
             return preferred;
           }
@@ -153,7 +169,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Evita que usuarios con roles solo administrativos accedan a la parte pública.
       if (user != null && !location.startsWith('/admin') && !canAccessMainApp(user.rol)) {
-        return firstAllowedAdminRoute(user) ?? '/login';
+        return firstAllowedAdminRouteDynamic(user, customSections) ?? '/login';
       }
 
       return null;
@@ -196,10 +212,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
+            path: '/espacios',
+            name: 'espacios',
+            pageBuilder: (context, state) =>
+            const NoTransitionPage(child: SpacesScreen()),
+          ),
+          GoRoute(
             path: '/servicios',
             name: 'servicios',
             pageBuilder: (context, state) =>
-            const NoTransitionPage(child: ServicesScreen()),
+            const NoTransitionPage(child: ServicesListScreen()),
           ),
           GoRoute(
             path: '/cafeteria',
@@ -213,13 +235,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
             const NoTransitionPage(child: ProfileScreen()),
           ),
-          GoRoute(
-            path: '/ai-chat',
-            name: 'ai_chat',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AiChatScreen()),
-          ),
         ],
+      ),
+      GoRoute(
+        path: '/ai-chat',
+        name: 'ai_chat',
+        pageBuilder: (context, state) =>
+        const NoTransitionPage(child: AiChatScreen()),
       ),
       GoRoute(
         path: '/booking/:espacioId',
@@ -339,6 +361,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: AdminSettingsScreen()),
               ),
               GoRoute(
+                path: 'personalizacion',
+                name: 'admin_personalizacion',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminPersonalizationScreen()),
+              ),
+              GoRoute(
                 path: 'incidencias',
                 name: 'admin_incidencias',
                 pageBuilder: (context, state) =>
@@ -356,6 +384,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) =>
                 const NoTransitionPage(child: AdminPollsScreen()),
               ),
+              GoRoute(
+                path: 'azure',
+                name: 'admin_azure',
+                pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminAzureScreen()),
+              ),
             ],
           ),
         ],
@@ -366,6 +400,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'reportar_incidencia',
         pageBuilder: (context, state) =>
         const NoTransitionPage(child: ReportIncidenciaScreen()),
+      ),
+      GoRoute(
+        path: '/tokens-recarga',
+        name: 'tokens_recarga',
+        pageBuilder: (context, state) {
+          final notificacion = state.extra as Notificacion;
+          return NoTransitionPage(
+            child: TokensRechargeScreen(notificacion: notificacion),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/incidencia/:incidenciaId',
+        name: 'incidencia_detalle',
+        pageBuilder: (context, state) {
+          final incidencia = state.extra is Incidencia ? state.extra as Incidencia : null;
+          final fromSubmission = state.uri.queryParameters['from'] == 'submission';
+          return NoTransitionPage(
+            child: ReportDetailScreen(
+              incidenciaId: state.pathParameters['incidenciaId']!,
+              incidenciaInicial: incidencia,
+              fromSubmission: fromSubmission,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/votaciones',
@@ -401,7 +460,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/actividad',
         name: 'actividad',
         pageBuilder: (context, state) =>
-        const NoTransitionPage(child: ActivityHistoryScreen()),
+        const NoTransitionPage(child: MisReservasScreen()),
       ),
       GoRoute(
         path: '/anuncios/:anuncioId',
@@ -461,6 +520,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         const NoTransitionPage(child: IesStudiesScreen()),
       ),
     ],
-    debugLogDiagnostics: kDebugMode, 
+    debugLogDiagnostics: kDebugMode,
   );
 });

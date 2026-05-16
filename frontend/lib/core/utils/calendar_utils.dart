@@ -1,3 +1,5 @@
+library;
+
 import 'package:url_launcher/url_launcher.dart';
 
 /// Utilidades para interactuar con aplicaciones de calendario externas (Google Calendar).
