@@ -17,11 +17,11 @@ final pushNotificationsServiceProvider = Provider<PushNotificationsService>((ref
 });
 
 /// Definición del canal de notificaciones para Android
-const AndroidNotificationChannel _reservivesChannel =
+const AndroidNotificationChannel _iesLuisVivesAppChannel =
 AndroidNotificationChannel(
-  'reservives_notifications',
-  'Reservives Notifications',
-  description: 'Canal principal de notificaciones de RESERVIVES',
+  'iesLuisVivesApp_notifications',
+  'iesLuisVivesApp Notifications',
+  description: 'Canal principal de notificaciones de IES Luis Vives App',
   importance: Importance.high,
 );
 
@@ -78,7 +78,7 @@ Future<void> initializePushNotificationsBootstrap() async {
         .resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin
     >()
-        ?.createNotificationChannel(_reservivesChannel);
+        ?.createNotificationChannel(_iesLuisVivesAppChannel);
 
     // Listener para mensajes cuando la app está abierta.
     FirebaseMessaging.onMessage.listen((message) {
@@ -92,10 +92,10 @@ Future<void> initializePushNotificationsBootstrap() async {
         notification.body,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'reservives_notifications',
-            'Reservives Notifications',
+            'iesLuisVivesApp_notifications',
+            'iesLuisVivesApp Notifications',
             channelDescription:
-            'Canal principal de notificaciones de RESERVIVES',
+            'Canal principal de notificaciones de IES Luis Vives App',
             importance: Importance.high,
             priority: Priority.high,
             icon: 'ic_notification',

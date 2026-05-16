@@ -1,4 +1,4 @@
-/// RESERVIVES - Widget de Configuración de Tramos Horarios.
+/// IES Luis Vives App - Widget de Configuración de Tramos Horarios.
 ///
 /// Este componente permite a los administradores definir qué franjas horarias
 /// son válidas para la reserva de un recurso específico (espacio o servicio).

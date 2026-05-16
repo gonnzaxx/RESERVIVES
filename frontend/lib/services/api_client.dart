@@ -87,6 +87,13 @@ class ApiClient {
     }
   }
 
+  static const Duration _timeout = Duration(seconds: 15);
+
+  Future<http.Response> _withTimeout(Future<http.Response> request) =>
+      request.timeout(_timeout, onTimeout: () {
+        throw ApiException('El servidor no responde. Verifica tu conexión.', 503);
+      });
+
   /// Realiza una petición GET al [endpoint] indicado.
   Future<dynamic> get(String endpoint, {Map<String, String>? queryParams}) async {
     try {
@@ -96,7 +103,7 @@ class ApiClient {
         uri = uri.replace(queryParameters: queryParams);
       }
 
-      final response = await http.get(uri, headers: _getHeaders());
+      final response = await _withTimeout(http.get(uri, headers: _getHeaders()));
       return _processResponse(response);
 
     } catch (e) {
@@ -113,7 +120,9 @@ class ApiClient {
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
       final headers = _getHeaders();
       if (body == null) headers.remove('Content-Type');
-      final response = await http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+      final response = await _withTimeout(
+        http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null),
+      );
       return _processResponse(response);
 
     } catch (e) {
@@ -124,7 +133,7 @@ class ApiClient {
   }
 
   /// Sube un archivo al servidor utilizando un formato [MultipartRequest].
-  Future<dynamic> postMultipart(String endpoint, {required String fileField, required List<int> fileBytes, required String fileName}) async {
+  Future<dynamic> postMultipart(String endpoint, {required String fileField, required List<int> fileBytes, required String fileName, Map<String, String>? fields}) async {
     try {
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
       final request = http.MultipartRequest('POST', uri);
@@ -132,6 +141,10 @@ class ApiClient {
 
       headers.remove('Content-Type');
       request.headers.addAll(headers);
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
 
       // Detecta el tipo de imagen basándose en la extensión.
       final ext = fileName.split('.').last.toLowerCase();
@@ -157,7 +170,7 @@ class ApiClient {
     try {
 
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
-      final response = await http.put(uri, headers: _getHeaders(), body: jsonEncode(body));
+      final response = await _withTimeout(http.put(uri, headers: _getHeaders(), body: jsonEncode(body)));
       return _processResponse(response);
 
     } catch (e) {
@@ -172,7 +185,7 @@ class ApiClient {
     try {
 
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
-      final response = await http.put(uri, headers: _getHeaders(), body: jsonEncode(body));
+      final response = await _withTimeout(http.put(uri, headers: _getHeaders(), body: jsonEncode(body)));
       return _processResponse(response);
 
     } catch (e) {
@@ -187,7 +200,7 @@ class ApiClient {
     try {
 
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
-      final response = await http.patch(uri, headers: _getHeaders(), body: jsonEncode(body));
+      final response = await _withTimeout(http.patch(uri, headers: _getHeaders(), body: jsonEncode(body)));
       return _processResponse(response);
 
     } catch (e) {
@@ -202,7 +215,7 @@ class ApiClient {
     try {
 
       final uri = Uri.parse('${AppConstants.apiBaseUrl}$endpoint');
-      final response = await http.delete(uri, headers: _getHeaders());
+      final response = await _withTimeout(http.delete(uri, headers: _getHeaders()));
       return _processResponse(response);
 
     } catch (e) {

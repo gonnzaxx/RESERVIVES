@@ -1,4 +1,4 @@
-/// RESERVIVES - Sistema de Diseño y Componentes de UI.
+/// IES Luis Vives App - Sistema de Diseño y Componentes de UI.
 ///
 /// Este archivo tiene los componentes visuales personalizados de la aplicación.
 
@@ -604,7 +604,6 @@ class RvGhostIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       shape: const CircleBorder(),
@@ -911,6 +910,65 @@ class RvSkeleton extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
+      ),
+    );
+  }
+}
+
+class RvSheetHeader extends StatelessWidget {
+  final VoidCallback? onClose;
+
+  const RvSheetHeader({super.key, this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: 44,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.hintColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          if (onClose != null)
+            Positioned(
+              right: 0,
+              child: GestureDetector(
+                onTap: onClose,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: theme.hintColor.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: theme.hintColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,7 +1,7 @@
-/// RESERVIVES - Authentication Service
+/// Servicio de Autenticación.
 ///
-/// Este servicio actúa como orquestador para los flujos de autenticación de la app,
-/// gestionando la comunicación entre el [authProvider] y el [apiClientProvider].
+/// Actúa como orquestador entre el [authProvider] y el [apiClientProvider],
+/// centralizando el login con Microsoft y la limpieza de estado al cerrar sesión.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
