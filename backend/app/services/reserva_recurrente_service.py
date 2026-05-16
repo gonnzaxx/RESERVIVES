@@ -1,5 +1,5 @@
 """
-RESERVIVES - Servicio de Reservas Recurrentes.
+IES LUIS VIVES APP - Servicio de Reservas Recurrentes.
 
 Gestiona la creación, aprobación, rechazo y generación de instancias
 de reservas periódicas. El flujo es:
@@ -8,9 +8,11 @@ de reservas periódicas. El flujo es:
   3. Scheduler diario genera las siguientes instancias hasta fecha_fin
 """
 
+import calendar
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.historial_tokens import HistorialTokens, TipoMovimientoToken
@@ -24,7 +26,9 @@ from app.models.usuario import RolUsuario, Usuario
 from app.repositories.espacio_repo import EspacioRepository
 from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
 from app.repositories.reserva_recurrente_repo import ReservaRecurrenteRepository
+from app.repositories.usuario_repo import UsuarioRepository
 from app.schemas.reserva import DuracionPlan, ReservaRecurrenteCreate
+from app.services.tramo_service import TramoService
 from app.utils.datetime_utils import local_slot_to_utc_range
 from app.utils.exceptions import (
     ConflictException,
@@ -53,10 +57,11 @@ class ReservaRecurrenteService:
         self.espacio_repo = EspacioRepository(session)
         self.logger = get_logger("app.services.reserva_recurrente")
 
+    # Crea la solicitud de reserva recurrente en estado PENDIENTE_APROBACION.
+    # Los alumnos no pueden usarla; admite duración_plan como alternativa a fecha_fin.
     async def crear_reserva_recurrente(
         self, usuario: Usuario, data: ReservaRecurrenteCreate
     ) -> ReservaRecurrente:
-        """Crea una solicitud de reserva recurrente pendiente de aprobación admin."""
         if usuario.rol == RolUsuario.ALUMNO:
             raise ForbiddenException(
                 "Los alumnos no pueden solicitar reservas recurrentes"
@@ -86,7 +91,6 @@ class ReservaRecurrenteService:
         if not espacio or not espacio.reservable or not espacio.activo:
             raise NotFoundException("Espacio", str(data.espacio_id))
 
-        from app.services.tramo_service import TramoService
         tramo_svc = TramoService(self.session)
         tramo = await tramo_svc.get_tramo_by_id(data.tramo_id)
         if not tramo or not tramo.activo:
@@ -108,6 +112,7 @@ class ReservaRecurrenteService:
         reserva_rec = await self.repo.create(reserva_rec)
         return reserva_rec
 
+    # Calcula la fecha de fin a partir del plan de duración preseleccionado
     @staticmethod
     def _compute_end_date_from_plan(fecha_inicio: date, plan: DuracionPlan) -> date:
         if plan == DuracionPlan.DIAS_15:
@@ -116,10 +121,10 @@ class ReservaRecurrenteService:
             return fecha_inicio + timedelta(days=30)
         return fecha_inicio + timedelta(days=90)
 
+    # Admin aprueba el patrón recurrente y genera las primeras instancias de forma inmediata
     async def aprobar_reserva_recurrente(
         self, reserva_recurrente_id: uuid.UUID, admin: Usuario
     ) -> ReservaRecurrente:
-        """Admin aprueba el patrón y se generan las primeras instancias."""
         if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
             raise ForbiddenException("No tienes permisos para aprobar reservas recurrentes")
 
@@ -135,10 +140,10 @@ class ReservaRecurrenteService:
         await self._generar_instancias(reserva_rec)
         return reserva_rec
 
+    # Admin rechaza el patrón con un motivo opcional
     async def rechazar_reserva_recurrente(
         self, reserva_recurrente_id: uuid.UUID, admin: Usuario, motivo: str | None = None
     ) -> ReservaRecurrente:
-        """Admin rechaza el patrón."""
         if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
             raise ForbiddenException("No tienes permisos para rechazar reservas recurrentes")
 
@@ -153,10 +158,11 @@ class ReservaRecurrenteService:
         await self.session.flush()
         return reserva_rec
 
+    # Cancela el patrón y todas sus instancias futuras pendientes/aprobadas.
+    # Devuelve los tokens consumidos por las instancias canceladas.
     async def cancelar_reserva_recurrente(
         self, reserva_recurrente_id: uuid.UUID, usuario: Usuario
     ) -> ReservaRecurrente:
-        """Cancela un patrón y sus instancias futuras pendientes/aprobadas."""
         reserva_rec = await self.repo.get_by_id(reserva_recurrente_id)
         if not reserva_rec:
             raise NotFoundException("ReservaRecurrente", str(reserva_recurrente_id))
@@ -170,10 +176,7 @@ class ReservaRecurrenteService:
 
         reserva_rec.estado = EstadoReservaRecurrente.CANCELADA
 
-        # Cancelar instancias futuras PENDIENTE y APROBADA
-        from sqlalchemy import select, and_
-        from datetime import datetime, timezone
-
+        # Cancelar instancias futuras pendientes y aprobadas
         result = await self.session.execute(
             select(ReservaEspacio).where(
                 and_(
@@ -208,12 +211,9 @@ class ReservaRecurrenteService:
         await self.session.flush()
         return reserva_rec
 
+    # Tarea del scheduler diario: genera instancias para los próximos N días
+    # en todos los patrones aprobados. Devuelve el total de instancias creadas.
     async def generar_instancias_pendientes(self) -> int:
-        """
-        Tarea del scheduler: genera instancias para los próximos
-        _DIAS_ANTICIPACION_INSTANCIAS días de todos los patrones aprobados.
-        Devuelve el número de instancias creadas.
-        """
         hoy = date.today()
         patrones = await self.repo.get_aprobadas_pendientes_de_generacion(hoy)
         total_creadas = 0
@@ -224,12 +224,9 @@ class ReservaRecurrenteService:
 
         return total_creadas
 
+    # Genera las ReservaEspacio concretas del patrón hasta el horizonte de anticipación.
+    # Omite días festivos, fines de semana, solapamientos y slots sin tokens suficientes.
     async def _generar_instancias(self, patron: ReservaRecurrente) -> int:
-        """
-        Genera las instancias concretas (ReservaEspacio) del patrón
-        hasta _DIAS_ANTICIPACION_INSTANCIAS días en el futuro.
-        Evita duplicados comprobando solapamiento antes de crear.
-        """
         hoy = date.today()
         horizonte = hoy + timedelta(days=_DIAS_ANTICIPACION_INSTANCIAS)
         ultima = patron.ultima_instancia_generada or (patron.fecha_inicio - timedelta(days=1))
@@ -261,10 +258,9 @@ class ReservaRecurrenteService:
                 )
                 continue
 
-            # Descontar tokens si aplica
+            # Descontar tokens si el rol del usuario los usa
             tokens = patron.tokens_por_instancia
             if tokens > 0:
-                from app.repositories.usuario_repo import UsuarioRepository
                 usuario_repo = UsuarioRepository(self.session)
                 propietario = await usuario_repo.get_by_id(patron.usuario_id)
                 if propietario and propietario.tokens >= tokens:
@@ -278,7 +274,7 @@ class ReservaRecurrenteService:
                         )
                     )
                 elif propietario:
-                    # Sin tokens suficientes → se omite esta instancia
+                    # Sin saldo suficiente: se omite esta instancia
                     self.logger.info(
                         "recurring_instance_skipped_tokens",
                         extra={"extra_data": {"patron_id": str(patron.id), "fecha": str(fecha)}},
@@ -303,21 +299,22 @@ class ReservaRecurrenteService:
         await self.session.flush()
         return creadas
 
+    # Calcula las fechas que corresponden al patrón de recurrencia entre dos límites.
+    # MENSUAL mantiene el mismo día del mes ajustando si el mes tiene menos días.
     @staticmethod
     def _calcular_fechas(
         patron: ReservaRecurrente, desde: date, hasta: date
     ) -> list[date]:
-        """Genera las fechas que corresponden al patrón de recurrencia."""
         fechas: list[date] = []
         if patron.tipo_recurrencia == TipoRecurrencia.SEMANAL:
             delta = timedelta(weeks=1)
         elif patron.tipo_recurrencia == TipoRecurrencia.QUINCENAL:
             delta = timedelta(weeks=2)
-        else:  # MENSUAL – misma fecha del mes cada mes
+        else:  # MENSUAL: misma fecha cada mes
             delta = None
 
         if delta is not None:
-            # Calcular el primer día del patrón que cae en o después de `desde`
+            # Primer día del patrón que cae en o después de `desde`
             cursor = patron.fecha_inicio
             while cursor < desde:
                 cursor += delta
@@ -325,17 +322,14 @@ class ReservaRecurrenteService:
                 fechas.append(cursor)
                 cursor += delta
         else:
-            # MENSUAL
+            # MENSUAL: avanzar mes a mes respetando el día original
             cursor = patron.fecha_inicio
             while cursor <= hasta:
                 if cursor >= desde:
                     fechas.append(cursor)
-                # Avanzar un mes
                 mes = cursor.month + 1
                 anio = cursor.year + (mes - 1) // 12
                 mes = ((mes - 1) % 12) + 1
-                # Mismo día, si existe en ese mes
-                import calendar
                 max_dia = calendar.monthrange(anio, mes)[1]
                 cursor = cursor.replace(year=anio, month=mes, day=min(cursor.day, max_dia))
 

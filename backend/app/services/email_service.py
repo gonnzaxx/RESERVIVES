@@ -1,31 +1,29 @@
 """
-Servicio de envio de email con templates HTML externos.
+Servicio de envio de email via Microsoft Graph.
 """
 
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
-import smtplib
+
+import httpx
 
 from app.config import get_settings
-from app.utils.datetime_utils import format_for_humans
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.configuracion import Configuracion
+from app.utils.datetime_utils import format_normalize
 
 
+# dict que devuelve "-" para claves ausentes, evita KeyError al renderizar templates
 class _SafeDict(dict):
     def __missing__(self, key):
         return "-"
 
 
 class EmailService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db=None):
         self.db = db
         self.settings = get_settings()
         self.template_dir = Path(__file__).resolve().parents[2] / "templates" / "email"
 
+    # Carga un template HTML y sustituye las variables del contexto
     def _load_html_template(self, template_file: str, context: dict) -> str:
         template_path = self.template_dir / template_file
         if not template_path.exists():
@@ -33,15 +31,17 @@ class EmailService:
         html = template_path.read_text(encoding="utf-8")
         return html.format_map(_SafeDict(context))
 
+    # Formatea un datetime ISO string al formato local del instituto
     def _format_datetime_value(self, raw: str) -> str:
         try:
             parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             if parsed.tzinfo is None:
                 return raw
-            return format_for_humans(parsed)
+            return format_normalize(parsed)
         except Exception:
             return raw
 
+    # Prepara el contexto del template: normaliza fechas y rellena campos opcionales
     def _prepare_context(self, context: dict) -> dict:
         prepared = dict(context)
         for field in ("inicio", "fin"):
@@ -52,248 +52,130 @@ class EmailService:
         prepared.setdefault("estado", "PENDIENTE")
         return prepared
 
-    def _render_template(self, template_key: str, context: dict) -> tuple[str, str, str]:
+    # Resuelve asunto y HTML según la clave de template; usa default si no coincide ninguna
+    def _render_template(self, template_key: str, context: dict) -> tuple[str, str]:
         safe_context = self._prepare_context(context)
 
         if template_key == "reserva_creada":
-            subject = "RESERVIVES | Reserva registrada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva ha sido registrada correctamente:
-
-- Recurso: {safe_context.get("recurso", "-")}
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-- Estado inicial: {safe_context.get("estado", "PENDIENTE")}
-
-Equipo RESERVIVES.
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva registrada"
             html = self._load_html_template("reserva_creada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_aprobada":
-            subject = "RESERVIVES | Reserva aprobada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva de "{safe_context.get("recurso", "-")}" ha sido APROBADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva aprobada"
             html = self._load_html_template("reserva_aprobada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_servicio_aprobada":
-            subject = "RESERVIVES | Reserva de servicio aprobada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva del servicio "{safe_context.get("recurso", "-")}" ha sido APROBADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva de servicio aprobada"
             html = self._load_html_template("reserva_servicio_aprobada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_servicio_rechazada":
-            subject = "RESERVIVES | Reserva de servicio rechazada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva del servicio "{safe_context.get("recurso", "-")}" ha sido RECHAZADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-- Motivo: {safe_context.get("motivo", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva de servicio rechazada"
             html = self._load_html_template("reserva_servicio_rechazada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_aula_profesor_aprobada":
-            subject = "RESERVIVES | Reserva de aula aprobada"
-            text = f"""
-Hola {safe_context.get("nombre", "profesor/a")},
-
-Tu reserva de aula "{safe_context.get("recurso", "-")}" ha sido APROBADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva de aula aprobada"
             html = self._load_html_template("reserva_aula_profesor_aprobada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_aula_profesor_rechazada":
-            subject = "RESERVIVES | Reserva de aula rechazada"
-            text = f"""
-Hola {safe_context.get("nombre", "profesor/a")},
-
-Tu reserva de aula "{safe_context.get("recurso", "-")}" ha sido RECHAZADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-- Motivo: {safe_context.get("motivo", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva de aula rechazada"
             html = self._load_html_template("reserva_aula_profesor_rechazada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_rechazada":
-            subject = "RESERVIVES | Reserva rechazada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva de "{safe_context.get("recurso", "-")}" ha sido RECHAZADA.
-
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-- Motivo: {safe_context.get("motivo", "-")}
-
-Equipo RESERVIVES
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva rechazada"
             html = self._load_html_template("reserva_rechazada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "reserva_cancelada":
-            subject = "RESERVIVES | Reserva cancelada"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tu reserva de "{safe_context.get("recurso", "-")}" ha sido CANCELADA correctamente.
-
-- Inicio: {safe_context.get("inicio", "-")}
-
-Los tokens asociados (si los hubiera) han sido devueltos a tu cuenta.
-
-Equipo RESERVIVES.
-
-Por favor, no responder a este correo.
-""".strip()
+            subject = "IES LUIS VIVES | Reserva cancelada"
             html = self._load_html_template("reserva_cancelada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "admin_nueva_reserva_pendiente":
-            subject = "RESERVIVES Admin | Nueva reserva pendiente"
-            text = f"""
-Atencion Administrador,
-
-Hay una nueva solicitud de reserva que requiere tu aprobacion:
-
-- Usuario: {safe_context.get("usuario", "-")}
-- Recurso: {safe_context.get("recurso", "-")}
-- Inicio: {safe_context.get("inicio", "-")}
-- Fin: {safe_context.get("fin", "-")}
-
-Accede al panel de administracion para gestionarla.
-
-Equipo RESERVIVES.
-""".strip()
+            subject = "IES LUIS VIVES | Nueva reserva pendiente"
             html = self._load_html_template("admin_nueva_reserva_pendiente.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "recarga_tokens":
-            subject = "RESERVIVES | Tus tokens han sido recargados"
-            text = f"""
-Hola {safe_context.get("nombre", "usuario")},
-
-Tus tokens han sido recargados.
-Saldo actual: {safe_context.get("cantidad", "0")} tokens.
-
-Ya puedes realizar nuevas reservas para este mes.
-
-Equipo RESERVIVES
-""".strip()
+            subject = "IES LUIS VIVES | Tus tokens han sido recargados"
             html = self._load_html_template("recarga_tokens.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "incidencia_reportada":
-            subject = "RESERVIVES Admin | Nueva Incidencia Reportada"
-            text = f"Hola {safe_context.get('admin_name')}, hay una nueva incidencia de {safe_context.get('user_name')}."
+            subject = "IES LUIS VIVES | Nueva Incidencia Reportada"
             html = self._load_html_template("incidencia_reportada.html", safe_context)
-            return subject, text, html
+            return subject, html
 
         if template_key == "incidencia_resuelta":
-            subject = "RESERVIVES | Incidencia Resuelta"
-            text = f"Hola {safe_context.get('user_name')}, tu incidencia ha sido resuelta."
+            subject = "IES LUIS VIVES | Incidencia Resuelta"
             html = self._load_html_template("incidencia_resuelta.html", safe_context)
-            return subject, text, html
+            return subject, html
 
-        subject = "RESERVIVES | Notificacion"
-        text = "Tienes una nueva notificacion de RESERVIVES."
+        subject = "IES LUIS VIVES | Notificación"
         html = self._load_html_template("default_notificacion.html", safe_context)
-        return subject, text, html
+        return subject, html
 
+    # Obtiene un access token de Microsoft Graph usando client_credentials
+    async def _get_access_token(self, client: httpx.AsyncClient) -> str:
+        token_url = (
+            f"https://login.microsoftonline.com/{self.settings.AZURE_TENANT_ID}"
+            "/oauth2/v2.0/token"
+        )
+        resp = await client.post(token_url, data={
+            "grant_type": "client_credentials",
+            "client_id": self.settings.AZURE_CLIENT_ID,
+            "client_secret": self.settings.AZURE_CLIENT_SECRET,
+            "scope": "https://graph.microsoft.com/.default",
+        })
+        resp.raise_for_status()
+        return resp.json()["access_token"]
+
+    # Envía un email via Microsoft Graph; aborta si no hay remitente configurado
     async def send_email(self, to_email: str, template_key: str, context: dict) -> None:
-        # Recuperar configuracion de BD para SMTP_ENABLED y SMTP_FROM_EMAIL
-        result_enabled = await self.db.execute(select(Configuracion).where(Configuracion.clave == 'smtp_enabled'))
-        conf_enabled = result_enabled.scalar_one_or_none()
-        smtp_enabled_str = conf_enabled.valor.lower() if conf_enabled else str(self.settings.SMTP_ENABLED).lower()
-        smtp_enabled = smtp_enabled_str in ('1', 'true', 'yes', 'si', 'on')
-
-        if not smtp_enabled:
+        from_email = self.settings.GRAPH_FROM_EMAIL
+        if not from_email:
             return
 
-        result_from = await self.db.execute(select(Configuracion).where(Configuracion.clave == 'smtp_from_email'))
-        conf_from = result_from.scalar_one_or_none()
-        smtp_from_email = conf_from.valor if conf_from and conf_from.valor.strip() else self.settings.SMTP_FROM_EMAIL
-
         try:
-            subject, text, html = self._render_template(template_key, context)
-            msg = MIMEMultipart("alternative")
-            msg["From"] = smtp_from_email
-            msg["To"] = to_email
-            audit_email = getattr(self.settings, 'SMTP_AUDIT_EMAIL', None)
-            if audit_email:
-                msg["Cc"] = audit_email
-            msg["Subject"] = subject
-            msg.attach(MIMEText(text, "plain", "utf-8"))
-            msg.attach(MIMEText(html, "html", "utf-8"))
-
-            recipients = [to_email]
-            if audit_email:
-                recipients.append(audit_email)
-
-            with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
-                server.starttls()
-                server.login(self.settings.SMTP_USERNAME, self.settings.SMTP_PASSWORD)
-                server.sendmail(smtp_from_email, recipients, msg.as_string())
+            subject, html = self._render_template(template_key, context)
+            async with httpx.AsyncClient(timeout=15) as client:
+                access_token = await self._get_access_token(client)
+                payload = {
+                    "message": {
+                        "subject": subject,
+                        "body": {"contentType": "HTML", "content": html},
+                        "toRecipients": [{"emailAddress": {"address": to_email}}],
+                    },
+                    "saveToSentItems": False,
+                }
+                resp = await client.post(
+                    f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+                resp.raise_for_status()
         except Exception as exc:
-            print(f"[EMAIL] Error enviando correo: {exc}")
+            print(f"[EMAIL] Error enviando correo a {to_email}: {exc}")
 
+    # Notifica a un admin que se ha reportado una nueva incidencia
     async def send_incidence_report(self, to_email: str, admin_name: str, user_name: str, description: str, created_at: datetime) -> None:
         context = {
             "admin_name": admin_name,
             "user_name": user_name,
             "description": description,
-            "created_at": format_for_humans(created_at)
+            "created_at": format_normalize(created_at)
         }
         await self.send_email(to_email, "incidencia_reportada", context)
 
+    # Notifica al usuario que su incidencia ha sido resuelta
     async def send_incidence_resolution(self, to_email: str, user_name: str, description: str, resolution: str) -> None:
         context = {
             "user_name": user_name,

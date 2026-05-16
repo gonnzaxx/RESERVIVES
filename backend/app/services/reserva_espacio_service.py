@@ -18,11 +18,15 @@ from app.models.reserva_servicio import ReservaServicio
 from app.models.usuario import RolUsuario, Usuario
 from app.repositories.espacio_repo import EspacioRepository
 from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
+from app.repositories.reserva_servicio_repo import ReservaServicioRepository
 from app.repositories.servicio_repo import ServicioRepository
+from app.repositories.usuario_repo import UsuarioRepository
 from app.schemas.reserva import (
     ReservaCreate,
     ReservaServicioCreate,
 )
+from app.services.tramo_service import TramoService
+from app.utils.datetime_utils import ensure_utc_aware, local_slot_to_utc_range
 from app.utils.exceptions import (
     ConflictException,
     ForbiddenException,
@@ -30,8 +34,8 @@ from app.utils.exceptions import (
     NotFoundException,
     ValidationException,
 )
-from app.utils.datetime_utils import ensure_utc_aware, local_slot_to_utc_range
 from app.utils.logging import get_logger
+from app.utils.non_working_days import is_non_working_day
 from app.utils.role_access import (
     BackofficeSection,
     MAX_USER_TOKENS,
@@ -69,18 +73,17 @@ class ReservaEspacioService:
 
         # 2. Verificar permisos de rol
         roles_permitidos = [rp.rol for rp in espacio.roles_permitidos]
-        roles_sin_restriccion = {RolUsuario.ADMIN, RolUsuario.JEFE_ESTUDIOS}
+        roles_sin_restriccion = {RolUsuario.ADMINISTRADOR, RolUsuario.JEFATURA}
 
         if (
             usuario.rol not in roles_sin_restriccion
-            and usuario.rol.value not in roles_permitidos
+            and usuario.rol not in roles_permitidos
         ):
             raise ForbiddenException(
-                f"Los usuarios con rol {usuario.rol.value} no pueden reservar este espacio"
+                f"Los usuarios con rol {usuario.rol} no pueden reservar este espacio"
             )
 
         # 3. Calcular fecha_inicio y fecha_fin según el sistema de tramos
-        from app.services.tramo_service import TramoService
         tramo_svc = TramoService(self.session)
         tramo = await tramo_svc.get_tramo_by_id(data.tramo_id)
         if not tramo or not tramo.activo:
@@ -126,7 +129,10 @@ class ReservaEspacioService:
         if fecha_inicio.weekday() >= 5 or fecha_fin.weekday() >= 5:
             raise ValidationException("No se permiten reservas en sabado o domingo")
 
-        # 5. Verificar solapamiento
+        if await is_non_working_day(self.session, data.fecha):
+            raise ValidationException("Este día es no laborable y no admite reservas")
+
+        # 5. Verificar solapamiento en el recurso
         hay_solapamiento = await self.reserva_espacio_repo.check_solapamiento(
             espacio_id=data.espacio_id,
             fecha_inicio=fecha_inicio,
@@ -136,6 +142,13 @@ class ReservaEspacioService:
             raise ConflictException(
                 "Ya existe una reserva en este espacio para el horario seleccionado"
             )
+
+        # 5b. Verificar solapamiento del usuario con cualquier otro recurso
+        servicio_repo = ReservaServicioRepository(self.session)
+        if await self.reserva_espacio_repo.check_solapamiento_usuario(usuario.id, fecha_inicio, fecha_fin):
+            raise ConflictException("Ya tienes una reserva de espacio en este horario")
+        if await servicio_repo.check_solapamiento_usuario(usuario.id, fecha_inicio, fecha_fin):
+            raise ConflictException("Ya tienes una reserva de servicio en este horario")
 
         # 6. Gestión de tokens (solo alumnos)
         tokens_necesarios = 0
@@ -189,8 +202,9 @@ class ReservaEspacioService:
         if not reserva:
             raise NotFoundException("Reserva", str(reserva_id))
 
-        # Verificar permisos
-        if reserva.usuario_id != usuario.id and usuario.rol != RolUsuario.ADMIN:
+        is_owner = reserva.usuario_id == usuario.id
+        is_admin_or_jefatura = usuario.rol in {RolUsuario.ADMINISTRADOR, RolUsuario.JEFATURA}
+        if not (is_owner or is_admin_or_jefatura):
             raise ForbiddenException("No puedes cancelar una reserva de otro usuario")
 
         if reserva.estado in [EstadoReserva.CANCELADA, EstadoReserva.RECHAZADA]:
@@ -248,10 +262,8 @@ class ReservaEspacioService:
 
         reserva.estado = EstadoReserva.RECHAZADA
 
-        # Devolver tokens
+        # Devolver tokens al propietario de la reserva
         if reserva.tokens_consumidos > 0:
-            # Obtener el usuario propietario de la reserva
-            from app.repositories.usuario_repo import UsuarioRepository
             usuario_repo = UsuarioRepository(self.session)
             propietario = await usuario_repo.get_by_id(reserva.usuario_id)
             if propietario:

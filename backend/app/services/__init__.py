@@ -1,1 +1,1 @@
-"""RESERVIVES - Paquete de servicios (lógica de negocio)."""
+"""IES LUIS VIVES APP - Paquete de servicios (lógica de negocio)."""

@@ -6,14 +6,14 @@ recarga mensual, consulta de saldo, ajustes manuales del admin.
 Los tokens se resetean (no se acumulan) el día 1 de cada mes.
 """
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
-from app.models.historial_tokens import HistorialTokens, TipoMovimientoToken
-from app.repositories.usuario_repo import UsuarioRepository
-from sqlalchemy import select
 from app.models.configuracion import Configuracion
+from app.models.historial_tokens import HistorialTokens, TipoMovimientoToken
 from app.models.notificacion import TipoNotificacion
+from app.repositories.usuario_repo import UsuarioRepository
 from app.services.notification_service import NotificationService
 from app.utils.role_access import MAX_USER_TOKENS, monthly_tokens_for_role
 
@@ -21,13 +21,13 @@ settings = get_settings()
 
 
 class TokenService:
-    """Servicio para gestión del sistema de tokens."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
         self.usuario_repo = UsuarioRepository(session)
         self.notification_service = NotificationService(session)
 
+    # Lee un entero de la tabla configuracion; devuelve default si no existe o no es numérico
     async def _get_config_int(self, clave: str, default: int) -> int:
         result = await self.session.execute(
             select(Configuracion.valor).where(Configuracion.clave == clave)
@@ -40,17 +40,12 @@ class TokenService:
             return int(parsed)
         return default
 
+    # Recarga mensual de tokens para todos los usuarios activos con tokens.
+    # Los tokens se resetean (no se acumulan) al valor configurado por rol.
+    # Devuelve el número de usuarios recargados.
     async def recarga_mensual(self) -> int:
-        """
-        Recarga mensual de tokens para todos los alumnos activos.
-        Se ejecuta el día 1 de cada mes. Los tokens NO se acumulan,
-        se resetean al valor configurado.
-
-        Returns:
-            Número de alumnos recargados.
-        """
         usuarios = await self.usuario_repo.get_active_users_for_monthly_tokens()
-        
+
         cantidad_tokens_alumno_legacy = await self._get_config_int(
             "tokens_por_recarga_alumno",
             settings.DEFAULT_MONTHLY_TOKENS,
@@ -63,18 +58,22 @@ class TokenService:
             "tokens_recarga_mensual_profesor",
             60,
         )
-        
+
         recargados = 0
 
         for usuario in usuarios:
-            # Resetear tokens al valor mensual segun rol (no acumulativo)
-            usuario.tokens = monthly_tokens_for_role(
-                usuario.rol,
-                cantidad_tokens_alumno,
-                cantidad_tokens_profesor,
-            )
+            # Busca config específica por rol (p. ej. tokens_recarga_mensual_control)
+            per_role_key = f"tokens_recarga_mensual_{usuario.rol.value.lower()}"
+            per_role_value = await self._get_config_int(per_role_key, -1)
+            if per_role_value >= 0:
+                usuario.tokens = min(per_role_value, MAX_USER_TOKENS)
+            else:
+                usuario.tokens = monthly_tokens_for_role(
+                    usuario.rol,
+                    cantidad_tokens_alumno,
+                    cantidad_tokens_profesor,
+                )
 
-            # Registrar en historial
             historial = HistorialTokens(
                 usuario_id=usuario.id,
                 cantidad=usuario.tokens,
@@ -83,7 +82,7 @@ class TokenService:
             )
             self.session.add(historial)
 
-            # Notificar al usuario (Push + In-app + Email)
+            # Notifica al usuario por push, in-app y email
             await self.notification_service.create_for_user(
                 usuario_id=usuario.id,
                 tipo=TipoNotificacion.RECARGA_TOKENS,
@@ -103,16 +102,11 @@ class TokenService:
         await self.session.flush()
         return recargados
 
+    # Ajuste manual de tokens por admin; cantidad puede ser positiva o negativa.
+    # Devuelve el nuevo saldo del usuario.
     async def ajuste_admin(
         self, usuario_id, cantidad: int, motivo: str
     ) -> int:
-        """
-        Ajuste manual de tokens por parte del admin.
-        Puede ser positivo (añadir) o negativo (quitar).
-
-        Returns:
-            Nuevo saldo de tokens del usuario.
-        """
         usuario = await self.usuario_repo.get_by_id(usuario_id)
         if not usuario:
             raise ValueError(f"Usuario {usuario_id} no encontrado")

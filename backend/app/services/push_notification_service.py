@@ -13,6 +13,7 @@ from firebase_admin import credentials, messaging
 from app.config import get_settings
 
 
+# Resultado del envío push: tokens inválidos detectados, éxitos y fallos
 @dataclass
 class PushSendResult:
     invalid_tokens: list[str]
@@ -24,6 +25,8 @@ class PushNotificationService:
     def __init__(self):
         self.settings = get_settings()
 
+    # Inicializa Firebase Admin si está habilitado y aún no se ha inicializado.
+    # Devuelve False si Firebase está desactivado o el archivo de credenciales no existe.
     def initialize(self) -> bool:
         if not self.settings.FIREBASE_ENABLED:
             return False
@@ -45,6 +48,8 @@ class PushNotificationService:
             print(f"[PUSH] Error inicializando Firebase Admin: {exc}")
             return False
 
+    # Envía una notificación push a una lista de tokens (deduplicados).
+    # Delega el envío a un hilo para no bloquear el event loop.
     async def send_to_tokens(
         self,
         *,
@@ -68,6 +73,7 @@ class PushNotificationService:
             data or {},
         )
 
+    # Envío síncrono token a token; acumula inválidos para limpiarlos después en BD
     def _send_to_tokens_sync(
         self,
         tokens: list[str],
@@ -114,6 +120,7 @@ class PushNotificationService:
                 failure_count += 1
                 code = getattr(exc, "code", "")
                 text = str(exc)
+                # Detecta tokens expirados o inválidos para purgarlos de la BD
                 if code in {"registration-token-not-registered", "invalid-argument"} or (
                     "registration-token-not-registered" in text
                     or "Requested entity was not found" in text
@@ -132,6 +139,7 @@ class PushNotificationService:
 _push_service: PushNotificationService | None = None
 
 
+# Singleton del servicio de push; se inicializa la primera vez que se llama
 def get_push_notification_service() -> PushNotificationService:
     global _push_service
     if _push_service is None:

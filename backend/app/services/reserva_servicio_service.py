@@ -15,23 +15,26 @@ from app.models.historial_tokens import HistorialTokens, TipoMovimientoToken
 from app.models.reserva_espacio import EstadoReserva
 from app.models.reserva_servicio import ReservaServicio
 from app.models.usuario import RolUsuario, Usuario
+from app.repositories.reserva_espacio_repo import ReservaEspacioRepository
 from app.repositories.reserva_servicio_repo import ReservaServicioRepository
 from app.repositories.servicio_repo import ServicioRepository
 from app.schemas.reserva import ReservaServicioCreate
+from app.services.tramo_service import TramoService
 from app.utils.datetime_utils import ensure_utc_aware, local_slot_to_utc_range
-from app.utils.logging import get_logger
-from app.utils.role_access import (
-    BackofficeSection,
-    MAX_USER_TOKENS,
-    can_access_backoffice_section,
-    uses_tokens,
-)
 from app.utils.exceptions import (
     ConflictException,
     ForbiddenException,
     InsufficientTokensException,
     NotFoundException,
     ValidationException,
+)
+from app.utils.logging import get_logger
+from app.utils.non_working_days import is_non_working_day
+from app.utils.role_access import (
+    BackofficeSection,
+    MAX_USER_TOKENS,
+    can_access_backoffice_section,
+    uses_tokens,
 )
 
 
@@ -59,8 +62,13 @@ class ReservaServicioService:
         if not servicio or not servicio.activo:
             raise NotFoundException("Servicio", str(data.servicio_id))
 
+        # 1b. Verificar que el rol del usuario tiene acceso al servicio
+        roles_permitidos = [rp.rol for rp in servicio.roles_permitidos]
+        roles_sin_restriccion = {RolUsuario.ADMINISTRADOR, RolUsuario.JEFATURA}
+        if roles_permitidos and usuario.rol not in roles_sin_restriccion and usuario.rol not in roles_permitidos:
+            raise ForbiddenException("Tu rol no tiene permiso para reservar este servicio")
+
         # 2. Validar tramo y disponibilidad
-        from app.services.tramo_service import TramoService
         tramo_svc = TramoService(self.session)
         tramo = await tramo_svc.get_tramo_by_id(data.tramo_id)
         if not tramo or not tramo.activo:
@@ -75,7 +83,7 @@ class ReservaServicioService:
         if disp_tramo.reservado:
             raise ConflictException("Este tramo ya está reservado para esa fecha")
 
-        # Interpret slot times in local school timezone, then persist as UTC.
+        # Convierte el slot horario local del instituto a UTC para persistir en BD
         fecha_inicio, fecha_fin = local_slot_to_utc_range(
             data.fecha,
             tramo.hora_inicio,
@@ -105,7 +113,10 @@ class ReservaServicioService:
         if fecha_inicio.weekday() >= 5 or fecha_fin.weekday() >= 5:
             raise ValidationException("No se permiten reservas en sábado o domingo")
 
-        # 4. Verificar solapamiento
+        if await is_non_working_day(self.session, data.fecha):
+            raise ValidationException("Este día es no laborable y no admite reservas")
+
+        # 4. Verificar solapamiento en el recurso
         hay_solapamiento = await self.reserva_servicio_repo.check_solapamiento(
             servicio_id=data.servicio_id,
             fecha_inicio=fecha_inicio,
@@ -115,6 +126,13 @@ class ReservaServicioService:
             raise ConflictException(
                 "Ya existe una reserva en este servicio para el horario seleccionado"
             )
+
+        # 4b. Verificar solapamiento del usuario con cualquier otro recurso
+        espacio_repo = ReservaEspacioRepository(self.session)
+        if await self.reserva_servicio_repo.check_solapamiento_usuario(usuario.id, fecha_inicio, fecha_fin):
+            raise ConflictException("Ya tienes una reserva de servicio en este horario")
+        if await espacio_repo.check_solapamiento_usuario(usuario.id, fecha_inicio, fecha_fin):
+            raise ConflictException("Ya tienes una reserva de espacio en este horario")
 
         # 5. Gestión de tokens (solo alumnos)
         tokens_necesarios = 0
@@ -162,7 +180,14 @@ class ReservaServicioService:
         if not reserva:
             raise NotFoundException("Reserva de servicio", str(reserva_id))
 
-        if reserva.usuario_id != usuario.id and usuario.rol != RolUsuario.ADMIN:
+        is_owner = reserva.usuario_id == usuario.id
+        is_admin_or_jefatura = usuario.rol in {RolUsuario.ADMINISTRADOR, RolUsuario.JEFATURA}
+        is_gestor_of_service = False
+        if usuario.rol == RolUsuario.GESTOR_SERVICIO:
+            servicio = await self.servicio_repo.get_by_id(reserva.servicio_id)
+            is_gestor_of_service = servicio and servicio.gestor_usuario_id == usuario.id
+
+        if not (is_owner or is_admin_or_jefatura or is_gestor_of_service):
             raise ForbiddenException("No puedes cancelar una reserva de otro usuario")
 
         if reserva.estado in [EstadoReserva.CANCELADA, EstadoReserva.RECHAZADA]:
@@ -185,16 +210,26 @@ class ReservaServicioService:
         await self.session.flush()
         return reserva
 
+    async def _can_manage_service_reservation(self, admin: Usuario, reserva: ReservaServicio) -> bool:
+        if can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
+            if admin.rol in {RolUsuario.ADMINISTRADOR, RolUsuario.JEFATURA, RolUsuario.CONTROL}:
+                return True
+            if admin.rol == RolUsuario.GESTOR_SERVICIO:
+                servicio = await self.servicio_repo.get_by_id(reserva.servicio_id)
+                return servicio is not None and servicio.gestor_usuario_id == admin.id
+        return False
+
     async def aprobar_reserva(
         self, reserva_id: uuid.UUID, admin: Usuario
     ) -> ReservaServicio:
-        """Aprueba una reserva de servicio pendiente. Solo admin."""
-        if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
-            raise ForbiddenException("No tienes permisos para aprobar reservas")
-
+        """Aprueba una reserva de servicio pendiente."""
         reserva = await self.reserva_servicio_repo.get_by_id(reserva_id)
         if not reserva:
             raise NotFoundException("Reserva de servicio", str(reserva_id))
+
+        if not await self._can_manage_service_reservation(admin, reserva):
+            raise ForbiddenException("No tienes permisos para aprobar esta reserva")
+
         if reserva.estado != EstadoReserva.PENDIENTE:
             raise ValidationException("Solo se pueden aprobar reservas pendientes")
 
@@ -205,13 +240,14 @@ class ReservaServicioService:
     async def rechazar_reserva(
         self, reserva_id: uuid.UUID, admin: Usuario
     ) -> ReservaServicio:
-        """Rechaza una reserva de servicio pendiente y devuelve tokens. Solo admin."""
-        if not can_access_backoffice_section(admin.rol, BackofficeSection.BOOKINGS):
-            raise ForbiddenException("No tienes permisos para rechazar reservas")
-
+        """Rechaza una reserva de servicio pendiente y devuelve tokens."""
         reserva = await self.reserva_servicio_repo.get_by_id(reserva_id)
         if not reserva:
             raise NotFoundException("Reserva de servicio", str(reserva_id))
+
+        if not await self._can_manage_service_reservation(admin, reserva):
+            raise ForbiddenException("No tienes permisos para rechazar esta reserva")
+
         if reserva.estado != EstadoReserva.PENDIENTE:
             raise ValidationException("Solo se pueden rechazar reservas pendientes")
 

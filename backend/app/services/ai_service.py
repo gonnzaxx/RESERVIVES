@@ -1,7 +1,15 @@
-import httpx
+"""
+IES LUIS VIVES APP - Servicio de IA (Vivi).
+
+Integración con Google Gemini para el asistente conversacional del instituto.
+Incluye reintentos con backoff exponencial para errores 429/503.
+"""
+
 import asyncio
 import logging
 from pathlib import Path
+
+import httpx
 
 from app.config import get_settings
 from app.utils.exceptions import ReservivesException
@@ -12,8 +20,10 @@ logger = logging.getLogger("app.services.ai")
 
 class AiService:
 
+    # Caché del system prompt en memoria; se carga una sola vez desde disco
     _system_prompt: str | None = None
 
+    # Carga el prompt de Vivi desde el archivo de texto; lo cachea en clase
     @classmethod
     def _get_system_prompt(cls) -> str:
         if cls._system_prompt is None:
@@ -21,7 +31,10 @@ class AiService:
             cls._system_prompt = prompt_path.read_text(encoding="utf-8").strip()
         return cls._system_prompt
 
-    async def chat(self, message: str) -> str:
+    # Envía un mensaje a Gemini con el historial de conversación.
+    # Reintenta hasta 4 veces con backoff exponencial si recibe 429 o 503.
+    # Devuelve el texto de respuesta o cadena vacía si no hay candidatos.
+    async def chat(self, message: str, history: list[dict] | None = None) -> str:
         if not settings.GEMINI_API_KEY:
             raise ReservivesException(
                 "La clave GEMINI_API_KEY no está configurada",
@@ -32,11 +45,19 @@ class AiService:
             "https://generativelanguage.googleapis.com/v1beta/models/"
             f"{settings.GEMINI_MODEL}:generateContent"
         )
+
+        # Construye el historial en el formato que espera Gemini
+        contents: list[dict] = []
+        for item in (history or []):
+            gemini_role = "user" if item.get("role") == "user" else "model"
+            contents.append({"role": gemini_role, "parts": [{"text": item["content"]}]})
+        contents.append({"role": "user", "parts": [{"text": message}]})
+
         payload = {
             "system_instruction": {
                 "parts": [{"text": self._get_system_prompt()}]
             },
-            "contents": [{"parts": [{"text": message}]}],
+            "contents": contents,
         }
         headers = {
             "x-goog-api-key": settings.GEMINI_API_KEY,
@@ -51,6 +72,7 @@ class AiService:
             async with httpx.AsyncClient(timeout=30) as client:
                 for attempt in range(max_attempts):
                     if attempt > 0:
+                        # Backoff exponencial: 0.5s, 1s, 2s...
                         delay = base_delay * (2 ** (attempt - 1))
                         await asyncio.sleep(delay)
 
