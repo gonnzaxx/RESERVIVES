@@ -350,8 +350,8 @@ SMTP_PASSWORD=...
 
 ```bash
 # Clona el repositorio
-git clone https://github.com/tu-usuario/reservives-app.git
-cd reservives-app
+git clone https://github.com/tu-usuario/reservives.git
+cd reservives
 
 # Copia y rellena el .env
 cp backend/.env.example backend/.env
