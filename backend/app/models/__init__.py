@@ -1,5 +1,5 @@
 """
-RESERVIVES - Modelos SQLAlchemy.
+IES LUIS VIVES APP - Modelos SQLAlchemy.
 
 Exporta todos los modelos para facilitar las importaciones.
 """

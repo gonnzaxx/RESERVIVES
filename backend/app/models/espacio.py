@@ -55,7 +55,7 @@ class Espacio(Base):
         "EspacioRolPermitido", back_populates="espacio",
         lazy="selectin", cascade="all, delete-orphan"
     )
-    reservas = relationship("ReservaEspacio", back_populates="espacio", lazy="selectin")
+    reservas = relationship("ReservaEspacio", back_populates="espacio", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
     tramos_permitidos = relationship(
         "EspacioTramoPermitido", back_populates="espacio",
         lazy="selectin", cascade="all, delete-orphan"
@@ -79,11 +79,12 @@ class EspacioRolPermitido(Base):
         Enum(
             "ALUMNO",
             "PROFESOR",
-            "ADMIN",
+            "ADMINISTRADOR",
             "CAFETERIA",
-            "JEFE_ESTUDIOS",
+            "JEFATURA",
             "SECRETARIA",
-            "PROFESOR_SERVICIO",
+            "GESTOR_SERVICIO",
+            "CONTROL",
             name="rol_usuario",
             create_type=False,
         ),

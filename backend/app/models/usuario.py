@@ -20,11 +20,12 @@ class RolUsuario(str, enum.Enum):
     """Roles disponibles en la aplicación."""
     ALUMNO = "ALUMNO"
     PROFESOR = "PROFESOR"
-    ADMIN = "ADMIN"
+    ADMINISTRADOR = "ADMINISTRADOR"
     CAFETERIA = "CAFETERIA"
-    JEFE_ESTUDIOS = "JEFE_ESTUDIOS"
+    JEFATURA = "JEFATURA"
     SECRETARIA = "SECRETARIA"
-    PROFESOR_SERVICIO = "PROFESOR_SERVICIO"
+    GESTOR_SERVICIO = "GESTOR_SERVICIO"
+    CONTROL = "CONTROL"
 
 
 class Usuario(Base):
@@ -39,10 +40,10 @@ class Usuario(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     microsoft_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500))
-    rol: Mapped[RolUsuario] = mapped_column(
-        Enum(RolUsuario, name="rol_usuario", create_type=False),
+    rol: Mapped[str] = mapped_column(
+        String(100),
         nullable=False,
-        default=RolUsuario.ALUMNO
+        default=RolUsuario.ALUMNO.value,
     )
     rol_override: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
@@ -73,4 +74,4 @@ class Usuario(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Usuario {self.nombre} {self.apellidos} ({self.rol.value})>"
+        return f"<Usuario {self.nombre} {self.apellidos} ({self.rol})>"

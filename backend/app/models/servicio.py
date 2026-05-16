@@ -7,7 +7,7 @@ Gestiona la información de los servicios ofrecidos por el centro.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +30,9 @@ class Servicio(Base):
     antelacion_dias: Mapped[int] = mapped_column(Integer, nullable=False, default=7)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    gestor_usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -38,11 +41,45 @@ class Servicio(Base):
     )
 
     # Relaciones
+    gestor = relationship("Usuario", foreign_keys=[gestor_usuario_id], lazy="selectin")
     reservas = relationship("ReservaServicio", back_populates="servicio", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
     tramos_permitidos = relationship(
         "ServicioTramoPermitido", back_populates="servicio",
         lazy="selectin", cascade="all, delete-orphan"
     )
+    roles_permitidos = relationship(
+        "ServicioRolPermitido", back_populates="servicio",
+        lazy="selectin", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Servicio '{self.nombre}'>"
+
+
+class ServicioRolPermitido(Base):
+    """Tabla intermedia: qué roles pueden reservar cada servicio."""
+    __tablename__ = "servicio_rol_permitido"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    servicio_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("servicios.id", ondelete="CASCADE"), nullable=False
+    )
+    rol: Mapped[str] = mapped_column(
+        Enum(
+            "ALUMNO",
+            "PROFESOR",
+            "ADMINISTRADOR",
+            "CAFETERIA",
+            "JEFATURA",
+            "SECRETARIA",
+            "GESTOR_SERVICIO",
+            "CONTROL",
+            name="rol_usuario",
+            create_type=False,
+        ),
+        nullable=False
+    )
+
+    servicio = relationship("Servicio", back_populates="roles_permitidos")

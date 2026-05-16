@@ -16,6 +16,8 @@ from app.utils.logging import get_logger, request_id_context
 logger = get_logger("app.http")
 
 
+# Asigna un request_id a cada petición (reutiliza X-Request-ID si viene en el header)
+# Registra método, ruta, código de respuesta y duración al finalizar
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))

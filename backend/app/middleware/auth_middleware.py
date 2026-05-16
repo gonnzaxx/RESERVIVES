@@ -1,5 +1,5 @@
 """
-RESERVIVES - Middleware de autenticación.
+IES LUIS VIVES APP - Middleware de autenticación.
 
 Proporciona la dependencia de FastAPI para proteger endpoints.
 Extrae el token JWT del header Authorization y devuelve el usuario actual.
@@ -9,11 +9,12 @@ import uuid
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.usuario import RolUsuario, Usuario
 from app.models.configuracion import Configuracion
+from app.models.usuario import RolUsuario, Usuario
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services.auth_service import verificar_token_jwt
 from app.utils.role_access import (
@@ -26,16 +27,11 @@ from app.utils.role_access import (
 security = HTTPBearer(auto_error=False)
 
 
-from sqlalchemy import select
-
+# Extrae y valida el JWT del header Authorization; devuelve el usuario autenticado o lanza 401
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> Usuario:
-    """
-    Dependencia de FastAPI: extrae y valida el JWT del header Authorization.
-    Devuelve el usuario autenticado o lanza 401.
-    """
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,7 +39,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verificar el JWT
+    # Verificar el JWT y comprobar que no es sesión de invitado
     payload = verificar_token_jwt(credentials.credentials)
     if payload.get("is_guest"):
         raise HTTPException(
@@ -59,7 +55,7 @@ async def get_current_user(
             detail="Token inválido",
         )
 
-    # Buscar el usuario en la BD
+    # Buscar el usuario en BD y comprobar que está activo
     repo = UsuarioRepository(db)
     usuario = await repo.get_by_id(uuid.UUID(user_id))
 
@@ -78,11 +74,11 @@ async def get_current_user(
     return usuario
 
 
+# Requiere rol de administrador; lanza 403 si el usuario tiene otro rol
 async def require_admin(
     usuario: Usuario = Depends(get_current_user),
 ) -> Usuario:
-    """Dependencia que requiere rol de administrador."""
-    if usuario.rol != RolUsuario.ADMIN:
+    if usuario.rol != RolUsuario.ADMINISTRADOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requiere rol de administrador",
@@ -90,11 +86,11 @@ async def require_admin(
     return usuario
 
 
+# Igual que get_current_user pero devuelve None si no hay token o este es inválido
 async def get_optional_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> Usuario | None:
-    """Devuelve usuario autenticado si el token es valido; si no, None."""
     if not credentials:
         return None
     try:
@@ -103,9 +99,41 @@ async def get_optional_current_user(
         return None
 
 
+_BACKOFFICE_SECTIONS_PREFIX = "backoffice_sections_"
+
+
+# Obtiene las secciones de backoffice configuradas en BD para un rol; None si no hay config custom
+async def _get_custom_sections(rol: str, db: AsyncSession) -> list[str] | None:
+    rol_str = rol.value if hasattr(rol, "value") else rol
+    result = await db.execute(
+        select(Configuracion.valor).where(
+            Configuracion.clave == f"{_BACKOFFICE_SECTIONS_PREFIX}{rol_str}"
+        )
+    )
+    val = result.scalar_one_or_none()
+    if val is None:
+        return None
+    return [s.strip() for s in val.split(",") if s.strip()]
+
+
+# Dependencia de fábrica: requiere que el usuario tenga acceso a la sección indicada del backoffice
+# Primero comprueba la config personalizada en BD; si no existe, usa las reglas estáticas por rol
 def require_backoffice_section(section: BackofficeSection):
-    async def _dependency(usuario: Usuario = Depends(get_current_user)) -> Usuario:
-        if not can_access_backoffice_section(usuario.rol, section):
+    async def _dependency(
+        usuario: Usuario = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> Usuario:
+        if usuario.rol == RolUsuario.ADMINISTRADOR:
+            return usuario
+
+        custom = await _get_custom_sections(usuario.rol, db)
+        if custom is not None:
+            if section.value not in custom:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tienes permisos para acceder a esta seccion",
+                )
+        elif not can_access_backoffice_section(usuario.rol, section):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tienes permisos para acceder a esta seccion",
@@ -115,10 +143,21 @@ def require_backoffice_section(section: BackofficeSection):
     return _dependency
 
 
+# Requiere que el usuario tenga acceso a al menos una sección del backoffice
 async def require_any_backoffice_access(
     usuario: Usuario = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> Usuario:
-    if not has_any_backoffice_access(usuario.rol):
+    if usuario.rol == RolUsuario.ADMINISTRADOR:
+        return usuario
+
+    custom = await _get_custom_sections(usuario.rol, db)
+    if custom is not None:
+        has_access = len(custom) > 0
+    else:
+        has_access = has_any_backoffice_access(usuario.rol)
+
+    if not has_access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos de BackOffice",
@@ -126,11 +165,11 @@ async def require_any_backoffice_access(
     return usuario
 
 
+# Requiere rol de profesor o administrador
 async def require_profesor_or_admin(
     usuario: Usuario = Depends(get_current_user),
 ) -> Usuario:
-    """Dependencia que requiere rol de profesor o administrador."""
-    if usuario.rol not in [RolUsuario.PROFESOR, RolUsuario.ADMIN]:
+    if usuario.rol not in [RolUsuario.PROFESOR, RolUsuario.ADMINISTRADOR]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Se requiere rol de profesor o administrador",
@@ -138,19 +177,19 @@ async def require_profesor_or_admin(
     return usuario
 
 
+# Verifica si la creación de reservas está habilitada globalmente; el admin siempre puede reservar
 async def check_reservas_habilitadas(
     db: AsyncSession = Depends(get_db),
     user: Usuario = Depends(get_current_user)
 ):
-    """Verifica si la creación de reservas está habilitada globalmente."""
-    if user.rol == RolUsuario.ADMIN:
+    if user.rol == RolUsuario.ADMINISTRADOR:
         return
-    
+
     result = await db.execute(
         select(Configuracion.valor).where(Configuracion.clave == "se_permiten_reservas")
     )
     permitido = result.scalar_one_or_none()
-    
+
     if permitido == "false":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
