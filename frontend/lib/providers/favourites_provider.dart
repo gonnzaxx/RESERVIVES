@@ -1,4 +1,4 @@
-/// RESERVIVES - Gestión de Elementos Favoritos.
+/// IES Luis Vives App - Gestión de Elementos Favoritos.
 ///
 /// Administra la persistencia y el estado reactivo de los espacios y servicios
 /// marcados como favoritos por el usuario. Permite un acceso rápido desde la
@@ -131,11 +131,8 @@ final listaFavoritosEspaciosProvider = FutureProvider.autoDispose<List<Espacio>>
   if (favState.espaciosIds.isEmpty) return [];
   
   final apiClient = ref.read(apiClientProvider);
-  final List<Espacio> favoritos = [];
-
   final response = await apiClient.get('/espacios/');
   final todos = (response as List).map((e) => Espacio.fromJson(e)).toList();
-  
   return todos.where((e) => favState.espaciosIds.contains(e.id)).toList();
 });
 

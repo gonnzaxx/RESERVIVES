@@ -1,7 +1,7 @@
 /// Gestión de Comunicación Institucional y Anuncios.
 ///
-/// Este archivo administra el flujo de anuncios informativos que se muestran
-/// a los usuarios. Incluye la gestión de métricas de visualización para las métricas.
+/// Administra el flujo de anuncios informativos que se muestran a los usuarios
+/// e incluye el registro de métricas de visualización para seguimiento estadístico.
 
 library;
 
@@ -45,7 +45,7 @@ class AnunciosNotifier extends AsyncNotifier<List<Anuncio>> {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.post('/anuncios/$anuncioId/view');
     } catch (e) {
-      print('Error al registrar métrica de anuncio: $e');
+      // Silenciamos el error para no interrumpir la navegación del usuario.
     }
   }
 }

@@ -1,11 +1,14 @@
 /// Providers de Reservas Recurrentes.
+///
+/// Gestiona la creación, consulta y moderación de reservas de tipo recurrente,
+/// que requieren aprobación del administrador antes de activarse.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/reserva_recurrente.dart';
 import 'package:reservives/services/api_client.dart';
 
-/// Lista de reservas recurrentes propias del usuario.
+/// Reservas recurrentes activas del usuario autenticado.
 final misReservasRecurrentesProvider =
     FutureProvider.autoDispose<List<ReservaRecurrente>>((ref) async {
   final api = ref.read(apiClientProvider);
@@ -15,7 +18,7 @@ final misReservasRecurrentesProvider =
       .toList();
 });
 
-/// Lista de reservas recurrentes pendientes de aprobación (solo admin).
+/// Reservas recurrentes pendientes de aprobación (solo visible para administradores).
 final reservasRecurrentesPendientesProvider =
     FutureProvider.autoDispose<List<ReservaRecurrente>>((ref) async {
   final api = ref.read(apiClientProvider);
@@ -26,7 +29,7 @@ final reservasRecurrentesPendientesProvider =
       .toList();
 });
 
-/// Notifier para crear una nueva reserva recurrente.
+/// Controlador para crear y cancelar reservas recurrentes propias.
 final crearReservaRecurrenteProvider =
     AsyncNotifierProvider<CrearReservaRecurrenteNotifier, ReservaRecurrente?>(
   CrearReservaRecurrenteNotifier.new,
@@ -37,6 +40,7 @@ class CrearReservaRecurrenteNotifier
   @override
   Future<ReservaRecurrente?> build() async => null;
 
+  /// Envía al backend la solicitud de nueva reserva recurrente semanal.
   Future<bool> crear({
     required String espacioId,
     required String tramoId,
@@ -67,6 +71,7 @@ class CrearReservaRecurrenteNotifier
     }
   }
 
+  /// Cancela una reserva recurrente propia identificada por [reservaId].
   Future<bool> cancelar(String reservaId) async {
     try {
       final api = ref.read(apiClientProvider);
@@ -79,7 +84,7 @@ class CrearReservaRecurrenteNotifier
   }
 }
 
-/// Notifier para acciones de admin (aprobar / rechazar).
+/// Controlador exclusivo para acciones administrativas: aprobar y rechazar solicitudes.
 final adminReservaRecurrenteProvider =
     AsyncNotifierProvider<AdminReservaRecurrenteNotifier, void>(
   AdminReservaRecurrenteNotifier.new,
@@ -89,6 +94,7 @@ class AdminReservaRecurrenteNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
+  /// Aprueba la reserva recurrente e invalida la lista de pendientes.
   Future<bool> aprobar(String reservaId) async {
     try {
       final api = ref.read(apiClientProvider);
@@ -100,6 +106,7 @@ class AdminReservaRecurrenteNotifier extends AsyncNotifier<void> {
     }
   }
 
+  /// Rechaza la reserva recurrente, opcionalmente con un [motivo] de rechazo.
   Future<bool> rechazar(String reservaId, {String? motivo}) async {
     try {
       final api = ref.read(apiClientProvider);
@@ -115,5 +122,6 @@ class AdminReservaRecurrenteNotifier extends AsyncNotifier<void> {
   }
 }
 
+// Formatea un DateTime al estándar YYYY-MM-DD requerido por el backend.
 String _formatDate(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

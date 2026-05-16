@@ -1,4 +1,7 @@
 /// Providers de Lista de Espera.
+///
+/// Gestiona la inscripción del usuario en listas de espera para slots
+/// ya ocupados, consulta el número de personas en cola y permite abandonar la posición.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,13 +18,14 @@ final miListaEsperaProvider =
       .toList();
 });
 
-/// Número de personas en espera para un slot concreto.
+/// Argumentos necesarios para consultar el contador de un slot concreto.
 typedef ListaEsperaCountArgs = ({
   String espacioId,
   String tramoId,
   DateTime fecha
 });
 
+/// Número de personas en espera para un espacio, tramo y fecha determinados.
 final listaEsperaCountProvider =
     FutureProvider.autoDispose.family<int, ListaEsperaCountArgs>(
   (ref, args) async {
@@ -35,7 +39,7 @@ final listaEsperaCountProvider =
   },
 );
 
-/// Notifier para unirse / abandonar la lista de espera.
+/// Controlador para las acciones de unirse y abandonar la lista de espera.
 final listaEsperaActionProvider =
     AsyncNotifierProvider<ListaEsperaActionNotifier, ListaEspera?>(
   ListaEsperaActionNotifier.new,
@@ -45,6 +49,7 @@ class ListaEsperaActionNotifier extends AsyncNotifier<ListaEspera?> {
   @override
   Future<ListaEspera?> build() async => null;
 
+  /// Añade al usuario a la lista de espera del [espacioId] para el [tramoId] y [fecha] indicados.
   Future<bool> unirse({
     required String espacioId,
     required String tramoId,
@@ -71,6 +76,7 @@ class ListaEsperaActionNotifier extends AsyncNotifier<ListaEspera?> {
     }
   }
 
+  /// Elimina al usuario de la lista de espera identificada por [entradaId].
   Future<bool> abandonar(String entradaId) async {
     try {
       final api = ref.read(apiClientProvider);

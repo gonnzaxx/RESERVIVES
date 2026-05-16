@@ -11,6 +11,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/incidencia.dart';
 import 'package:reservives/services/api_client.dart';
 
+final incidenciaByIdProvider = FutureProvider.autoDispose.family<Incidencia, String>((ref, id) async {
+  final apiClient = ref.read(apiClientProvider);
+  final response = await apiClient.get('/incidencias/mis-incidencias');
+  final list = (response as List).map((e) => Incidencia.fromJson(e as Map<String, dynamic>)).toList();
+  return list.firstWhere((i) => i.id == id);
+});
+
 final misIncidenciasProvider =
 AsyncNotifierProvider.autoDispose<MisIncidenciasNotifier, List<Incidencia>>(
       () => MisIncidenciasNotifier(),
@@ -54,7 +61,7 @@ class ReportarIncidenciaNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<bool> reportar(String descripcion, {String? imagenUrl}) async {
+  Future<Incidencia?> reportar(String descripcion, {String? imagenUrl}) async {
     state = const AsyncLoading();
     try {
       final apiClient = ref.read(apiClientProvider);
@@ -64,15 +71,12 @@ class ReportarIncidenciaNotifier extends AsyncNotifier<void> {
       });
 
       final nueva = Incidencia.fromJson(response as Map<String, dynamic>);
-
-      // Actualización reactiva del listado personal.
       ref.read(misIncidenciasProvider.notifier).addIncident(nueva);
-
       state = const AsyncData(null);
-      return true;
+      return nueva;
     } catch (e, st) {
       state = AsyncError(e, st);
-      return false;
+      return null;
     }
   }
 }

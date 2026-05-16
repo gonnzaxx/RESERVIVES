@@ -86,6 +86,7 @@ class MisReservasServiciosNotifier extends AsyncNotifier<List<Reserva>> {
         .toList();
   }
 
+  // Devuelve una copia mutable del estado actual o lista vacía si aún no hay datos.
   List<Reserva> _currentList() {
     return state.maybeWhen(
       data: (items) => List<Reserva>.from(items),

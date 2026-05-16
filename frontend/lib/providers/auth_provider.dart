@@ -97,6 +97,7 @@ class AuthProvider extends Notifier<AuthState> {
 
   String? get token => state.token;
 
+  // Construye el cliente OAuth2 con los endpoints de Azure para la sesión actual.
   OAuth2Client _createClient() {
     return OAuth2Client(
       authorizeUrl: 'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/authorize',
@@ -106,7 +107,7 @@ class AuthProvider extends Notifier<AuthState> {
     );
   }
 
-  /// Inicia el flujo completo de login
+  /// Inicia el flujo completo de login con Microsoft OAuth2 y sincroniza la sesión con el backend.
   Future<void> login() async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -116,6 +117,7 @@ class AuthProvider extends Notifier<AuthState> {
       final tokenResponse = await client.getTokenWithAuthCodeFlow(
         clientId: _clientId,
         scopes: _scopes,
+        authCodeParams: {'prompt': 'select_account'},
       );
 
       final microsoftToken = tokenResponse.accessToken;
@@ -142,14 +144,14 @@ class AuthProvider extends Notifier<AuthState> {
       );
       await _persistSession(backendToken);
 
-      if (kDebugMode) print('Login correctly synchronized with Backend');
+      if (kDebugMode) print('Login sincronizado correctamente con el backend');
     } catch (e) {
-      if (kDebugMode) print('Login failed: $e');
+      if (kDebugMode) print('Login fallido: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  /// Refresca los datos del usuario actual desde la API (/auth/me)
+  /// Actualiza los datos del usuario actual consultando /auth/me.
   Future<void> refreshCurrentUser() async {
     if (state.isGuest) return;
     try {
@@ -158,20 +160,23 @@ class AuthProvider extends Notifier<AuthState> {
       final user = Usuario.fromJson(response as Map<String, dynamic>);
       state = state.copyWith(user: user);
     } catch (e) {
-      if (kDebugMode) print('Failed to refresh user: $e');
+      if (kDebugMode) print('No se pudo refrescar el usuario: $e');
     }
   }
 
+  // Establece el token de Microsoft directamente y sincroniza el perfil. Útil para web.
   Future<void> loginWithMicrosoft(String token) async {
     state = state.copyWith(token: token, isGuest: false);
     await _persistSession(token);
     await refreshCurrentUser();
   }
 
+  // Actualiza el estado local con los datos del usuario sin tocar el servidor.
   Future<void> updateUserData(Usuario user) async {
     state = state.copyWith(user: user);
   }
 
+  // Login de desarrollo sin OAuth; usa un email hardcodeado del entorno de pruebas.
   Future<void> loginDevBypass() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -203,9 +208,14 @@ class AuthProvider extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null, clearToken: true, clearUser: true);
     try {
       final apiClient = ref.read(apiClientProvider);
-      await apiClient.post('/auth/guest');
-      state = state.copyWith(isGuest: true, isLoading: false);
-      await _persistGuestSession();
+      final response = await apiClient.post('/auth/guest') as Map<String, dynamic>;
+      final guestToken = response['access_token'] as String?;
+      if (guestToken == null || guestToken.isEmpty) {
+        state = state.copyWith(isLoading: false, error: 'No se obtuvo token de invitado');
+        return;
+      }
+      state = state.copyWith(token: guestToken, isGuest: true, isLoading: false);
+      await _persistGuestSession(guestToken);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -249,6 +259,7 @@ class AuthProvider extends Notifier<AuthState> {
     state = AuthState();
   }
 
+  // Guarda el token y la marca de tiempo en SharedPreferences para sesiones autenticadas.
   Future<void> _persistSession(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
@@ -259,9 +270,10 @@ class AuthProvider extends Notifier<AuthState> {
     );
   }
 
-  Future<void> _persistGuestSession() async {
+  // Igual que _persistSession pero marca la sesión como invitado.
+  Future<void> _persistGuestSession(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await prefs.setString(_tokenKey, token);
     await prefs.setBool(_guestKey, true);
     await prefs.setString(
       _loginTimestampKey,
@@ -269,6 +281,7 @@ class AuthProvider extends Notifier<AuthState> {
     );
   }
 
+  // Elimina todas las claves de sesión del almacenamiento local.
   Future<void> _clearPersistedSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
@@ -309,20 +322,28 @@ class AuthProvider extends Notifier<AuthState> {
       }
 
       if (isGuest) {
-        state = state.copyWith(isGuest: true, isLoading: false, error: null);
+        state = state.copyWith(token: token, isGuest: true, isLoading: false, error: null);
         return;
       }
 
       state = state.copyWith(token: token, isLoading: true, error: null, isGuest: false);
-      await refreshCurrentUser();
+      await refreshCurrentUser().timeout(
+        const Duration(seconds: 12),
+        onTimeout: () async {
+          await _clearPersistedSession();
+          state = AuthState();
+        },
+      );
 
-      if (state.user == null) {
+      if (state.user == null && state.isLoading) {
         await _clearPersistedSession();
         state = AuthState();
         return;
       }
 
-      state = state.copyWith(isLoading: false);
+      if (state.isLoading) {
+        state = state.copyWith(isLoading: false);
+      }
     } catch (_) {
       state = AuthState();
     }

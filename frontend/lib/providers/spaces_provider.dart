@@ -1,11 +1,14 @@
-
+/// Proveedores de Espacios.
+///
+/// Gestiona el catálogo de instalaciones del centro, los filtros de búsqueda
+/// y la carga de detalles individuales.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/models/espacio.dart';
 import 'package:reservives/services/api_client.dart';
 
-/// Provider para el texto de búsqueda en instalaciones
+/// Almacena el texto de búsqueda introducido por el usuario en la sección de instalaciones.
 final espaciosSearchQueryProvider = NotifierProvider.autoDispose<_EspaciosSearchQuery, String>(
   _EspaciosSearchQuery.new,
 );
@@ -14,10 +17,11 @@ class _EspaciosSearchQuery extends Notifier<String> {
   @override
   String build() => '';
 
+  // Actualiza la cadena de búsqueda.
   void setQuery(String value) => state = value;
 }
 
-/// Provider para el filtro de tipo de espacio seleccionado
+/// Guarda el tipo de espacio actualmente seleccionado como filtro (null = sin filtro).
 final espaciosFilterTipoProvider = NotifierProvider.autoDispose<_FilterTipo, TipoEspacio?>(
   _FilterTipo.new,
 );
@@ -26,10 +30,11 @@ class _FilterTipo extends Notifier<TipoEspacio?> {
   @override
   TipoEspacio? build() => null;
 
+  // Cambia el filtro de tipo; pasa null para mostrar todos los espacios.
   void setTipo(TipoEspacio? value) => state = value;
 }
 
-/// Provider que carga la lista de espacios y aplica los filtros de búsqueda.
+/// Obtiene la lista de espacios del backend aplicando el filtro de tipo y la búsqueda por texto.
 final espaciosProvider = FutureProvider.autoDispose<List<Espacio>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
   final tipo = ref.watch(espaciosFilterTipoProvider);
@@ -55,7 +60,7 @@ final espaciosProvider = FutureProvider.autoDispose<List<Espacio>>((ref) async {
   return spaces;
 });
 
-/// Provider para cargar los detalles de un espacio especifico.
+/// Carga el detalle de un espacio concreto por su [id].
 final espacioDetalleProvider =
 FutureProvider.family.autoDispose<Espacio, String>((ref, id) async {
   final apiClient = ref.read(apiClientProvider);

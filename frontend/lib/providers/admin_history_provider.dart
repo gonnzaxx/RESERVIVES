@@ -1,4 +1,4 @@
-/// RESERVIVES - Gestión de Estado del Historial de Administración.
+/// IES Luis Vives App - Gestión de Estado del Historial de Administración.
 ///
 /// Proporciona la lógica para filtrar y recuperar el historial global de reservas
 /// del centro. Utiliza Riverpod para la reactividad, permitiendo que la lista

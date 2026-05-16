@@ -1,4 +1,4 @@
-/// RESERVIVES - Sistema de Invalidación y Sincronización de Contadores.
+/// IES Luis Vives App - Sistema de Invalidación y Sincronización de Contadores.
 ///
 /// Este archivo gestiona el control de versiones local para los contadores del
 /// dashboard administrativo. Permite invalidar datos cacheados cuando ocurren

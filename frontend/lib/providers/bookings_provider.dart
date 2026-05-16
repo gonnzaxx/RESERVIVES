@@ -34,7 +34,7 @@ class MisReservasNotifier extends AsyncNotifier<List<Reserva>> {
         .toList();
   }
 
-  /// Helper privado para obtener el estado actual de los datos sin lógica de error/carga.
+  // Devuelve una copia mutable de la lista actual o vacía si aún no hay datos cargados.
   List<Reserva> _currentList() {
     return state.maybeWhen(
       data: (items) => List<Reserva>.from(items),

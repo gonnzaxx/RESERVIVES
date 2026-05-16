@@ -1,7 +1,7 @@
 /// Interfaz de Asistencia Inteligente (Vivi).
 ///
-/// Este servicio gestiona la interacción con la IA del centro. Mantiene el
-/// historial de la conversación, controla los estados de carga...
+/// Gestiona la conversación con el asistente IA del centro: historial de mensajes,
+/// estados de carga y throttling para evitar spam de peticiones.
 
 library;
 
@@ -65,6 +65,14 @@ class AiChatNotifier extends Notifier<AiChatState> {
     }
     _lastSentAt = now;
 
+    // Captura historial previo antes de añadir el nuevo mensaje.
+    final history = state.messages
+        .map((m) => {
+              'role': m.role == AiChatRole.user ? 'user' : 'assistant',
+              'content': m.text,
+            })
+        .toList();
+
     // Actualización local inmediata del mensaje del usuario.
     final currentMessages = List<AiChatMessage>.from(state.messages)
       ..add(AiChatMessage(role: AiChatRole.user, text: trimmed));
@@ -77,7 +85,7 @@ class AiChatNotifier extends Notifier<AiChatState> {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
         '/ai/chat',
-        body: {'message': trimmed},
+        body: {'message': trimmed, 'history': history},
       ) as Map<String, dynamic>;
       final reply = (response['response'] ?? '').toString().trim();
 
