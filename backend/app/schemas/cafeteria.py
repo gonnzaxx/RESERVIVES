@@ -5,7 +5,8 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 
-# Categorías 
+# Categorías
+
 class CategoriaResponse(BaseModel):
     """Schema de respuesta para una categoría de cafetería."""
     id: uuid.UUID
@@ -37,7 +38,7 @@ class CategoriaUpdate(BaseModel):
     activa: bool | None = None
 
 
-# Productos
+# Productos 
 
 class ProductoResponse(BaseModel):
     """Schema de respuesta para un producto de cafetería."""

@@ -1,5 +1,5 @@
 """
-RESERVIVES - Schemas Pydantic (DTOs).
+IES LUIS VIVES APP - Schemas Pydantic (DTOs).
 
 Exporta todos los schemas para facilitar las importaciones.
 """

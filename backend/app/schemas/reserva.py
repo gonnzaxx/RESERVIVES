@@ -21,6 +21,7 @@ class ReservaResponse(BaseModel):
     tramo_id: uuid.UUID | None = None
     tramo: TramoHorarioResponse | None = None
     nombre_usuario: str | None = None
+    email_usuario: str | None = None
     nombre_espacio: str | None = None
     tipo_espacio: str | None = None
     created_at: datetime
@@ -67,6 +68,7 @@ class ReservaServicioResponse(BaseModel):
     tramo_id: uuid.UUID | None = None
     tramo: TramoHorarioResponse | None = None
     nombre_usuario: str | None = None
+    email_usuario: str | None = None
     nombre_servicio: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -124,6 +126,7 @@ class ReservaRecurrenteResponse(BaseModel):
     tokens_por_instancia: int
     ultima_instancia_generada: date | None = None
     nombre_usuario: str | None = None
+    email_usuario: str | None = None
     nombre_espacio: str | None = None
     nombre_tramo: str | None = None
     created_at: datetime

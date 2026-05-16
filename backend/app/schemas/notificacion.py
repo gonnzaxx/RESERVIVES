@@ -16,6 +16,7 @@ class NotificacionResponse(BaseModel):
     titulo: str
     mensaje: str
     leida: bool
+    referencia_id: uuid.UUID | None = None
     created_at: datetime
 
     class Config:

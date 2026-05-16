@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 from app.models.usuario import RolUsuario
 
 
-# Schemas de respuesta
+# --- Schemas de respuesta (output) ---
 
 class UsuarioResponse(BaseModel):
     """Schema de respuesta para un usuario."""
@@ -15,11 +15,11 @@ class UsuarioResponse(BaseModel):
     apellidos: str
     email: str
     avatar_url: str | None = None
-    rol: RolUsuario
+    rol: str
     tokens: int
     activo: bool
     is_guest: bool = False
-    roles_detectados: list[RolUsuario] = Field(default_factory=list)
+    roles_detectados: list[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -33,14 +33,14 @@ class UsuarioResumen(BaseModel):
     nombre: str
     apellidos: str
     email: str
-    rol: RolUsuario
+    rol: str
     activo: bool
 
     class Config:
         from_attributes = True
 
 
-# Schemas de entrada
+# --- Schemas de entrada (input) ---
 
 class UsuarioCreate(BaseModel):
     """Schema para crear un usuario (usado internamente tras login con EntraID)."""
@@ -57,12 +57,12 @@ class UsuarioUpdate(BaseModel):
     nombre: str | None = Field(None, min_length=1, max_length=100)
     apellidos: str | None = Field(None, min_length=1, max_length=150)
     avatar_url: str | None = None
-    rol: RolUsuario | None = None
+    rol: str | None = Field(None, pattern=r'^[A-Z][A-Z0-9_]{1,99}$')
     tokens: int | None = None
     activo: bool | None = None
 
 
-# Schemas de autenticación
+# --- Schemas de autenticación ---
 
 class TokenResponse(BaseModel):
     """Respuesta con el token JWT tras autenticación."""
