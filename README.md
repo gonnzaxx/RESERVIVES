@@ -1,6 +1,6 @@
 <div align="center">
   <img src="metadata/logo_luis_vives.png" width="180" alt="IES Luis Vives Logo" />
-  <h1>IES Luis Vives App</h1>
+  <h1>APP IES LUIS VIVES</h1>
   <p><strong>Plataforma integral de gestión de reservas y recursos para el IES Luis Vives.</strong></p>
 
   <p>
@@ -14,7 +14,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/Frontend-https%3A%2F%2Fvms.iesluisvives.org%3A2121-02569B?style=flat-square" alt="Frontend URL" />
-    <img src="https://img.shields.io/badge/API%20Docs-https%3A%2F%2Fvms.iesluisvives.org%3A1212%2Fapi%2Fdocs-009688?style=flat-square" alt="API Docs URL" />
+    <img src="https://img.shields.io/badge/API%20Docs-https%3A%2F%2Fvms.iesluisvives.org%3A2121%2Fapi%2Fdocs-009688?style=flat-square" alt="API Docs URL" />
   </p>
 </div>
 
@@ -35,7 +35,7 @@
 
 ## Sobre el Proyecto
 
-**Reservives** es una aplicación web y móvil diseñada para modernizar y centralizar la gestión de recursos del IES Luis Vives. Permite a alumnos y profesores reservar espacios (aulas, pistas deportivas), acceder a los servicios del instituto (peluquería, departamentos, etc.) y consultar el tablón de anuncios, todo desde una única plataforma segura autenticada con **Microsoft EntraID (Azure AD)**.
+**App IES Luis Vives** es una aplicación web y móvil diseñada para modernizar y centralizar la gestión de recursos del IES Luis Vives. Permite a alumnos y profesores reservar espacios (aulas, pistas deportivas), acceder a los servicios del instituto (peluquería, departamentos, etc.) y consultar el tablón de anuncios, todo desde una única plataforma segura autenticada con **Microsoft EntraID (Azure AD)**.
 
 El sistema implementa un **modelo de tokens** como moneda interna que regula el acceso a los recursos, junto con flujos de aprobación para reservas que requieren autorización explícita.
 
@@ -47,7 +47,7 @@ El sistema implementa un **modelo de tokens** como moneda interna que regula el 
 
 - Login seguro mediante **Microsoft EntraID (OAuth2 / OIDC)**.
 - Modo invitado con acceso restringido a contenido público.
-- Gestión de roles: `ADMIN`, `JEFE_ESTUDIOS`, `PROFESOR`, `ALUMNO`.
+- Gestión de roles: `ADMINISTRADOR`, `JEFATURA`, `SECRETARIA`, `CONTROL`, `CAFETERIA`, `GESTOR_SERVICIO`, `PROFESOR`, `ALUMNO`.
 - Perfil de usuario con historial de actividad y saldo de tokens.
 - Administración completa de usuarios desde el panel de administración.
 
@@ -188,26 +188,28 @@ El sistema implementa un **modelo de tokens** como moneda interna que regula el 
 ### Visión General
 
 ```
-                        Internet
-                           │
-                    ┌──────▼──────┐
-                    │   Traefik   │  Puerto 2121 (HTTPS) → Frontend
-                    │ (TLS Proxy) │  Puerto 1212 (HTTPS) → Backend
-                    └──────┬──────┘
-                           │
-             ┌─────────────┴──────────────┐
-             │                            │
-      ┌──────▼──────┐             ┌───────▼──────┐
-      │   Frontend  │             │   Backend    │
-      │  Flutter +  │             │  FastAPI +   │
-      │    Nginx    │             │   Uvicorn    │
-      └─────────────┘             └───────┬──────┘
-                                          │ Red interna
-                                  ┌───────▼──────┐
-                                  │  PostgreSQL  │
-                                  │   (Docker)   │
-                                  └──────────────┘
+                              Internet
+                                 │
+                          ┌──────▼──────┐
+                          │   Traefik   │  Puerto 2121 (HTTPS)
+                          │ (TLS Proxy) │  ├─ /*      → Frontend
+                          └──────┬──────┘  └─ /api/*  → Backend
+                                 │
+               ┌─────────────────┴────────────────────┐
+               │         Red: traefik                  │
+      ┌────────▼────────┐               ┌─────────────▼──────┐
+      │    Frontend     │               │      Backend       │
+      │   Flutter Web   │               │  FastAPI + Uvicorn │
+      │     (Nginx)     │               │   expone /api/*    │
+      └─────────────────┘               └──────────┬─────────┘
+                                                   │ Red: internal
+                                           ┌───────▼──────┐
+                                           │  PostgreSQL  │
+                                           │   (Docker)   │
+                                           └──────────────┘
 ```
+
+El frontend y el backend comparten el mismo puerto externo (2121). Traefik enruta el tráfico según el prefijo de ruta: las peticiones a `/api/*` se dirigen al backend, y el resto al frontend. El backend está conectado a ambas redes Docker: `traefik` (para recibir tráfico externo) e `internal` (para comunicarse con la base de datos). El frontend solo está en la red `traefik`.
 
 ### Backend — Capas
 
@@ -236,54 +238,44 @@ lib/
 
 ## Base de Datos
 
-Motor principal: **PostgreSQL 16** con la extensión `btree_gist` para control estricto de solapamientos horarios mediante restricciones de exclusión nativas.
+Motor principal: **PostgreSQL 16** con las extensiones `uuid-ossp` (generación de UUIDs) y `btree_gist` (control estricto de solapamientos horarios mediante restricciones de exclusión nativas).
 
 ### Entidades principales
 
 | Tabla | Descripción |
 | :--- | :--- |
-| `usuarios` | Perfiles de alumnos y profesores con saldo de tokens y rol |
-| `espacios` | Recursos físicos reservables (aulas, pistas…) |
-| `reservas` | Ocupación de espacios por usuario y tramo horario |
-| `reservas_recurrentes` | Patrones de reserva periódica sujetos a aprobación |
-| `lista_espera` | Cola de espera por tramo y espacio |
-| `servicios_instituto` | Servicios ofertados por los departamentos |
-| `reservas_servicios` | Reservas de servicios con flujo de aprobación |
+| `usuarios` | Perfiles de todos los usuarios con saldo de tokens, rol y flag `rol_override` |
+| `espacios` | Recursos físicos reservables (aulas, pistas…) con control de autorización y antelación |
+| `espacio_rol_permitido` | Roles que pueden reservar cada espacio (N:M) |
+| `espacio_tramos_permitidos` | Tramos horarios habilitados para cada espacio (N:M) |
+| `reservas_espacios` | Reservas de espacios con control de solapamiento (EXCLUDE constraint) |
+| `reservas_recurrentes` | Patrones de reserva periódica (semanal, quincenal, mensual) sujetos a aprobación |
+| `lista_espera` | Cola de espera ordenada por posición cuando un tramo está ocupado |
+| `servicios` | Servicios ofertados por los departamentos, con gestor asignado (FK a usuario) |
+| `servicio_rol_permitido` | Roles que pueden reservar cada servicio (N:M) |
+| `servicio_tramos_permitidos` | Tramos horarios habilitados para cada servicio (N:M) |
+| `reservas_servicios` | Reservas de servicios con flujo de aprobación y control de solapamiento |
+| `tramos_horarios` | Catálogo inmutable de periodos lectivos (mañana / tarde, recreos) |
 | `favoritos_espacios` | Relación usuario ↔ espacio favorito |
 | `favoritos_servicios` | Relación usuario ↔ servicio favorito |
-| `tramos_horarios` | Definición de periodos lectivos |
-| `anuncios` | Publicaciones del tablón con expiración |
-| `cafeteria_categorias` | Categorías del menú del comedor |
-| `cafeteria_productos` | Productos con precio y estado activo |
-| `encuestas` | Votaciones con opciones y fecha límite |
-| `votos` | Registro de votos por usuario y encuesta |
-| `incidencias` | Reportes de problemas con seguimiento de estado |
-| `historial_tokens` | Auditoría de todos los movimientos de tokens |
-| `notificaciones` | Bandeja de notificaciones por usuario |
-| `configuracion` | Pares clave-valor para la configuración global |
+| `historial_tokens` | Auditoría completa de recargas, consumos, devoluciones y ajustes de tokens |
+| `notificaciones` | Bandeja de notificaciones in-app por usuario |
+| `preferencias_notificacion` | Configuración por usuario de qué notificaciones recibir y por qué canal |
+| `notificacion_entregas` | Historial de entregas por canal (in-app, email, push) para auditoría |
+| `dispositivos_push` | Tokens FCM registrados por usuario y plataforma |
+| `anuncios` | Publicaciones del tablón con expiración configurable y marcado destacado |
+| `anuncio_visualizaciones` | Registro de lecturas para métricas de alcance |
+| `categorias_cafeteria` | Categorías del menú del comedor |
+| `productos_cafeteria` | Productos con precio, disponibilidad y marcado destacado |
+| `encuestas` | Votaciones con fecha límite de cierre automático |
+| `encuesta_opciones` | Opciones de respuesta de cada encuesta |
+| `votos_encuesta` | Registro de votos con restricción de un voto por usuario y encuesta |
+| `incidencias` | Reportes de problemas con seguimiento de estado y comentario del admin |
+| `configuracion` | Pares clave-valor para la configuración global del sistema |
 
 ### Diagrama Entidad-Relación
 
-```mermaid
-erDiagram
-    USUARIO ||--o{ RESERVA : realiza
-    USUARIO ||--o{ RESERVA_RECURRENTE : solicita
-    USUARIO ||--o{ RESERVA_SERVICIO : reserva
-    USUARIO ||--o{ HISTORIAL_TOKENS : posee
-    USUARIO ||--o{ INCIDENCIA : reporta
-    USUARIO ||--o{ NOTIFICACION : recibe
-    USUARIO ||--o{ VOTO : emite
-    USUARIO ||--o{ LISTA_ESPERA : se_apunta
-    ESPACIO ||--o{ RESERVA : es_reservado
-    ESPACIO ||--o{ RESERVA_RECURRENTE : es_reservado
-    ESPACIO ||--o{ LISTA_ESPERA : tiene
-    ESPACIO ||--o{ ESPACIO_TRAMO : configura
-    TRAMO_HORARIO ||--o{ ESPACIO_TRAMO : aplica
-    TRAMO_HORARIO ||--o{ RESERVA : asigna
-    SERVICIO ||--o{ RESERVA_SERVICIO : genera
-    ENCUESTA ||--o{ OPCION : contiene
-    OPCION ||--o{ VOTO : recibe
-```
+![Diagrama E-R](metadata/diagrams/er_diagram.png)
 
 ---
 
@@ -294,13 +286,13 @@ La aplicación se despliega en el servidor del IES Luis Vives mediante Docker Co
 | Servicio | URL |
 | :--- | :--- |
 | Frontend Web | `https://vms.iesluisvives.org:2121` |
-| API REST | `https://vms.iesluisvives.org:1212/api` |
-| Documentación API | `https://vms.iesluisvives.org:1212/api/docs` |
+| API REST | `https://vms.iesluisvives.org:2121/api` |
+| Documentación API | `https://vms.iesluisvives.org:2121/api/docs` |
 
 ### Requisitos del servidor
 
 - Docker y Docker Compose instalados.
-- Traefik configurado con los entrypoints `websecure` (puerto 2121) y `api` (puerto 1212) con TLS.
+- Traefik configurado con el entrypoint `websecure` (puerto 2121) con TLS. Traefik enruta `/api/*` al backend y el resto al frontend según las reglas de PathPrefix definidas en las etiquetas del compose.
 - Red externa de Docker llamada `traefik` creada previamente:
 
 ```bash
@@ -358,8 +350,8 @@ SMTP_PASSWORD=...
 
 ```bash
 # Clona el repositorio
-git clone https://github.com/tu-usuario/reservives.git
-cd reservives
+git clone https://github.com/tu-usuario/reservives-app.git
+cd reservives-app
 
 # Copia y rellena el .env
 cp backend/.env.example backend/.env
@@ -368,7 +360,10 @@ cp backend/.env.example backend/.env
 docker-compose up -d --build
 ```
 
-El frontend estará disponible en `http://localhost:2121` y la API en `http://localhost:1212/api/docs`.
+El frontend estará disponible en `http://localhost:2121` y la API en `http://localhost:2121/api/docs`.
+
+> **Nota:** Para el flujo de autenticación con Microsoft EntraID es necesario acceder mediante HTTPS o localhost.
+
 ---
 
 ## Estructura del Repositorio
@@ -434,9 +429,8 @@ Evolución, rediseño completo y despliegue en producción por:
 ---
 
 ## Documentación
-
-- [Anteproyecto original](https://github.com/RuyMi/tfg-gestion-espacios/blob/main/metadata/Anteproyecto.pdf)
 - [Documentación del proyecto original](https://github.com/RuyMi/tfg-gestion-espacios/blob/main/Proyecto%20Desarrolo%20de%20aplicaciones_IES%20Luis%20Vives.pdf)
+- [Presentación del proyecto](https://iesluisvivesapp.my.canva.site)
 
 ---
 
