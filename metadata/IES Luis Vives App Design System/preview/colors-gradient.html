@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brand gradient</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--rv-bg); font-family:var(--rv-font); }
+  .stack { display:grid; gap:14px; grid-template-columns: 1.4fr 1fr 1fr; }
+  .grad { border-radius:var(--rv-radius-l); padding:18px 20px; min-height:108px; color:#fff; display:flex; flex-direction:column; justify-content:space-between; }
+  .grad.brand { background: linear-gradient(135deg, #B53F7A 0%, #D23F7A 100%); box-shadow: 0 14px 24px rgba(181,63,122,.20);}
+  .grad.hero-l { background: linear-gradient(135deg,#FFFFFF 0%,#F2F4FF 50%,#E9F0FF 100%); color:#10131A; border:1px solid #E6E8F0;}
+  .grad.hero-d { background: linear-gradient(135deg,#101522 0%,#0B0E15 50%,#171C2D 100%); }
+  .name { font:700 13px/1.2 var(--rv-font); }
+  .stops { font:600 10px/1.5 var(--rv-font); opacity:.9; letter-spacing:.4px; text-transform:uppercase; }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <div class="grad brand"><div class="name">brand · accent → primary</div><div class="stops">#B53F7A → #D23F7A · 135°</div></div>
+    <div class="grad hero-l"><div class="name">hero · light</div><div class="stops" style="color:#667085">#FFFFFF · #F2F4FF · #E9F0FF</div></div>
+    <div class="grad hero-d"><div class="name">hero · dark</div><div class="stops">#101522 · #0B0E15 · #171C2D</div></div>
+  </div>
+</body>
+</html>

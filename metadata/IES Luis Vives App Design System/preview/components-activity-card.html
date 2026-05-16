@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Activity card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded">
+<style>
+  body { margin:0; padding:18px 24px; background:#F0F1F5; font-family:var(--rv-font); display:flex; flex-direction:column; gap:10px; }
+  .a {
+    display:flex; align-items:stretch;
+    background:#fff; border-radius:14px;
+    border:1.5px solid rgba(16,19,26,.05);
+    box-shadow: 0 8px 24px rgba(16,19,26,.08);
+    overflow:hidden;
+  }
+  .stripe { width:4px; }
+  .date { width:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0; }
+  .date .d-name { font:700 10px/1.2 var(--rv-font); }
+  .date .d-num { font:900 22px/1.05 var(--rv-font); color:#10131A; }
+  .date .d-mon { font:700 9px/1.3 var(--rv-font); color:#667085; text-transform:uppercase; }
+  .sep { width:1px; background: rgba(16,19,26,.06); margin: 12px 0; }
+  .info { flex:1; padding: 12px 14px; display:flex; flex-direction:column; justify-content:center; }
+  .title { font:700 14px/1.2 var(--rv-font); color:#10131A; }
+  .meta { display:flex; align-items:center; gap:5px; margin-top:5px; color:#667085; font:500 12px/1 var(--rv-font); }
+  .meta .material-symbols-rounded { font-size:13px; }
+  .chev { display:flex; align-items:center; padding-right:12px; color:rgba(102,112,133,.5); }
+</style>
+</head>
+<body>
+  <div class="a">
+    <div class="stripe" style="background:#2EC48D"></div>
+    <div class="date">
+      <div class="d-name" style="color:#2EC48D">VIE</div>
+      <div class="d-num">14</div>
+      <div class="d-mon">NOV</div>
+    </div>
+    <div class="sep"></div>
+    <div class="info">
+      <div class="title">Aula multimedia 204</div>
+      <div class="meta"><span class="material-symbols-rounded">schedule</span>10:00 - 11:30</div>
+    </div>
+    <div class="chev"><span class="material-symbols-rounded">chevron_right</span></div>
+  </div>
+  <div class="a">
+    <div class="stripe" style="background:#FFB020"></div>
+    <div class="date">
+      <div class="d-name" style="color:#FFB020">SÁB</div>
+      <div class="d-num">15</div>
+      <div class="d-mon">NOV</div>
+    </div>
+    <div class="sep"></div>
+    <div class="info">
+      <div class="title">Pista de pádel — recurrente</div>
+      <div class="meta"><span class="material-symbols-rounded">schedule</span>17:00 - 18:00 · pendiente</div>
+    </div>
+    <div class="chev"><span class="material-symbols-rounded">chevron_right</span></div>
+  </div>
+</body>
+</html>

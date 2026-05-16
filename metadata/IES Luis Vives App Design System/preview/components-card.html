@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Surface card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded">
+<style>
+  body { margin:0; padding:22px 24px; background:#F0F1F5; font-family:var(--rv-font); }
+  .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .card {
+    background:#fff; border-radius:20px; padding:18px;
+    border:1.5px solid rgba(16,19,26,.05);
+    box-shadow: 0 8px 24px rgba(16,19,26,.08);
+  }
+  .card.hover {
+    border-color: rgba(181,63,122,.28);
+    transform: scale(1.02);
+    box-shadow: 0 25px 40px rgba(16,19,26,.12), 0 4px 10px rgba(16,19,26,.03);
+  }
+  .lab { font:700 11px/1.4 var(--rv-font); letter-spacing:1px; color:#667085; text-transform:uppercase; margin-bottom:8px; }
+  .h { font:700 18px/1.2 var(--rv-font); letter-spacing:-.4px; }
+  .body { font:400 13px/1.5 var(--rv-font); color:#667085; margin-top:6px; }
+  .footer { margin-top:14px; display:flex; align-items:center; gap:8px; }
+  .chip { background:rgba(181,63,122,.10); color:#B53F7A; border-radius:999px; padding:4px 10px; font:800 10px var(--rv-font); }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="card">
+    <div class="lab">resting</div>
+    <div class="h">Pista de pádel cubierta</div>
+    <div class="body">Disponible mañana a las 10:00 — 11:30 con un coste de 2 tokens.</div>
+    <div class="footer"><span class="chip">DEPORTIVO</span><span class="chip" style="background:rgba(46,196,141,.12);color:#1F8E66">DISPONIBLE</span></div>
+  </div>
+  <div class="card hover">
+    <div class="lab" style="color:#B53F7A">hover · 1.02 ×</div>
+    <div class="h">Pista de pádel cubierta</div>
+    <div class="body">Border tightens to <code>accent @ 0.28</code> and shadow upgrades from soft → deep.</div>
+    <div class="footer"><span class="chip">DEPORTIVO</span><span class="chip" style="background:rgba(46,196,141,.12);color:#1F8E66">DISPONIBLE</span></div>
+  </div>
+</div>
+</body>
+</html>

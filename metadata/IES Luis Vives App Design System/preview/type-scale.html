@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:20px 24px; background:#fff; font-family:var(--rv-font); color:#10131A; }
+  .row { display:grid; grid-template-columns: 78px 1fr 110px; align-items:baseline; gap:14px; padding: 7px 0; border-bottom:1px solid #F0F1F5; }
+  .row:last-child { border-bottom:none; }
+  .key { font:600 10px/1.3 var(--rv-font); color:#667085; letter-spacing:.4px; text-transform:uppercase; }
+  .meta{ font:600 10px/1.3 var(--rv-font); color:#667085; text-align:right; }
+</style>
+</head>
+<body>
+  <div class="row"><div class="key">display lg</div><div style="font:700 36px/1 var(--rv-font);letter-spacing:-1px">Reservives</div><div class="meta">40 / 700 · -1.0</div></div>
+  <div class="row"><div class="key">headline</div><div style="font:700 24px/1.1 var(--rv-font);letter-spacing:-.6px">Iniciar sesión</div><div class="meta">28 / 700 · -0.6</div></div>
+  <div class="row"><div class="key">title lg</div><div style="font:600 18px/1.25 var(--rv-font);letter-spacing:-.4px">Próximas reservas</div><div class="meta">20 / 600 · -0.4</div></div>
+  <div class="row"><div class="key">title md</div><div style="font:600 15px/1.3 var(--rv-font);letter-spacing:-.2px">Reservar pista de pádel</div><div class="meta">17 / 600 · -0.2</div></div>
+  <div class="row"><div class="key">body</div><div style="font:400 14px/1.5 var(--rv-font)">Tienes 3 encuestas activas y 12 tokens disponibles.</div><div class="meta">15 / 400</div></div>
+  <div class="row"><div class="key">small</div><div style="font:500 12px/1.5 var(--rv-font);color:#667085">Actualizado hace unos segundos · IES Luis Vives</div><div class="meta">13 / 500</div></div>
+</body>
+</html>

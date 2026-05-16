@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neutrals — light</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:#EEF0F6; font-family:var(--rv-font); }
+  .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .sw   { padding:12px; min-height:88px; border-radius:var(--rv-radius-s); display:flex; flex-direction:column; justify-content:flex-end; }
+  .sw .n { font:700 12px/1.2 var(--rv-font); color:#10131A; }
+  .sw .h { font:600 10px/1.4 var(--rv-font); color:#667085; letter-spacing:.4px; text-transform:uppercase; }
+  .border { border:1px solid #E6E8F0; }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="sw border" style="background:#F6F7FB"><div class="n">background</div><div class="h">#F6F7FB</div></div>
+    <div class="sw border" style="background:#FFFFFF"><div class="n">surface / card</div><div class="h">#FFFFFF</div></div>
+    <div class="sw border" style="background:#F2F2F7"><div class="n">input fill</div><div class="h">#F2F2F7</div></div>
+    <div class="sw border" style="background:#E6E8F0"><div class="n">divider</div><div class="h">#E6E8F0</div></div>
+    <div class="sw" style="background:#10131A"><div class="n" style="color:#fff">text / fg</div><div class="h" style="color:#B0B9CD">#10131A</div></div>
+    <div class="sw" style="background:#667085"><div class="n" style="color:#fff">text muted</div><div class="h" style="color:#E6E8F0">#667085</div></div>
+    <div class="sw" style="background:#8E8E93"><div class="n" style="color:#fff">input hint</div><div class="h" style="color:#E6E8F0">#8E8E93</div></div>
+    <div class="sw border" style="background:#F9FAFF"><div class="n">circle bg</div><div class="h">#F9FAFF</div></div>
+  </div>
+</body>
+</html>

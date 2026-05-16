@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Skeleton</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 24px; background:#F0F1F5; font-family:var(--rv-font); }
+  .card { background:#fff; border-radius:20px; padding:16px; box-shadow: 0 8px 24px rgba(16,19,26,.08); }
+  .row { display:flex; align-items:center; gap:14px; }
+  .row + .row { margin-top:10px; padding-top:10px; border-top:1px solid rgba(16,19,26,.04); }
+  .lines { flex:1; }
+  .lines .l + .l { margin-top:8px; }
+  .skel { background: linear-gradient(90deg, #E5E5EA 0%, #F2F2F7 50%, #E5E5EA 100%); background-size:200% 100%; animation: shim 1.4s linear infinite; border-radius:5px; }
+  @keyframes shim { 0% { background-position:200% 0 } 100% { background-position:-200% 0 } }
+  .img { width:76px; height:76px; border-radius:12px; flex-shrink:0; }
+  .l1 { height:12px; width:64px; border-radius:4px; }
+  .l2 { height:16px; width:100%; border-radius:5px; }
+  .l3 { height:12px; width:80%; border-radius:4px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="row">
+      <div class="lines">
+        <div class="l skel l1"></div>
+        <div class="l skel l2"></div>
+        <div class="l skel l3"></div>
+      </div>
+      <div class="skel img"></div>
+    </div>
+    <div class="row">
+      <div class="lines">
+        <div class="l skel l1"></div>
+        <div class="l skel l2"></div>
+        <div class="l skel l3"></div>
+      </div>
+      <div class="skel img"></div>
+    </div>
+  </div>
+</body>
+</html>

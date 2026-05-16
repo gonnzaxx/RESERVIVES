@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Primary colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--rv-bg); font-family:var(--rv-font); }
+  .row { display:flex; gap:14px; }
+  .swatch { flex:1; border-radius:var(--rv-radius-m); padding:14px 14px 12px; min-height:96px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow: var(--rv-shadow-soft); }
+  .swatch .name { font: 700 13px/1.2 var(--rv-font); }
+  .swatch .hex  { font: 600 11px/1.4 var(--rv-font); opacity:.85; letter-spacing:.4px; text-transform:uppercase; margin-top:2px; }
+  .light { color:#fff; }
+  .dark  { color:#10131A; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="swatch light" style="background:#D23F7A;"><div class="name">primary</div><div class="hex">#D23F7A</div></div>
+    <div class="swatch light" style="background:#9E2A58;"><div class="name">primary / dark</div><div class="hex">#9E2A58</div></div>
+    <div class="swatch dark"  style="background:#F4A1C0;"><div class="name">primary / light</div><div class="hex">#F4A1C0</div></div>
+    <div class="swatch light" style="background:#B53F7A;"><div class="name">accent</div><div class="hex">#B53F7A</div></div>
+    <div class="swatch light" style="background:#8A2F5D;"><div class="name">accent / dark</div><div class="hex">#8A2F5D</div></div>
+    <div class="swatch light" style="background:#EC64B3;"><div class="name">accent / light</div><div class="hex">#EC64B3</div></div>
+  </div>
+</body>
+</html>

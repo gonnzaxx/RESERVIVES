@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reservives — UI kit</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const FAKE_USER = {
+  name:   'Marina Salgado',
+  role:   'Estudiante · 2.º Bachillerato',
+  email:  'marina.salgado@iesluisvives.org',
+  tokens: 12,
+};
+
+const BOOKINGS = [
+  { id:'b1', dayName:'VIE', day:14, month:'NOV', title:'Aula multimedia 204',          time:'10:00 - 11:30', status:'aprobada',  statusLabel:null },
+  { id:'b2', dayName:'SÁB', day:15, month:'NOV', title:'Pista de pádel — recurrente',   time:'17:00 - 18:00', status:'pendiente', statusLabel:'pendiente' },
+  { id:'b3', dayName:'LUN', day:17, month:'NOV', title:'Salón de actos · ensayo coro',  time:'12:30 - 13:30', status:'aprobada',  statusLabel:null },
+  { id:'b4', dayName:'MIÉ', day:19, month:'NOV', title:'Sala de profesores',            time:'09:00 - 10:00', status:'aprobada',  statusLabel:null },
+];
+
+function App() {
+  const [authed, setAuthed] = useState(false);
+  const [tab,    setTab]    = useState('home');
+  const [stack,  setStack]  = useState([]);          // sub-screens stack
+  const [toast,  setToast]  = useState(null);
+  const [confirm,setConfirm]= useState(null);
+  const [loadingMs, setLoadingMs] = useState(false);
+  const [loadingGuest, setLoadingGuest] = useState(false);
+
+  function signIn(){
+    setLoadingMs(true);
+    setTimeout(()=>{ setLoadingMs(false); setAuthed(true); setToast({kind:'success', msg:`Bienvenida, ${FAKE_USER.name.split(' ')[0]}.`}); }, 750);
+  }
+  function asGuest(){
+    setLoadingGuest(true);
+    setTimeout(()=>{ setLoadingGuest(false); setAuthed(true); setToast({kind:'info', msg:'Has entrado como invitado/a.'}); }, 600);
+  }
+  function logout(){
+    setConfirm({
+      title: '¿Cerrar sesión?',
+      body: 'Tendrás que volver a iniciar sesión para acceder a tus reservas.',
+      confirmLabel: 'Cerrar sesión',
+      onConfirm: () => { setConfirm(null); setAuthed(false); setStack([]); setTab('home'); },
+    });
+  }
+  function pushScreen(s){ setStack(st => [...st, s]); }
+  function popScreen(){ setStack(st => st.slice(0, -1)); }
+
+  // Body
+  let body = null;
+  if (!authed) {
+    body = <LoginScreen onSignIn={signIn} onGuest={asGuest} loadingMs={loadingMs} loadingGuest={loadingGuest} />;
+  } else if (stack.length) {
+    const top = stack[stack.length - 1];
+    if (top.kind === 'space') {
+      body = <SpaceDetailScreen
+        space={top.space}
+        onBack={popScreen}
+        onConfirm={(payload) => {
+          popScreen();
+          setTab('home');
+          setToast({ kind:'success', msg:`Reserva confirmada · ${payload.day.name} ${payload.day.num} ${payload.slot.h}.` });
+        }}
+      />;
+    }
+  } else {
+    if (tab === 'home') {
+      body = <HomeScreen
+        user={FAKE_USER}
+        bookings={BOOKINGS}
+        onOpenPolls={() => setToast({kind:'info', msg:'Abriendo encuestas activas…'})}
+        onOpenBooking={(b) => setToast({kind:'info', msg:b.title})}
+        onSeeAll={() => setToast({kind:'info', msg:'Vista completa de reservas'})}
+        onNotif={() => setToast({kind:'info', msg:'Sin nuevas notificaciones'})}
+      />;
+    }
+    if (tab === 'reservas')  body = <ReservasScreen onOpenSpace={(s) => pushScreen({ kind:'space', space:s })} />;
+    if (tab === 'cafeteria') body = <CafeteriaScreen />;
+    if (tab === 'asistente') body = <AsistenteScreen />;
+    if (tab === 'perfil')    body = <ProfileScreen user={FAKE_USER} onLogout={logout} />;
+  }
+
+  return (
+    <div className="stage">
+      <div className="phone">
+        {body}
+        {authed && stack.length === 0 && <BottomBar active={tab} onChange={setTab} />}
+        {toast && <Toast kind={toast.kind} message={toast.msg} onDone={() => setToast(null)} />}
+        {confirm && (
+          <ConfirmDialog
+            title={confirm.title}
+            body={confirm.body}
+            confirmLabel={confirm.confirmLabel}
+            onConfirm={confirm.onConfirm}
+            onCancel={() => setConfirm(null)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+</body>
+</html>

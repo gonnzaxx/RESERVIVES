@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Semantic colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--rv-bg); font-family:var(--rv-font); }
+  .row { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; }
+  .sw  { padding:12px; min-height:96px; border-radius:var(--rv-radius-m); display:flex; flex-direction:column; justify-content:space-between; color:#fff; box-shadow: var(--rv-shadow-soft); }
+  .sw .n { font:700 13px/1.2 var(--rv-font); }
+  .sw .h { font:600 11px/1.4 var(--rv-font); opacity:.92; letter-spacing:.5px; text-transform:uppercase; }
+  .sw .role { font:500 11px/1.4 var(--rv-font); opacity:.85; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw" style="background:#2EC48D"><div><div class="n">success</div><div class="role">aprobada</div></div><div class="h">#2EC48D</div></div>
+    <div class="sw" style="background:#FFB020;color:#10131A"><div><div class="n">warning</div><div class="role" style="opacity:.7">pendiente</div></div><div class="h" style="opacity:.7">#FFB020</div></div>
+    <div class="sw" style="background:#FF5D73"><div><div class="n">error</div><div class="role">rechazada · cancelada</div></div><div class="h">#FF5D73</div></div>
+    <div class="sw" style="background:#3289EC"><div><div class="n">blue</div><div class="role">info</div></div><div class="h">#3289EC</div></div>
+    <div class="sw" style="background:#AA1FFF"><div><div class="n">purple</div><div class="role">accent · destacado</div></div><div class="h">#AA1FFF</div></div>
+  </div>
+</body>
+</html>

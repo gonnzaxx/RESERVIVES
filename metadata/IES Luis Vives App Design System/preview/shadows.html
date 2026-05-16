@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shadows</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:30px 24px; background:#F0F1F5; font-family:var(--rv-font); }
+  .row { display:grid; grid-template-columns: repeat(3, 1fr); gap:24px; }
+  .b { background:#fff; border-radius:14px; min-height:108px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; }
+  .lab { font:700 12px/1.2 var(--rv-font); color:#10131A; }
+  .val { font:600 10px/1.4 var(--rv-font); color:#667085; letter-spacing:.4px; text-transform:uppercase; }
+  .soft { box-shadow: 0 8px 24px rgba(16,19,26,.08); }
+  .deep { box-shadow: 0 25px 40px rgba(16,19,26,.12), 0 4px 10px rgba(16,19,26,.03); }
+  .glow { background: linear-gradient(135deg,#B53F7A,#D23F7A); color:#fff; box-shadow: 0 4px 12px rgba(181,63,122,.30); }
+  .glow .lab,.glow .val { color:#fff }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="b soft"><div class="lab">soft</div><div class="val">y8 · b24 · 8% ink</div></div>
+    <div class="b deep"><div class="lab">deep</div><div class="val">y25 · b40 · 12% +<br>y4 · b10 · 3%</div></div>
+    <div class="b glow"><div class="lab">button glow</div><div class="val">y4 · b12 · 30% accent</div></div>
+  </div>
+</body>
+</html>

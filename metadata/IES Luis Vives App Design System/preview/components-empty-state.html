@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Empty state</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded">
+<style>
+  body { margin:0; padding:24px; background:#fff; font-family:var(--rv-font); display:flex; align-items:center; gap:24px; }
+  .halo { width:130px; height:130px; border-radius:50%; background:rgba(181,63,122,.04); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .core { width:100px; height:100px; border-radius:50%; background:#F9FAFF; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 24px rgba(16,19,26,.08); }
+  .core .material-symbols-rounded { font-size:44px; color: rgba(181,63,122,.6); }
+  .body { flex:1; }
+  .h { font:800 18px/1.2 var(--rv-font); }
+  .p { font:400 13px/1.5 var(--rv-font); color:#667085; margin-top:6px; max-width:340px; }
+  .btn { margin-top:14px; display:inline-flex; align-items:center; gap:8px; padding:11px 16px; border-radius:14px; background:#B53F7A; color:#fff; font:700 13px var(--rv-font); box-shadow: 0 4px 12px rgba(181,63,122,.3); }
+  .btn .material-symbols-rounded { font-size:16px; }
+</style>
+</head>
+<body>
+  <div class="halo"><div class="core"><span class="material-symbols-rounded">event_busy</span></div></div>
+  <div class="body">
+    <div class="h">Aún no tienes reservas esta semana</div>
+    <div class="p">Empieza a planificar la semana — reserva un aula, una pista o solicita un servicio del instituto.</div>
+    <div class="btn"><span class="material-symbols-rounded">add</span>Reservar ahora</div>
+  </div>
+</body>
+</html>

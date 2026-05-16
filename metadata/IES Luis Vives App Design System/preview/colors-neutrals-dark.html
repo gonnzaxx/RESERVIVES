@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neutrals — dark</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:#090B10; font-family:var(--rv-font); }
+  .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .sw   { padding:12px; min-height:88px; border-radius:var(--rv-radius-s); display:flex; flex-direction:column; justify-content:flex-end; border:1px solid rgba(255,255,255,.06); }
+  .sw .n { font:700 12px/1.2 var(--rv-font); color:#F5F7FF; }
+  .sw .h { font:600 10px/1.4 var(--rv-font); color:#B0B9CD; letter-spacing:.4px; text-transform:uppercase; }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="sw" style="background:#090B10"><div class="n">background</div><div class="h">#090B10</div></div>
+    <div class="sw" style="background:#11141C"><div class="n">surface</div><div class="h">#11141C</div></div>
+    <div class="sw" style="background:#151A24"><div class="n">card</div><div class="h">#151A24</div></div>
+    <div class="sw" style="background:#1C1C1E"><div class="n">card / alt</div><div class="h">#1C1C1E</div></div>
+    <div class="sw" style="background:#2E3747"><div class="n">divider</div><div class="h">#2E3747</div></div>
+    <div class="sw" style="background:#F5F7FF"><div class="n" style="color:#10131A">text / fg</div><div class="h" style="color:#667085">#F5F7FF</div></div>
+    <div class="sw" style="background:#B0B9CD"><div class="n" style="color:#10131A">text muted</div><div class="h" style="color:#11141C">#B0B9CD</div></div>
+    <div class="sw" style="background:#2C2C2E"><div class="n">skeleton base</div><div class="h">#2C2C2E</div></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toast / SnackBar</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded">
+<style>
+  body { margin:0; padding:18px 24px; background:#F0F1F5; font-family:var(--rv-font); display:flex; flex-direction:column; gap:10px; }
+  .toast {
+    display:flex; align-items:center; gap:12px;
+    background:#fff; border-radius:20px; padding:14px 18px;
+    box-shadow: 0 8px 24px rgba(16,19,26,.08);
+  }
+  .toast .material-symbols-rounded { font-size:22px; font-variation-settings: 'FILL' 1; }
+  .toast .msg { font:600 14px/1.2 var(--rv-font); color:#10131A; }
+</style>
+</head>
+<body>
+  <div class="toast"><span class="material-symbols-rounded" style="color:#2EC48D">check_circle</span><div class="msg">Reserva confirmada para mañana a las 10:00.</div></div>
+  <div class="toast"><span class="material-symbols-rounded" style="color:#FFB020">warning</span><div class="msg">Recuerda que esta reserva consume 2 tokens.</div></div>
+  <div class="toast"><span class="material-symbols-rounded" style="color:#FF5D73">error</span><div class="msg">No se pudo conectar con el servidor. Intenta de nuevo.</div></div>
+</body>
+</html>

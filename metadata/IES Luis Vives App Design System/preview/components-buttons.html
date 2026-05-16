@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded">
+<style>
+  body { margin:0; padding:24px; background:var(--rv-bg); font-family:var(--rv-font); }
+  .row { display:grid; grid-template-columns: 1.4fr 1fr 1fr; gap:14px; align-items:center; }
+  .btn-primary {
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    background:#B53F7A; color:#fff; font:700 15px/1 var(--rv-font);
+    border:none; padding:16px 18px; border-radius:14px;
+    box-shadow: 0 4px 12px rgba(181,63,122,.3);
+    cursor:pointer; width:100%;
+  }
+  .btn-primary .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 500; font-size: 20px; }
+  .btn-outline {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:transparent; color:#667085;
+    font:600 13px/1 var(--rv-font);
+    border:1.5px solid rgba(16,19,26,.08); padding:16px 18px; border-radius:14px;
+  }
+  .btn-ghost {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(16,19,26,.03); border:1px solid rgba(16,19,26,.06);
+    color:rgba(16,19,26,.65);
+  }
+  .btn-ghost .material-symbols-rounded { font-size:20px; }
+  .col-ghost { display:flex; gap:10px; align-items:center; justify-content:flex-start; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <button class="btn-primary"><span class="material-symbols-rounded">login</span> Iniciar sesión con Microsoft</button>
+    <button class="btn-outline">Continuar sin cuenta</button>
+    <div class="col-ghost">
+      <span class="btn-ghost"><span class="material-symbols-rounded">notifications</span></span>
+      <span class="btn-ghost"><span class="material-symbols-rounded">search</span></span>
+      <span class="btn-ghost"><span class="material-symbols-rounded">tune</span></span>
+    </div>
+  </div>
+</body>
+</html>

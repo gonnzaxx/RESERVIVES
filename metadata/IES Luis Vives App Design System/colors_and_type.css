@@ -1,0 +1,129 @@
+/* ============================================================
+   RESERVIVES — IES Luis Vives App
+   Foundations: colors + typography
+   Sourced from frontend/lib/config/app_theme.dart (AppColors,
+   AppRadii, AppShadows) and AppTheme.lightTheme/darkTheme.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+  /* ---- Brand: rose / fuchsia primaries ---- */
+  --rv-primary:        #D23F7A;   /* primaryBlue (sic — rose) */
+  --rv-primary-dark:   #9E2A58;
+  --rv-primary-light:  #F4A1C0;
+
+  /* ---- Brand: purple accents ---- */
+  --rv-accent:         #B53F7A;   /* accentPurple — used as ColorScheme.primary */
+  --rv-accent-dark:    #8A2F5D;
+  --rv-accent-light:   #EC64B3;
+
+  /* ---- Light surface palette ---- */
+  --rv-bg:             #F6F7FB;   /* scaffold background */
+  --rv-surface:        #FFFFFF;
+  --rv-card:           #FFFFFF;
+  --rv-fg:             #10131A;   /* primary text */
+  --rv-fg-muted:       #667085;   /* secondary text */
+  --rv-divider:        #E6E8F0;
+  --rv-input-fill:     #F2F2F7;
+  --rv-input-hint:     #8E8E93;
+
+  /* ---- Dark surface palette ---- */
+  --rv-bg-dark:        #090B10;
+  --rv-surface-dark:   #11141C;
+  --rv-card-dark:      #151A24;   /* design_system.dart also uses #1C1C1E */
+  --rv-card-dark-alt:  #1C1C1E;
+  --rv-fg-dark:        #F5F7FF;
+  --rv-fg-muted-dark:  #B0B9CD;
+  --rv-divider-dark:   #2E3747;
+
+  /* ---- Semantic ---- */
+  --rv-success:        #2EC48D;
+  --rv-warning:        #FFB020;
+  --rv-error:          #FF5D73;
+  --rv-info:           #D23F7A;   /* aliased to primary */
+  --rv-blue:           #3289EC;
+  --rv-purple:         #AA1FFF;
+  --rv-accent-blue:    #4F6EF7;
+
+  /* ---- Brand gradient ---- */
+  --rv-gradient-brand: linear-gradient(135deg, #B53F7A 0%, #D23F7A 100%);
+  --rv-gradient-hero-light: linear-gradient(135deg, #FFFFFF 0%, #F2F4FF 50%, #E9F0FF 100%);
+  --rv-gradient-hero-dark:  linear-gradient(135deg, #101522 0%, #0B0E15 50%, #171C2D 100%);
+
+  /* ---- Radii ---- */
+  --rv-radius-s:  10px;  /* inputs */
+  --rv-radius-m:  14px;  /* buttons, default cards */
+  --rv-radius-l:  20px;  /* dialogs, sheets, surface cards */
+  --rv-radius-xl: 32px;
+  --rv-radius-pill: 999px;
+
+  /* ---- Spacing scale (informal — derived from common values in code) ---- */
+  --rv-space-1: 4px;
+  --rv-space-2: 8px;
+  --rv-space-3: 12px;
+  --rv-space-4: 16px;
+  --rv-space-5: 20px;
+  --rv-space-6: 24px;
+  --rv-space-7: 32px;
+  --rv-space-8: 40px;
+
+  /* ---- Shadows (light) ---- */
+  --rv-shadow-soft: 0 8px 24px rgba(16, 19, 26, 0.08);
+  --rv-shadow-deep:
+      0 25px 40px rgba(16, 19, 26, 0.12),
+      0 4px 10px rgba(16, 19, 26, 0.03);
+  --rv-shadow-button: 0 4px 12px rgba(181, 63, 122, 0.30);
+
+  /* ---- Shadows (dark) ---- */
+  --rv-shadow-soft-dark: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --rv-shadow-deep-dark:
+      0 20px 40px rgba(0, 0, 0, 0.40),
+      0 2px 10px rgba(181, 63, 122, 0.05);
+
+  /* ---- Type ---- */
+  --rv-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ============================================================
+   Typographic scale — mirrors app_theme.dart textTheme
+   ============================================================ */
+.rv-display-lg { font: 700 40px/1.05 var(--rv-font); letter-spacing: -1.0px; }
+.rv-display-md { font: 700 32px/1.1  var(--rv-font); letter-spacing: -0.8px; }
+.rv-headline-lg{ font: 700 28px/1.15 var(--rv-font); letter-spacing: -0.6px; }
+.rv-headline-md{ font: 600 22px/1.2  var(--rv-font); letter-spacing: -0.4px; }
+.rv-title-lg   { font: 600 20px/1.25 var(--rv-font); letter-spacing: -0.4px; }
+.rv-title-md   { font: 600 17px/1.3  var(--rv-font); letter-spacing: -0.2px; }
+.rv-body-lg    { font: 400 17px/1.4  var(--rv-font); letter-spacing: -0.2px; }
+.rv-body-md    { font: 400 15px/1.5  var(--rv-font); }
+.rv-body-sm    { font: 500 13px/1.5  var(--rv-font); color: var(--rv-fg-muted); }
+.rv-label-sm   { font: 700 11px/1.4  var(--rv-font); letter-spacing: 1.0px; text-transform: uppercase; color: var(--rv-fg-muted); }
+
+/* heaviest weights used in headings (w800/w900) for emphasis */
+.rv-display-md.is-bold,
+.rv-headline-lg.is-bold { font-weight: 800; }
+
+/* ============================================================
+   Semantic helpers — typical token-level CSS vars
+   (h1/h2/p map to scale above; mono is intentionally not used by Reservives)
+   ============================================================ */
+:root {
+  --rv-h1: 700 40px/1.05 var(--rv-font);
+  --rv-h2: 700 32px/1.1  var(--rv-font);
+  --rv-h3: 700 28px/1.15 var(--rv-font);
+  --rv-h4: 600 22px/1.2  var(--rv-font);
+  --rv-h5: 600 20px/1.25 var(--rv-font);
+  --rv-h6: 600 17px/1.3  var(--rv-font);
+  --rv-p:  400 15px/1.5  var(--rv-font);
+  --rv-small: 500 13px/1.5 var(--rv-font);
+  --rv-eyebrow: 700 11px/1.4 var(--rv-font);
+}
+
+/* base reset for cards/previews */
+.rv-base {
+  font-family: var(--rv-font);
+  color: var(--rv-fg);
+  background: var(--rv-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
