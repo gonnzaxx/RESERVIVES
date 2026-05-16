@@ -59,7 +59,7 @@ class _AnnouncementDetailScreenState
     final anunciosAsync = ref.watch(anunciosProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -464,7 +464,7 @@ class _LoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     return Center(
       child: ConstrainedBox(

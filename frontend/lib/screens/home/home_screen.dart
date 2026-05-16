@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,18 +14,15 @@ import 'package:reservives/providers/polls_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
 import 'package:reservives/providers/bookings_provider.dart';
 import 'package:reservives/providers/bookings_live_updates_provider.dart';
+import 'package:reservives/providers/service_provider.dart';
 import 'package:reservives/screens/onboarding/app_tutorial_dialog.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/widgets/rv_image.dart';
 import 'package:reservives/config/constants.dart';
+import 'package:reservives/screens/chat/ai_chat_fab.dart';
 
-/// Pantalla principal de la aplicación.
-///
-/// Actúa como el Dashboard del usuario. Se encarga de mostrar un resumen rápido
-/// de su actividad: reservas, encuestas activas y el tablón de anuncios.
-///
-/// En el primer login, dispara [AppTutorialDialog] para guiar al usuario
-/// por la economía de tokens y las reglas de reserva.
+// Dashboard principal del usuario: muestra reservas recientes, encuestas activas y anuncios.
+// En el primer acceso lanza el tutorial de bienvenida.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -38,10 +34,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _checkAndShowTutorial());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowTutorial();
+      _loadReservations();
+    });
   }
 
+  // Recarga las reservas del usuario si no es invitado
+  void _loadReservations() {
+    if (!mounted) return;
+    final isGuest = ref.read(authProvider).isGuest;
+    if (isGuest) return;
+    ref.invalidate(misReservasProvider);
+    ref.invalidate(misReservasServiciosProvider);
+  }
+
+  // Comprueba si debe mostrarse el tutorial y lo lanza si es necesario
   Future<void> _checkAndShowTutorial() async {
     if (!mounted) return;
     final user = ref.read(authProvider).user;
@@ -57,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = auth.user;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.of(context).size.width > 700;
+    final isWeb = AppConstants.isWideScreen(context);
 
     if (!isGuest) ref.watch(bookingsWebSocketProvider).connect();
 
@@ -78,6 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      floatingActionButton: AiChatFab(isGuest: isGuest),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -598,8 +607,6 @@ class _ActivitySection extends StatelessWidget {
         return AppColors.error;
       case EstadoReserva.aprobada:
         return AppColors.success;
-      default:
-        return AppColors.primaryBlue;
     }
   }
 }
@@ -632,8 +639,8 @@ class _PollsBannerState extends State<_PollsBanner> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.accentPurple,
-                AppColors.accentPurple.withValues(alpha: 0.85),
+                widget.theme.colorScheme.primary,
+                widget.theme.colorScheme.primary.withValues(alpha: 0.85),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -641,7 +648,7 @@ class _PollsBannerState extends State<_PollsBanner> {
             borderRadius: BorderRadius.circular(AppRadii.l),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accentPurple
+                color: widget.theme.colorScheme.primary
                     .withValues(alpha: _hovered ? 0.35 : 0.20),
                 blurRadius: _hovered ? 20 : 14,
                 offset: const Offset(0, 6),
@@ -769,7 +776,7 @@ class _GoBookButtonState extends State<_GoBookButton> {
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) {
         setState(() => _pressed = false);
-        context.pushNamed('servicios');
+        context.pushNamed('espacios');
       },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
@@ -822,7 +829,7 @@ class _SeeAllButton extends StatelessWidget {
     final primary = theme.colorScheme.primary;
 
     return GestureDetector(
-      onTap: () => context.pushNamed('servicios'),
+      onTap: () => context.pushNamed('actividad'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
@@ -1313,3 +1320,4 @@ class _AnunciosSkeleton extends StatelessWidget {
     );
   }
 }
+

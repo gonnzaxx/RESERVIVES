@@ -6,7 +6,6 @@ import 'package:reservives/config/app_theme.dart';
 import 'package:reservives/core/utils/datetime_utils.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/models/notificacion.dart';
-import 'package:reservives/providers/navigation_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
 import 'package:reservives/widgets/design_system.dart';
 import 'package:reservives/config/constants.dart';
@@ -153,15 +152,20 @@ class _NotificationCard extends ConsumerWidget {
         return AppColors.warning;
       case TipoNotificacion.nuevoEspacio:
       case TipoNotificacion.nuevoServicio:
-      case TipoNotificacion.incidenciaResueltas:
+      case TipoNotificacion.incidenciaResuelta:
+      case TipoNotificacion.reservaRecurrenteAprobada:
         return AppColors.accentPurple;
+      case TipoNotificacion.reservaRecurrenteRechazada:
+        return AppColors.error;
+      case TipoNotificacion.nuevaReservaRecurrentePendiente:
+        return AppColors.warning;
+      case TipoNotificacion.listaEsperaDisponible:
+        return AppColors.success;
       case TipoNotificacion.nuevoAnuncio:
       case TipoNotificacion.nuevaEncuesta:
         return AppColors.primaryBlue;
       case TipoNotificacion.recargaTokens:
         return Colors.greenAccent.shade700;
-      default:
-        return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -185,12 +189,18 @@ class _NotificationCard extends ConsumerWidget {
         return Icons.how_to_vote_rounded;
       case TipoNotificacion.nuevaIncidencia:
         return Icons.report_problem_rounded;
-      case TipoNotificacion.incidenciaResueltas:
+      case TipoNotificacion.incidenciaResuelta:
         return Icons.task_alt_rounded;
       case TipoNotificacion.recargaTokens:
         return Icons.toll_rounded;
-      default:
-        return Icons.notifications_rounded;
+      case TipoNotificacion.reservaRecurrenteAprobada:
+        return Icons.event_repeat_rounded;
+      case TipoNotificacion.reservaRecurrenteRechazada:
+        return Icons.event_busy_rounded;
+      case TipoNotificacion.nuevaReservaRecurrentePendiente:
+        return Icons.pending_actions_rounded;
+      case TipoNotificacion.listaEsperaDisponible:
+        return Icons.how_to_reg_rounded;
     }
   }
 
@@ -199,11 +209,22 @@ class _NotificationCard extends ConsumerWidget {
       case TipoNotificacion.reservaAprobada:
       case TipoNotificacion.reservaRechazada:
       case TipoNotificacion.reservaCancelada:
-        ref.read(servicesTabIndexProvider.notifier).setIndex(2);
-        context.goNamed('servicios');
+        if (item.referenciaId != null) {
+          context.pushNamed('reserva_detalle', pathParameters: {
+            'reservaId': item.referenciaId!,
+          });
+        } else {
+          context.goNamed('espacios');
+        }
+        break;
+
+      case TipoNotificacion.reservaRecurrenteAprobada:
+      case TipoNotificacion.reservaRecurrenteRechazada:
+        context.pushNamed('actividad');
         break;
 
       case TipoNotificacion.nuevaReservaPendiente:
+      case TipoNotificacion.nuevaReservaRecurrentePendiente:
         context.pushNamed('admin_reservas');
         break;
 
@@ -222,12 +243,11 @@ class _NotificationCard extends ConsumerWidget {
         break;
 
       case TipoNotificacion.nuevoEspacio:
-        ref.read(servicesTabIndexProvider.notifier).setIndex(0);
-        context.goNamed('servicios');
+      case TipoNotificacion.listaEsperaDisponible:
+        context.goNamed('espacios');
         break;
 
       case TipoNotificacion.nuevoServicio:
-        ref.read(servicesTabIndexProvider.notifier).setIndex(1);
         context.goNamed('servicios');
         break;
 
@@ -235,17 +255,18 @@ class _NotificationCard extends ConsumerWidget {
         context.pushNamed('votaciones');
         break;
 
-      case TipoNotificacion.incidenciaResueltas:
-        context.pop();
-        context.goNamed('perfil');
+      case TipoNotificacion.incidenciaResuelta:
+        if (item.referenciaId != null) {
+          context.pushNamed('incidencia_detalle', pathParameters: {
+            'incidenciaId': item.referenciaId!,
+          });
+        } else {
+          context.goNamed('perfil');
+        }
         break;
 
       case TipoNotificacion.recargaTokens:
-        context.pop();
-        context.goNamed('perfil');
-        break;
-
-      default:
+        context.pushNamed('tokens_recarga', extra: item);
         break;
     }
   }

@@ -5,8 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:reservives/config/constants.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/widgets/app_logo.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
@@ -46,13 +46,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Hero(
-              tag: 'ies-logo-hero',
-              child: Image.asset(
-                AppAssets.logoPathForTheme(Theme.of(context).brightness),
-                width: 180,
-                fit: BoxFit.contain,
-              ),
+            const AppLogo(
+              width: 180,
+              heroTag: 'ies-logo-hero',
             ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
             const SizedBox(height: 40),
 

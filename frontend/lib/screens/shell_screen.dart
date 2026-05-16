@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:ui';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
 import 'package:reservives/providers/notifications_provider.dart';
+import 'package:reservives/services/push_notifications_service.dart';
+import 'package:reservives/widgets/app_logo.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
@@ -23,6 +26,9 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen>
     with WidgetsBindingObserver {
+  bool _pushHandlersSetup = false;
+  StreamSubscription<RemoteMessage>? _pushOpenedSub;
+
   @override
   void initState() {
     super.initState();
@@ -36,10 +42,85 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
 
   @override
   void dispose() {
+    _pushOpenedSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  void _setupPushHandlers() {
+    if (_pushHandlersSetup) return;
+    _pushHandlersSetup = true;
+
+    ref.read(pushNotificationsServiceProvider).syncTokenWithBackend();
+
+    _pushOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      if (mounted) _navigateFromPush(message);
+    });
+
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null && mounted) _navigateFromPush(message);
+    });
+  }
+
+  void _navigateFromPush(RemoteMessage message) {
+    final tipo = message.data['tipo'] as String?;
+    final raw = message.data['referencia_id'] as String?;
+    final refId = (raw != null && raw.isNotEmpty) ? raw : null;
+
+    if (tipo == null) return;
+
+    switch (tipo) {
+      case 'RESERVA_APROBADA':
+      case 'RESERVA_RECHAZADA':
+      case 'RESERVA_CANCELADA':
+        if (refId != null) {
+          context.pushNamed('reserva_detalle', pathParameters: {'reservaId': refId});
+        } else {
+          context.goNamed('espacios');
+        }
+        break;
+      case 'RESERVA_RECURRENTE_APROBADA':
+      case 'RESERVA_RECURRENTE_RECHAZADA':
+        context.pushNamed('actividad');
+        break;
+      case 'NUEVA_RESERVA_PENDIENTE':
+      case 'NUEVA_RESERVA_RECURRENTE_PENDIENTE':
+        context.pushNamed('admin_reservas');
+        break;
+      case 'NUEVA_INCIDENCIA':
+        context.pushNamed('admin_incidencias');
+        break;
+      case 'NUEVO_ANUNCIO':
+        if (refId != null) {
+          context.pushNamed('anuncio_detalle', pathParameters: {'anuncioId': refId});
+        } else {
+          context.goNamed('home');
+        }
+        break;
+      case 'NUEVO_ESPACIO':
+      case 'LISTA_ESPERA_DISPONIBLE':
+        context.goNamed('espacios');
+        break;
+      case 'NUEVO_SERVICIO':
+        context.goNamed('servicios');
+        break;
+      case 'NUEVA_ENCUESTA':
+        context.pushNamed('votaciones');
+        break;
+      case 'INCIDENCIA_RESUELTA':
+        if (refId != null) {
+          context.pushNamed('incidencia_detalle', pathParameters: {'incidenciaId': refId});
+        } else {
+          context.goNamed('perfil');
+        }
+        break;
+      case 'RECARGA_TOKENS':
+        context.goNamed('home');
+        break;
+    }
+  }
+
+  // Al volver a primer plano, actualiza el contador de notificaciones no leídas
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -53,18 +134,20 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      if (next.isAuthenticated && !next.isGuest) {
+        _setupPushHandlers();
+      }
+    });
+
     if (!authState.isAuthenticated) {
       return Scaffold(
         body: Center(
-          child: Hero(
-            tag: 'ies-logo-hero',
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Image.asset(
-                AppAssets.logoPathForTheme(Theme.of(context).brightness),
-                width: 140,
-                fit: BoxFit.contain,
-              ),
+          child: const Padding(
+            padding: EdgeInsets.all(32),
+            child: AppLogo(
+              width: 140,
+              heroTag: 'ies-logo-hero',
             ),
           ),
         ),
@@ -76,38 +159,33 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     final size = MediaQuery.of(context).size;
     final isWide = size.width > 900;
 
+    // Devuelve el índice de la pestaña activa según la ruta actual
     int selectedIndex() {
       if (location.startsWith('/home')) return 0;
-      if (location.startsWith('/servicios')) return 1;
-      if (location.startsWith('/ai-chat')) return 2;
+      if (location.startsWith('/espacios')) return 1;
+      if (location.startsWith('/servicios')) return 2;
       if (location.startsWith('/cafeteria')) return 3;
       if (location.startsWith('/perfil')) return 4;
       return 0;
     }
 
     final items = [
-      (context.tr('shell.nav.home'), Icons.home, Icons.home_outlined),
-      (context.tr('shell.nav.bookings'), Icons.edit_calendar, Icons.calendar_month_outlined),
-      ('Vivi', Icons.wechat_outlined, Icons.wechat_outlined),
+      (context.tr('shell.nav.home'), Icons.home_rounded, Icons.home_outlined),
+      (context.tr('shell.nav.spaces'), Icons.meeting_room_rounded, Icons.meeting_room_outlined),
+      (context.tr('shell.nav.services'), Icons.build_circle, Icons.build_circle_outlined),
       (context.tr('shell.nav.cafeteria'), Icons.restaurant_menu, Icons.local_cafe_outlined),
       (context.tr('shell.nav.profile'), Icons.person_rounded, Icons.person_outline_rounded),
     ];
 
     final activeIndex = selectedIndex();
-    final isGuest = authState.isGuest;
 
+    // Navega a la sección correspondiente con feedback háptico
     void navigate(int index) {
       HapticFeedback.selectionClick();
       switch (index) {
         case 0: context.goNamed('home'); break;
-        case 1: context.goNamed('servicios'); break;
-        case 2:
-          if (isGuest) {
-            context.pushNamed('restricted');
-          } else {
-            context.goNamed('ai_chat');
-          }
-          break;
+        case 1: context.goNamed('espacios'); break;
+        case 2: context.goNamed('servicios'); break;
         case 3: context.goNamed('cafeteria'); break;
         case 4: context.goNamed('perfil'); break;
       }
@@ -190,12 +268,10 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
-                    // Logo con efecto Hover simple
                     _HeaderLogo(onTap: () => context.goNamed('home')),
 
                     const SizedBox(width: 48),
 
-                    // Items de Navegación con indicador inferior animado
                     Expanded(
                       child: Row(
                         children: List.generate(items.length, (index) {
@@ -217,6 +293,7 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
+  // Construye un ítem de navegación del header web con animación de selección
   Widget _navItem(BuildContext context, int index, bool isSelected) {
     final theme = Theme.of(context);
     return Padding(
@@ -256,6 +333,7 @@ class _WebHeader extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
+  // Devuelve los botones de acción del header: notificaciones y avatar de perfil
   Widget _actionButtons(BuildContext context, int unreadCount, bool isGuest, dynamic user) {
     final theme = Theme.of(context);
     return Row(
@@ -295,12 +373,9 @@ class _HeaderLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: Hero(
-          tag: 'app_logo',
-          child: Image.asset(
-            AppAssets.logoPathForTheme(Theme.of(context).brightness),
-            height: 50,
-          ),
+        child: const AppLogo(
+          height: 50,
+          heroTag: 'app_logo',
         ),
       ),
     );
@@ -374,14 +449,13 @@ class _WebFooter extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Image.asset(
-                              AppAssets.logoPathForTheme(Theme.of(context).brightness),
+                            const AppLogo(
                               width: 54,
                               height: 54,
                             ),
                             const SizedBox(width: 16),
                             Text(
-                              'RESERVIVES',
+                              'IES LUIS VIVES',
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
@@ -558,6 +632,7 @@ class _SocialImageButton extends StatelessWidget {
     required this.url,
   });
 
+  // Abre la URL en el navegador externo
   Future<void> _launchUrl() async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -599,12 +674,17 @@ class _MobileBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom > 0
+        ? MediaQuery.of(context).padding.bottom + 10
+        : 25.0;
+
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).padding.bottom,
+            top: 4,
+            bottom: bottomPadding,
           ),
           decoration: BoxDecoration(
             color: isDarkMode ? const Color(0x661C1C1E) : const Color(0x4DFFFFFF),
@@ -619,6 +699,7 @@ class _MobileBottomNavBar extends StatelessWidget {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(items.length, (index) {
               final item = items[index];
               final isSelected = activeIndex == index;
@@ -632,45 +713,43 @@ class _MobileBottomNavBar extends StatelessWidget {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onTap(index),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedScale(
-                          scale: isSelected ? 1.0 : 0.92,
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          child: index == 0
-                              ? Consumer(
-                            builder: (context, ref, _) {
-                              final count = ref.watch(unreadNotificationsCountProvider).value ?? 0;
-                              if (count <= 0) return Icon(isSelected ? item.$2 : item.$3, size: 28, color: color);
-                              return Badge(
-                                label: Text(count > 99 ? '99+' : '$count', style: const TextStyle(fontSize: 8)),
-                                child: Icon(isSelected ? item.$2 : item.$3, size: 28, color: color),
-                              );
-                            },
-                          )
-                              : Icon(
-                            isSelected ? item.$2 : item.$3,
-                            size: 28,
-                            color: color,
-                          ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      AnimatedScale(
+                        scale: isSelected ? 1.0 : 0.92,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        child: index == 0
+                            ? Consumer(
+                          builder: (context, ref, _) {
+                            final count = ref.watch(unreadNotificationsCountProvider).value ?? 0;
+                            if (count <= 0) return Icon(isSelected ? item.$2 : item.$3, size: 28, color: color);
+                            return Badge(
+                              label: Text(count > 99 ? '99+' : '$count', style: const TextStyle(fontSize: 8)),
+                              child: Icon(isSelected ? item.$2 : item.$3, size: 28, color: color),
+                            );
+                          },
+                        )
+                            : Icon(
+                          isSelected ? item.$2 : item.$3,
+                          size: 28,
+                          color: color,
                         ),
-                        const SizedBox(height: 3),
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                            color: color,
-                            letterSpacing: -0.1,
-                          ),
-                          child: Text(item.$1),
+                      ),
+                      const SizedBox(height: 3),
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: color,
+                          letterSpacing: -0.1,
                         ),
-                      ],
-                    ),
+                        child: Text(item.$1),
+                      ),
+                    ],
                   ),
                 ),
               );

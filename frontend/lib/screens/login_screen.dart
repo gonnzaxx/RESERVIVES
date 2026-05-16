@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reservives/config/app_theme.dart';
-import 'package:reservives/config/constants.dart';
 import 'package:reservives/i10n/app_localizations.dart';
 import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/branding_provider.dart';
 import 'package:reservives/services/auth_service.dart';
+import 'package:reservives/widgets/app_logo.dart';
 import 'package:reservives/widgets/design_system.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoadingMicrosoft = false;
   bool _isLoadingBypass = false;
 
+  // Inicia sesión con cuenta Microsoft corporativa
   Future<void> _loginMicrosoft() async {
     setState(() => _isLoadingMicrosoft = true);
     final error =
@@ -30,6 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (error != null) RvAlerts.error(context, error);
   }
 
+  // Accede como invitado sin autenticación
   Future<void> _loginBypass() async {
     setState(() => _isLoadingBypass = true);
     await ref.read(authProvider.notifier).loginAsGuest();
@@ -43,6 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final branding = ref.watch(brandingProvider);
 
     return Scaffold(
       body: Stack(
@@ -61,14 +65,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     Hero(
                       tag: 'ies-logo-hero',
-                      child: Container(
+                      child: SizedBox(
                         width: 130,
                         height: 130,
-                        child: Image.asset(
-                          AppAssets.logoPathForTheme(
-                              theme.brightness),
-                          fit: BoxFit.contain,
-                        ),
+                        child: const AppLogo(),
                       ),
                     )
                         .animate()
@@ -92,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 10),
 
                     Text(
-                      context.tr('login.title'),
+                      branding.appName ?? context.tr('login.title'),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -354,6 +354,7 @@ class _AnimatedBackgroundState extends State<_AnimatedBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
+  // Arranca la animación de fondo en bucle infinito de 15 segundos
   @override
   void initState() {
     super.initState();
@@ -369,6 +370,7 @@ class _AnimatedBackgroundState extends State<_AnimatedBackground>
     super.dispose();
   }
 
+  // Construye el fondo con gradiente animado y blobs de color
   @override
   Widget build(BuildContext context) {
     final isDark =
@@ -476,6 +478,3 @@ class _Blob extends StatelessWidget {
   }
 }
 
-extension on AppColors {
-  static const Color ink = Color(0xFF0D0F14);
-}
